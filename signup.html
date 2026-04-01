@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créer un compte — KPI Hub</title>
+<!-- EmailJS SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--burg:#800020;--burg2:#a3254a;--ease:cubic-bezier(.4,0,.2,1);}
+
+body{
+  font-family:'DM Sans',sans-serif;min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  background:#0a0608;overflow:hidden;position:relative;
+}
+.bg{
+  position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 60% at 20% 10%,rgba(128,0,32,0.18) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 50% at 80% 90%,rgba(163,37,74,0.12) 0%,transparent 50%);
+  animation:mesh 8s ease-in-out infinite alternate;
+}
+@keyframes mesh{from{filter:blur(0px);}to{filter:blur(2px);}}
+.grid{
+  position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(128,0,32,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(128,0,32,0.04) 1px,transparent 1px);
+  background-size:60px 60px;
+}
+
+.card{
+  position:relative;z-index:10;width:100%;max-width:420px;margin:20px;
+  padding:44px 40px 40px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);
+  border-radius:24px;backdrop-filter:blur(24px);
+  box-shadow:0 32px 80px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.08);
+  animation:up .7s var(--ease) both;
+}
+@keyframes up{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+.card::before{
+  content:'';position:absolute;inset:-1px;border-radius:25px;
+  background:linear-gradient(135deg,rgba(128,0,32,0.35),transparent 50%,rgba(163,37,74,0.15));
+  z-index:-1;opacity:0;transition:opacity .4s;
+}
+.card:hover::before{opacity:1;}
+
+.logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:28px;}
+.logo-mark{width:36px;height:36px;border-radius:10px;background:var(--burg);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(128,0,32,0.5);}
+.logo-mark svg{width:18px;height:18px;fill:white;}
+.logo-text{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:rgba(255,255,255,0.9);}
+.logo-text em{color:#e8a0b0;font-style:normal;}
+
+h2{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:rgba(255,255,255,0.92);text-align:center;margin-bottom:4px;}
+.sub{text-align:center;font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:24px;letter-spacing:.06em;text-transform:uppercase;}
+
+/* step indicator */
+.steps{display:flex;gap:6px;margin-bottom:24px;justify-content:center;}
+.step{height:3px;flex:1;border-radius:2px;background:rgba(255,255,255,0.1);transition:background .4s;}
+.step.active{background:var(--burg);}
+.step.done{background:rgba(128,0,32,0.5);}
+
+/* info box */
+.info-box{
+  padding:10px 14px;margin-bottom:18px;
+  background:rgba(128,0,32,0.12);border:1px solid rgba(128,0,32,0.25);
+  border-radius:10px;font-size:11px;color:rgba(232,160,176,0.85);line-height:1.7;display:none;
+}
+.info-box.show{display:block;}
+
+/* fields */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:6px;}
+.field-row{position:relative;}
+.field input{
+  width:100%;padding:12px 16px;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px;color:rgba(255,255,255,0.9);
+  font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:all .25s;
+}
+.field input:focus{border-color:rgba(128,0,32,0.7);background:rgba(128,0,32,0.08);box-shadow:0 0 0 3px rgba(128,0,32,0.15);}
+.field input::placeholder{color:rgba(255,255,255,0.2);}
+.field input.ok{border-color:rgba(74,222,128,0.5);}
+.field input.err{border-color:#f87171;}
+.eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;color:rgba(255,255,255,0.3);font-size:16px;user-select:none;transition:color .2s;}
+.eye:hover{color:rgba(255,255,255,0.6);}
+.field-msg{font-size:11px;margin-top:5px;display:none;animation:fi .2s ease;}
+.field-msg.show{display:block;}
+.field-msg.error{color:#f87171;}
+.field-msg.success{color:#4ade80;}
+@keyframes fi{from{opacity:0;}to{opacity:1;}}
+
+/* code input */
+.code-wrap{display:flex;gap:8px;justify-content:center;margin:8px 0 16px;}
+.code-box{
+  width:52px;height:58px;border-radius:12px;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+  color:rgba(255,255,255,0.9);font-size:22px;font-weight:600;
+  text-align:center;outline:none;font-family:'DM Sans',sans-serif;
+  transition:all .2s;caret-color:transparent;
+}
+.code-box:focus{border-color:rgba(128,0,32,0.7);background:rgba(128,0,32,0.1);box-shadow:0 0 0 3px rgba(128,0,32,0.15);}
+.code-box.filled{border-color:rgba(74,222,128,0.4);}
+
+.resend{text-align:center;font-size:12px;color:rgba(255,255,255,0.3);margin-bottom:8px;}
+.resend button{background:none;border:none;color:rgba(232,160,176,0.7);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;transition:color .2s;}
+.resend button:hover{color:#e8a0b0;}
+.resend button:disabled{color:rgba(255,255,255,0.15);cursor:default;}
+
+/* global error */
+.global-err{
+  padding:10px 14px;margin-bottom:14px;
+  background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);
+  border-radius:10px;font-size:12px;color:#f87171;
+  display:none;align-items:center;gap:8px;animation:fi .2s;
+}
+.global-err.show{display:flex;}
+
+/* button */
+.btn{
+  width:100%;padding:14px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,var(--burg),var(--burg2));
+  color:white;font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.03em;
+  transition:all .2s;position:relative;overflow:hidden;margin-top:4px;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(128,0,32,0.5);}
+.btn:disabled{opacity:.6;cursor:default;transform:none;}
+
+.spinner{
+  display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);
+  border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.link{text-align:center;margin-top:18px;font-size:13px;color:rgba(255,255,255,0.3);}
+.link a{color:rgba(232,160,176,0.8);text-decoration:none;font-weight:500;transition:color .2s;}
+.link a:hover{color:#e8a0b0;}
+
+/* toast */
+.toast{
+  position:fixed;top:20px;right:20px;z-index:9999;
+  background:rgba(14,11,11,0.95);border:1px solid rgba(255,255,255,0.1);
+  color:white;padding:11px 16px;border-radius:12px;font-size:13px;
+  backdrop-filter:blur(12px);display:flex;align-items:center;gap:8px;
+  transform:translateY(-60px);opacity:0;transition:all .35s var(--ease);pointer-events:none;
+  max-width:300px;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+<div class="bg"></div>
+<div class="grid"></div>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
+    <span class="logo-text">KPI <em>Hub</em></span>
+  </div>
+
+  <h2>Créer un compte</h2>
+  <p class="sub" id="stepLabel">Étape 1 — Informations</p>
+
+  <div class="steps">
+    <div class="step active" id="s1"></div>
+    <div class="step" id="s2"></div>
+    <div class="step" id="s3"></div>
+  </div>
+
+  <div class="global-err" id="globalErr"><span>⛔</span><span id="globalErrText"></span></div>
+
+  <!-- ── STEP 1: Info ── -->
+  <div id="step1">
+    <div class="field">
+      <label>Adresse email</label>
+      <div class="field-row">
+        <input type="email" id="email" placeholder="vous@exemple.com" oninput="validateEmail()">
+      </div>
+      <div class="field-msg" id="emailMsg"></div>
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <div class="field-row">
+        <input type="password" id="password" placeholder="Min. 6 caractères" oninput="validatePass()">
+        <span class="eye" onclick="toggleEye('password','eye1')">👁</span>
+      </div>
+      <div class="field-msg" id="passMsg"></div>
+    </div>
+    <div class="field">
+      <label>Confirmer le mot de passe</label>
+      <div class="field-row">
+        <input type="password" id="confirm" placeholder="Répéter le mot de passe" oninput="validateConfirm()">
+        <span class="eye" onclick="toggleEye('confirm','eye2')" id="eye2">👁</span>
+      </div>
+      <div class="field-msg" id="confirmMsg"></div>
+    </div>
+    <button class="btn" id="btn1" onclick="goStep2()">Continuer →</button>
+  </div>
+
+  <!-- ── STEP 2: Send code ── -->
+  <div id="step2" style="display:none;">
+    <div class="info-box show" id="infoBox">
+      Un code d'accès à 6 chiffres va être envoyé à<br>
+      <strong id="emailDisplay" style="color:#e8a0b0;"></strong>
+    </div>
+    <button class="btn" id="btn2" onclick="sendCode()">📧 Envoyer le code par email</button>
+    <p style="text-align:center;font-size:11px;color:rgba(255,255,255,0.25);margin-top:12px;">
+      Vérifiez aussi vos spams
+    </p>
+  </div>
+
+  <!-- ── STEP 3: Verify code ── -->
+  <div id="step3" style="display:none;">
+    <p style="text-align:center;font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:16px;">
+      Entrez le code envoyé à <span style="color:#e8a0b0;" id="emailDisplay3"></span>
+    </p>
+    <div class="code-wrap" id="codeWrap">
+      <input class="code-box" maxlength="1" data-idx="0" oninput="codeInput(this)" onkeydown="codeKey(event,this)">
+      <input class="code-box" maxlength="1" data-idx="1" oninput="codeInput(this)" onkeydown="codeKey(event,this)">
+      <input class="code-box" maxlength="1" data-idx="2" oninput="codeInput(this)" onkeydown="codeKey(event,this)">
+      <input class="code-box" maxlength="1" data-idx="3" oninput="codeInput(this)" onkeydown="codeKey(event,this)">
+      <input class="code-box" maxlength="1" data-idx="4" oninput="codeInput(this)" onkeydown="codeKey(event,this)">
+      <input class="code-box" maxlength="1" data-idx="5" oninput="codeInput(this)" onkeydown="codeKey(event,this)">
+    </div>
+    <div class="resend">
+      <button id="resendBtn" onclick="resendCode()" disabled>Renvoyer le code</button>
+      <span id="resendTimer" style="margin-left:4px;"></span>
+    </div>
+    <button class="btn" id="btn3" onclick="verifyCode()">Vérifier et créer le compte</button>
+  </div>
+
+  <div class="link">Déjà un compte ? <a href="login.html">Se connecter</a></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── EmailJS INIT ───────────────────────────────────────────────────
+   📌 INSTRUCTION:
+   1. Créez un compte sur https://www.emailjs.com (gratuit, 200 emails/mois)
+   2. Créez un Service (Gmail, Outlook…) → copiez le Service ID
+   3. Créez un Template avec ces variables: {{to_email}}, {{access_code}}, {{app_name}}
+   4. Récupérez votre Public Key dans Account > API Keys
+   5. Remplacez les 3 valeurs ci-dessous
+──────────────────────────────────────────────────────────────────── */
+const EMAILJS_PUBLIC_KEY  = 'VOTRE_PUBLIC_KEY';   // ← remplacer
+const EMAILJS_SERVICE_ID  = 'VOTRE_SERVICE_ID';   // ← remplacer
+const EMAILJS_TEMPLATE_ID = 'VOTRE_TEMPLATE_ID';  // ← remplacer
+const DEMO_MODE = (EMAILJS_PUBLIC_KEY === 'VOTRE_PUBLIC_KEY'); // auto-detect
+
+emailjs.init(EMAILJS_PUBLIC_KEY);
+
+let _generatedCode = '';
+let _resendCount   = 0;
+let _resendInterval = null;
+
+/* ─── UTILS ─────────────────────────────────────────────────────── */
+function toast(msg, type='ok'){
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${type==='ok'?'✓':'⚠'}</span> ${msg}`;
+  t.style.borderColor = type==='ok' ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 3500);
+}
+function showGlobal(msg){ const e=document.getElementById('globalErr'); document.getElementById('globalErrText').textContent=msg; e.classList.add('show'); }
+function hideGlobal(){ document.getElementById('globalErr').classList.remove('show'); }
+
+function setField(id, msgId, state, msg){
+  const inp = document.getElementById(id);
+  const msgEl = document.getElementById(msgId);
+  inp.classList.remove('ok','err');
+  msgEl.classList.remove('show','error','success');
+  if(state){
+    inp.classList.add(state==='ok'?'ok':'err');
+    msgEl.textContent = msg;
+    msgEl.classList.add('show', state==='ok'?'success':'error');
+  }
+}
+
+function toggleEye(inputId, eyeId){
+  const inp = document.getElementById(inputId);
+  const eye = document.getElementById(eyeId);
+  inp.type = inp.type==='password' ? 'text' : 'password';
+  if(eye) eye.textContent = inp.type==='password' ? '👁' : '🙈';
+}
+
+function setStep(n){
+  ['step1','step2','step3'].forEach((id,i)=>{
+    document.getElementById(id).style.display = i+1===n ? 'block' : 'none';
+  });
+  const labels = ['Étape 1 — Informations','Étape 2 — Confirmation email','Étape 3 — Code de vérification'];
+  document.getElementById('stepLabel').textContent = labels[n-1];
+  ['s1','s2','s3'].forEach((id,i)=>{
+    const el = document.getElementById(id);
+    el.className = 'step' + (i+1<n ? ' done' : i+1===n ? ' active' : '');
+  });
+}
+
+/* ─── STEP 1 VALIDATION ─────────────────────────────────────────── */
+function validateEmail(){
+  const v = document.getElementById('email').value.trim();
+  if(!v){ setField('email','emailMsg',null,null); return false; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ setField('email','emailMsg','err','Email invalide'); return false; }
+  setField('email','emailMsg','ok','Email valide ✓');
+  return true;
+}
+function validatePass(){
+  const v = document.getElementById('password').value;
+  if(!v){ setField('password','passMsg',null,null); return false; }
+  if(v.length<6){ setField('password','passMsg','err','Minimum 6 caractères'); return false; }
+  setField('password','passMsg','ok','Mot de passe valide ✓');
+  validateConfirm();
+  return true;
+}
+function validateConfirm(){
+  const p = document.getElementById('password').value;
+  const c = document.getElementById('confirm').value;
+  if(!c){ setField('confirm','confirmMsg',null,null); return false; }
+  if(p!==c){ setField('confirm','confirmMsg','err','Les mots de passe ne correspondent pas'); return false; }
+  setField('confirm','confirmMsg','ok','Confirmation correcte ✓');
+  return true;
+}
+
+function goStep2(){
+  hideGlobal();
+  if(!validateEmail()||!validatePass()||!validateConfirm()) return;
+
+  const email = document.getElementById('email').value.trim();
+  let users = JSON.parse(localStorage.getItem('kpi_users')||'[]');
+  if(users.find(u=>u.email===email)){
+    showGlobal('Un compte avec cet email existe déjà'); return;
+  }
+
+  document.getElementById('emailDisplay').textContent = email;
+  setStep(2);
+}
+
+/* ─── STEP 2 — SEND CODE ────────────────────────────────────────── */
+function generateCode(){ return String(Math.floor(100000+Math.random()*900000)); }
+
+async function sendCode(){
+  const btn = document.getElementById('btn2');
+  const email = document.getElementById('email').value.trim();
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Envoi en cours…';
+  hideGlobal();
+
+  _generatedCode = generateCode();
+  const expiry   = Date.now() + 10*60*1000; // 10 min
+  sessionStorage.setItem('kpi_signup_code',    _generatedCode);
+  sessionStorage.setItem('kpi_signup_expiry',  expiry);
+  sessionStorage.setItem('kpi_signup_email',   email);
+
+  if(DEMO_MODE){
+    // ── DEMO MODE: show code in toast (no real email) ──
+    await new Promise(r=>setTimeout(r,900));
+    toast(`DEMO — Code : ${_generatedCode} (EmailJS non configuré)`,'⚠');
+    document.getElementById('emailDisplay3').textContent = email;
+    setStep(3);
+    startResendTimer();
+    btn.disabled=false; btn.innerHTML='📧 Envoyer le code par email';
+    return;
+  }
+
+  try{
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email:    email,
+      access_code: _generatedCode,
+      app_name:    'KPI Hub',
+    });
+    toast('Code envoyé ! Vérifiez votre boîte mail.');
+    document.getElementById('emailDisplay3').textContent = email;
+    setStep(3);
+    startResendTimer();
+  }catch(e){
+    console.error(e);
+    showGlobal('Erreur d\'envoi email. Vérifiez votre configuration EmailJS.');
+  }finally{
+    btn.disabled=false; btn.innerHTML='📧 Envoyer le code par email';
+  }
+}
+
+/* ─── RESEND TIMER ──────────────────────────────────────────────── */
+function startResendTimer(){
+  const btn = document.getElementById('resendBtn');
+  const timer = document.getElementById('resendTimer');
+  btn.disabled = true;
+  let secs = 60;
+  if(_resendInterval) clearInterval(_resendInterval);
+  _resendInterval = setInterval(()=>{
+    secs--;
+    timer.textContent = `(${secs}s)`;
+    if(secs<=0){ clearInterval(_resendInterval); btn.disabled=false; timer.textContent=''; }
+  },1000);
+}
+async function resendCode(){
+  _resendCount++;
+  if(_resendCount>3){ toast('Trop de tentatives. Rechargez la page.','err'); return; }
+  await sendCode();
+  toast('Nouveau code envoyé !');
+}
+
+/* ─── CODE INPUTS ───────────────────────────────────────────────── */
+function codeInput(el){
+  el.classList.toggle('filled', el.value.length>0);
+  if(el.value&&el.dataset.idx<5){
+    document.querySelector(`[data-idx="${+el.dataset.idx+1}"]`).focus();
+  }
+  // auto-verify when all filled
+  const boxes = document.querySelectorAll('.code-box');
+  if([...boxes].every(b=>b.value)) verifyCode();
+}
+function codeKey(e,el){
+  if(e.key==='Backspace'&&!el.value&&el.dataset.idx>0){
+    document.querySelector(`[data-idx="${+el.dataset.idx-1}"]`).focus();
+  }
+}
+
+/* ─── STEP 3 — VERIFY ───────────────────────────────────────────── */
+function verifyCode(){
+  const boxes = document.querySelectorAll('.code-box');
+  const entered = [...boxes].map(b=>b.value).join('');
+
+  if(entered.length < 6){
+    showGlobal('Entrez le code complet (6 chiffres)');
+    return;
+  }
+
+  const stored = sessionStorage.getItem('kpi_signup_code');
+  const expiry = Number(sessionStorage.getItem('kpi_signup_expiry') || 0);
+  const email  = sessionStorage.getItem('kpi_signup_email');
+
+  if(Date.now() > expiry){
+    showGlobal('Code expiré. Veuillez renvoyer un nouveau code.');
+    return;
+  }
+
+  if(entered !== stored){
+    showGlobal('Code incorrect. Vérifiez votre email.');
+    return;
+  }
+
+  // ✅ CREATE USER WITH ACCESS CODE
+  const password = document.getElementById('password').value;
+
+  let users = JSON.parse(localStorage.getItem('kpi_users') || []);
+
+  users.push({
+    email,
+    password,
+    accessCode: stored,   // ✅ IMPORTANT FIX
+    createdAt: Date.now(),
+    verified: true
+  });
+
+  localStorage.setItem('kpi_users', JSON.stringify(users));
+
+  sessionStorage.clear();
+
+  toast('Compte créé avec succès ! Redirection…');
+  setTimeout(() => window.location.href = 'login.html', 1400);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connexion — KPI Hub</title>
+
+<!--
+  ✅ FIREBASE COMPAT SDK (no import statements needed in HTML)
+  Must be loaded BEFORE any firebase.xxx() call
+-->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+<!--
+  ✅ Firebase initialized HERE — at the top, before any usage
+  Remove the broken ES module imports from <head>
+-->
+<script>
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDJTVidU8fgOUTAu2xyFEQRLpasmOD4I34",
+    authDomain:        "kpi-dashboard-6e771.firebaseapp.com",
+    projectId:         "kpi-dashboard-6e771",
+    storageBucket:     "kpi-dashboard-6e771.firebasestorage.app",
+    messagingSenderId: "34524674550",
+    appId:             "1:34524674550:web:a5f93daca18cfa004a6fd7",
+    measurementId:     "G-MT3PRTMECJ"
+  };
+
+  // initializeApp must be called once before any firebase.auth() usage
+  firebase.initializeApp(firebaseConfig);
+  // Note: getAnalytics is NOT in the compat SDK — omit it here.
+  // Analytics will still work via the measurementId automatically.
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--burg:#800020;--burg2:#a3254a;--ease:cubic-bezier(.4,0,.2,1);}
+
+body{
+  font-family:'DM Sans',sans-serif;min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  background:#0a0608;overflow:auto;position:relative;
+}
+
+/* ── background ── */
+.bg{
+  position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 60% at 80% 10%,rgba(128,0,32,0.2) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 50% at 20% 90%,rgba(163,37,74,0.12) 0%,transparent 50%);
+}
+.grid{
+  position:fixed;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(128,0,32,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(128,0,32,0.04) 1px,transparent 1px);
+  background-size:60px 60px;
+}
+
+/* ── card ── */
+.card{
+  position:relative;z-index:10;width:100%;max-width:400px;margin:20px;
+  padding:44px 40px 40px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.09);
+  border-radius:24px;backdrop-filter:blur(24px);
+  box-shadow:0 32px 80px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.08);
+  animation:up .7s var(--ease) both;
+   max-height:90vh;     /* ✅ NEW */
+  overflow-y:auto;     /* ✅ NEW */
+}
+@keyframes up{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
+.card::before{
+  content:'';position:absolute;inset:-1px;border-radius:25px;
+  background:linear-gradient(135deg,rgba(128,0,32,0.35),transparent 50%,rgba(163,37,74,0.15));
+  z-index:-1;opacity:0;transition:opacity .4s;
+}
+.card:hover::before{opacity:1;}n
+
+/* ── logo ── */
+.logo{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:28px;}
+.logo-mark{
+  width:36px;height:36px;border-radius:10px;background:var(--burg);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 16px rgba(128,0,32,0.5);
+}
+.logo-mark svg{width:18px;height:18px;fill:white;}
+.logo-text{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:rgba(255,255,255,0.9);}
+.logo-text em{color:#e8a0b0;font-style:normal;}
+
+h2{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:rgba(255,255,255,0.92);text-align:center;margin-bottom:4px;}
+.sub{text-align:center;font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:24px;letter-spacing:.06em;text-transform:uppercase;}
+
+/* ── hint ── */
+.hint{
+  padding:10px 14px;margin-bottom:18px;
+  background:rgba(128,0,32,0.12);border:1px solid rgba(128,0,32,0.25);
+  border-radius:10px;font-size:11px;color:rgba(232,160,176,0.8);line-height:1.7;
+}
+.hint strong{color:#e8a0b0;}
+
+/* ── errors ── */
+.global-err{
+  padding:10px 14px;margin-bottom:14px;
+  background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);
+  border-radius:10px;font-size:12px;color:#f87171;
+  display:none;align-items:center;gap:8px;
+  animation:fi .2s;
+}
+.global-err.show{display:flex;}
+@keyframes fi{from{opacity:0;}to{opacity:1;}}
+
+/* ── fields ── */
+.field{margin-bottom:14px;}
+.field label{
+  display:block;font-size:10px;font-weight:500;letter-spacing:.12em;
+  text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:6px;
+}
+.field-row{position:relative;}
+.field input{
+  width:100%;padding:12px 16px;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px;color:rgba(255,255,255,0.9);
+  font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:all .25s;
+}
+.field input:focus{
+  border-color:rgba(128,0,32,0.7);background:rgba(128,0,32,0.08);
+  box-shadow:0 0 0 3px rgba(128,0,32,0.15);
+}
+.field input::placeholder{color:rgba(255,255,255,0.2);}
+.eye{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  cursor:pointer;color:rgba(255,255,255,0.3);font-size:16px;
+  user-select:none;transition:color .2s;
+}
+.eye:hover{color:rgba(255,255,255,0.6);}
+.field-msg{font-size:11px;margin-top:5px;display:none;color:#f87171;}
+.field-msg.show{display:block;animation:fi .2s;}
+
+/* ── primary button ── */
+.btn{
+  width:100%;padding:14px;border:none;border-radius:12px;
+  background:linear-gradient(135deg,var(--burg),var(--burg2));
+  color:white;font-family:'DM Sans',sans-serif;
+  font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.03em;
+  transition:all .2s;margin-top:6px;
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(128,0,32,0.5);}
+.btn:disabled{opacity:.6;cursor:default;transform:none;pointer-events:none;}
+
+/* ── divider ── */
+.divider{
+  display:flex;align-items:center;gap:12px;margin:18px 0;
+}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,0.08);}
+.divider span{font-size:11px;color:rgba(255,255,255,0.2);white-space:nowrap;}
+
+/* ── Google button ── */
+.btn-google{
+  width:100%;padding:12px 14px;border-radius:12px;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.05);
+  color:rgba(255,255,255,0.85);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.btn-google:hover{
+  background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.22);
+  transform:translateY(-1px);
+}
+.btn-google:disabled{opacity:.5;cursor:default;pointer-events:none;}
+.btn-google svg{width:18px;height:18px;flex-shrink:0;}
+
+/* ── spinner ── */
+.spinner{
+  display:inline-block;width:14px;height:14px;
+  border:2px solid rgba(255,255,255,0.25);border-top-color:white;
+  border-radius:50%;animation:spin .6s linear infinite;
+  margin-right:6px;vertical-align:middle;flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── link ── */
+.link{text-align:center;margin-top:20px;font-size:13px;color:rgba(255,255,255,0.3);}
+.link a{color:rgba(232,160,176,0.8);text-decoration:none;font-weight:500;transition:color .2s;}
+.link a:hover{color:#e8a0b0;}
+
+/* ── toast ── */
+.toast{
+  position:fixed;top:20px;right:20px;z-index:9999;
+  background:rgba(14,11,11,0.96);border:1px solid rgba(255,255,255,0.1);
+  color:white;padding:11px 16px;border-radius:12px;font-size:13px;
+  backdrop-filter:blur(12px);display:flex;align-items:center;gap:8px;
+  transform:translateY(-60px);opacity:0;transition:all .35s var(--ease);
+  pointer-events:none;max-width:300px;
+}
+.toast.show{transform:translateY(0);opacity:1;}
+</style>
+</head>
+<body>
+
+<div class="bg"></div>
+<div class="grid"></div>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg>
+    </div>
+    <span class="logo-text">KPI <em>Hub</em></span>
+  </div>
+
+  <h2>Bienvenue</h2>
+  <p class="sub">Connectez-vous à votre espace</p>
+
+  <div class="hint">
+    <strong>Code d'accès</strong> : reçu par email lors de l'inscription.<br>
+    Pas de compte ? <a href="signup.html" style="color:#e8a0b0;">Créer un compte</a>
+  </div>
+
+  <div class="global-err" id="globalErr">
+    <span>⛔</span><span id="globalErrText"></span>
+  </div>
+
+  <!-- Email / Password / Code form -->
+  <div class="field">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="vous@exemple.com" autocomplete="email">
+    <div class="field-msg" id="emailMsg"></div>
+  </div>
+
+  <div class="field">
+    <label>Mot de passe</label>
+    <div class="field-row">
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      <span class="eye" id="eyeBtn" onclick="toggleEye()">👁</span>
+    </div>
+    <div class="field-msg" id="passMsg"></div>
+  </div>
+
+  <div class="field">
+    <label>Code d'accès (reçu par email)</label>
+    <input type="text" id="code" placeholder="123456" maxlength="10" autocomplete="off">
+    <div class="field-msg" id="codeMsg"></div>
+  </div>
+
+  <button class="btn" id="loginBtn" onclick="login()">Se connecter →</button>
+
+  <!-- OR separator -->
+  <div class="divider"><span>ou continuer avec</span></div>
+
+  <!-- Google Sign-In -->
+  <button class="btn-google" id="googleBtn" onclick="loginGoogle()">
+    <!-- Google "G" logo SVG -->
+    <svg viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      <path fill="none" d="M0 0h48v48H0z"/>
+    </svg>
+    Continuer avec Google
+  </button>
+
+  <div class="link">Pas de compte ? <a href="signup.html">Créer un compte</a></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════
+     SCRIPTS — all logic after DOM is ready
+═══════════════════════════════════════════════ -->
+<script>
+/* ── Guard: redirect if already logged in ── */
+if (localStorage.getItem('kpi_auth') === 'true') {
+  window.location.href = 'dashboard.html';
+}
+
+/* ── Toast helper ── */
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${type === 'ok' ? '✓' : '⚠'}</span> ${msg}`;
+  t.style.borderColor = type === 'ok' ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ── Field helpers ── */
+function toggleEye() {
+  const inp = document.getElementById('password');
+  const eye = document.getElementById('eyeBtn');
+  inp.type  = inp.type === 'password' ? 'text' : 'password';
+  eye.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearErr(id) { document.getElementById(id).classList.remove('show'); }
+function showGlobal(msg) {
+  document.getElementById('globalErrText').textContent = msg;
+  document.getElementById('globalErr').classList.add('show');
+}
+function hideGlobal() { document.getElementById('globalErr').classList.remove('show'); }
+
+/* ─────────────────────────────────────────────────
+   EMAIL / PASSWORD LOGIN
+───────────────────────────────────────────────── */
+function login() {
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('password').value;
+  const code  = document.getElementById('code').value.trim();
+  let valid   = true;
+
+  ['emailMsg', 'passMsg', 'codeMsg'].forEach(clearErr);
+  hideGlobal();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('emailMsg', 'Email invalide'); valid = false; }
+  if (!pass)  { showErr('passMsg', 'Mot de passe requis'); valid = false; }
+  if (!code)  { showErr('codeMsg', "Code d'accès requis"); valid = false; }
+  if (!valid) return;
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Connexion…';
+
+  setTimeout(() => {
+    const users = JSON.parse(localStorage.getItem('kpi_users') || '[]');
+    const user  = users.find(u => u.email === email && u.password === pass);
+
+    if (!user) {
+      showGlobal('Email ou mot de passe incorrect');
+      btn.disabled = false;
+      btn.innerHTML = 'Se connecter →';
+      return;
+    }
+
+    // Code validation:
+    // - If user has an accessCode stored (set during signup), check it
+    // - If user is verified (email verified flow), allow any valid session
+    const storedCode = user.accessCode || null;
+    if (storedCode && code !== storedCode) {
+      showGlobal("Code d'accès invalide");
+      btn.disabled = false;
+      btn.innerHTML = 'Se connecter →';
+      return;
+    }
+
+    // Success
+    localStorage.setItem('kpi_auth', 'true');
+    localStorage.setItem('kpi_current_user', JSON.stringify({ email: user.email, method: 'email' }));
+    window.location.href = 'dashboard.html';
+  }, 700);
+}
+
+/* ─────────────────────────────────────────────────
+   GOOGLE SIGN-IN via Firebase
+   firebase.initializeApp() was already called above
+───────────────────────────────────────────────── */
+async function loginGoogle() {
+  const btn = document.getElementById('googleBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Connexion Google…';
+  hideGlobal();
+
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
+
+    const result  = await firebase.auth().signInWithPopup(provider);
+    const idToken = await result.user.getIdToken();
+    const email   = result.user.email;
+    const name    = result.user.displayName || email.split('@')[0];
+
+    // ── Option A: send token to your Node.js backend ──
+    // Uncomment if you have the backend running on localhost:3001
+    /*
+    const res = await fetch('http://localhost:3001/api/auth/firebase-login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ idToken }),
+    });
+    if (!res.ok) throw new Error('Backend auth failed');
+    const data = await res.json();
+    localStorage.setItem('kpi_jwt', data.token);
+    */
+
+    // ── Option B: frontend-only (no backend needed) ──
+    // Store Google user directly in localStorage
+    localStorage.setItem('kpi_auth', 'true');
+    localStorage.setItem('kpi_current_user', JSON.stringify({
+      email,
+      name,
+      method:  'google',
+      uid:     result.user.uid,
+      photoURL: result.user.photoURL || null,
+    }));
+
+    showToast(`Bienvenue ${name} !`);
+    setTimeout(() => window.location.href = 'dashboard.html', 800);
+
+  } catch (err) {
+    console.error('Google login error:', err);
+
+    // Handle common Firebase error codes gracefully
+    const messages = {
+      'auth/popup-closed-by-user':        'Connexion annulée.',
+      'auth/popup-blocked':               'Popup bloquée par le navigateur. Autorisez les popups pour ce site.',
+      'auth/network-request-failed':      'Erreur réseau. Vérifiez votre connexion.',
+      'auth/cancelled-popup-request':     'Connexion annulée.',
+      'auth/unauthorized-domain':         'Domaine non autorisé dans Firebase Console (ajoutez localhost).',
+      'auth/account-exists-with-different-credential': 'Un compte existe déjà avec cet email.',
+    };
+
+    const msg = messages[err.code] || `Erreur Google: ${err.message}`;
+    showGlobal(msg);
+
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg viewBox="0 0 48 48" style="width:18px;height:18px;flex-shrink:0;">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Continuer avec Google`;
+  }
+}
+
+/* ── Enter key triggers email login ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+</script>
+
+</body>
+</html>
