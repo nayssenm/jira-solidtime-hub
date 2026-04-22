@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Connexion — KPI Hub</title>
+
+<!--
+  ✅ FIREBASE COMPAT SDK (no import statements needed in HTML)
+  Must be loaded BEFORE any firebase.xxx() call
+-->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+<!--
+  ✅ Firebase initialized HERE — at the top, before any usage
+  Remove the broken ES module imports from <head>
+-->
+<script>
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDJTVidU8fgOUTAu2xyFEQRLpasmOD4I34",
+    authDomain:        "kpi-dashboard-6e771.firebaseapp.com",
+    projectId:         "kpi-dashboard-6e771",
+    storageBucket:     "kpi-dashboard-6e771.firebasestorage.app",
+    messagingSenderId: "34524674550",
+    appId:             "1:34524674550:web:a5f93daca18cfa004a6fd7",
+    measurementId:     "G-MT3PRTMECJ"
+  };
+
+  // initializeApp must be called once before any firebase.auth() usage
+  firebase.initializeApp(firebaseConfig);
+  // Note: getAnalytics is NOT in the compat SDK — omit it here.
+  // Analytics will still work via the measurementId automatically.
+</script>
+
+<link rel="stylesheet" href="auth.css">
+
+
+</head>
+<body>
+
+<div class="video-bg">
+  <video autoplay muted loop playsinline
+    src="https://videos.pexels.com/video-files/3129671/3129671-uhd_2560_1440_30fps.mp4">
+  </video>
+</div>
+<div class="overlay"></div>
+<div class="grid"></div>
+
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg>
+    </div>
+    <span class="logo-text">KPI <em>Hub</em></span>
+  </div>
+
+  <h2>Bienvenue</h2>
+  <p class="sub">Connectez-vous à votre espace</p>
+
+  <div class="hint">
+    <strong>Code d'accès</strong> : reçu par email lors de l'inscription.<br>
+    Pas de compte ? <a href="signup.html">Créer un compte →</a>
+  </div>
+
+  <div class="global-err" id="globalErr">
+    <span>⛔</span><span id="globalErrText"></span>
+  </div>
+
+  <!-- Email / Password / Code form -->
+  <div class="field">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="vous@exemple.com" autocomplete="email">
+    <div class="field-msg" id="emailMsg"></div>
+  </div>
+
+  <div class="field">
+    <label>Mot de passe</label>
+    <div class="field-row">
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      <span class="eye" id="eyeBtn" onclick="toggleEye()">👁</span>
+    </div>
+    <div class="field-msg" id="passMsg"></div>
+  </div>
+
+  <div class="field">
+    <label>Code d'accès (reçu par email)</label>
+    <input type="text" id="code" placeholder="123456" maxlength="10" autocomplete="off">
+    <div class="field-msg" id="codeMsg"></div>
+  </div>
+
+  <button class="btn" id="loginBtn" onclick="login()">Se connecter →</button>
+
+  <!-- OR separator -->
+  <div class="divider"><span>ou continuer avec</span></div>
+
+  <!-- Google Sign-In -->
+  <button class="btn-google" id="googleBtn" onclick="loginGoogle()">
+    <!-- Google "G" logo SVG -->
+    <svg viewBox="0 0 48 48">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      <path fill="none" d="M0 0h48v48H0z"/>
+    </svg>
+    Continuer avec Google
+  </button>
+
+  <div class="link">Pas de compte ? <a href="signup.html">Créer un compte</a></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════
+     SCRIPTS — all logic after DOM is ready
+═══════════════════════════════════════════════ -->
+<script>
+/* ── Guard: redirect if already logged in ── */
+if (localStorage.getItem('kpi_auth') === 'true') {
+  window.location.href = 'dashboard.html';
+}
+
+/* ── Toast helper ── */
+function showToast(msg, type = 'ok') {
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${type === 'ok' ? '✓' : '⚠'}</span> ${msg}`;
+  t.style.borderColor = type === 'ok' ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+/* ── Field helpers ── */
+function toggleEye() {
+  const inp = document.getElementById('password');
+  const eye = document.getElementById('eyeBtn');
+  inp.type  = inp.type === 'password' ? 'text' : 'password';
+  eye.textContent = inp.type === 'password' ? '👁' : '🙈';
+}
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function clearErr(id) { document.getElementById(id).classList.remove('show'); }
+function showGlobal(msg) {
+  document.getElementById('globalErrText').textContent = msg;
+  document.getElementById('globalErr').classList.add('show');
+}
+function hideGlobal() { document.getElementById('globalErr').classList.remove('show'); }
+
+/* ─────────────────────────────────────────────────
+   EMAIL / PASSWORD LOGIN
+───────────────────────────────────────────────── */
+function login() {
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('password').value;
+  const code  = document.getElementById('code').value.trim();
+  let valid   = true;
+
+  ['emailMsg', 'passMsg', 'codeMsg'].forEach(clearErr);
+  hideGlobal();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('emailMsg', 'Email invalide'); valid = false; }
+  if (!pass)  { showErr('passMsg', 'Mot de passe requis'); valid = false; }
+  if (!code)  { showErr('codeMsg', "Code d'accès requis"); valid = false; }
+  if (!valid) return;
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Connexion…';
+
+  setTimeout(() => {
+    const users = JSON.parse(localStorage.getItem('kpi_users') || '[]');
+    const user  = users.find(u => u.email === email && u.password === pass);
+
+    if (!user) {
+      showGlobal('Email ou mot de passe incorrect');
+      btn.disabled = false;
+      btn.innerHTML = 'Se connecter →';
+      return;
+    }
+
+    // Code validation:
+    // - If user has an accessCode stored (set during signup), check it
+    // - If user is verified (email verified flow), allow any valid session
+    const storedCode = user.accessCode || null;
+    if (storedCode && code !== storedCode) {
+      showGlobal("Code d'accès invalide");
+      btn.disabled = false;
+      btn.innerHTML = 'Se connecter →';
+      return;
+    }
+
+    // Success
+    localStorage.setItem('kpi_auth', 'true');
+    localStorage.setItem('kpi_current_user', JSON.stringify({ email: user.email, method: 'email' }));
+    window.location.href = 'dashboard.html';
+  }, 700);
+}
+
+/* ─────────────────────────────────────────────────
+   GOOGLE SIGN-IN via Firebase
+   firebase.initializeApp() was already called above
+───────────────────────────────────────────────── */
+async function loginGoogle() {
+  const btn = document.getElementById('googleBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Connexion Google…';
+  hideGlobal();
+
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
+
+    const result  = await firebase.auth().signInWithPopup(provider);
+    const idToken = await result.user.getIdToken();
+    const email   = result.user.email;
+    const name    = result.user.displayName || email.split('@')[0];
+
+    // ── Option A: send token to your Node.js backend ──
+    // Uncomment if you have the backend running on localhost:3001
+    /*
+    const res = await fetch('http://localhost:3001/api/auth/firebase-login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ idToken }),
+    });
+    if (!res.ok) throw new Error('Backend auth failed');
+    const data = await res.json();
+    localStorage.setItem('kpi_jwt', data.token);
+    */
+
+    // ── Option B: frontend-only (no backend needed) ──
+    // Store Google user directly in localStorage
+    localStorage.setItem('kpi_auth', 'true');
+    localStorage.setItem('kpi_current_user', JSON.stringify({
+      email,
+      name,
+      method:  'google',
+      uid:     result.user.uid,
+      photoURL: result.user.photoURL || null,
+    }));
+
+    showToast(`Bienvenue ${name} !`);
+    setTimeout(() => window.location.href = 'dashboard.html', 800);
+
+  } catch (err) {
+    console.error('Google login error:', err);
+
+    // Handle common Firebase error codes gracefully
+    const messages = {
+      'auth/popup-closed-by-user':        'Connexion annulée.',
+      'auth/popup-blocked':               'Popup bloquée par le navigateur. Autorisez les popups pour ce site.',
+      'auth/network-request-failed':      'Erreur réseau. Vérifiez votre connexion.',
+      'auth/cancelled-popup-request':     'Connexion annulée.',
+      'auth/unauthorized-domain':         'Domaine non autorisé dans Firebase Console (ajoutez localhost).',
+      'auth/account-exists-with-different-credential': 'Un compte existe déjà avec cet email.',
+    };
+
+    const msg = messages[err.code] || `Erreur Google: ${err.message}`;
+    showGlobal(msg);
+
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg viewBox="0 0 48 48" style="width:18px;height:18px;flex-shrink:0;">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+      </svg>
+      Continuer avec Google`;
+  }
+}
+
+/* ── Enter key triggers email login ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI Overview — KPI Hub</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+/* Auth guard */
+(function(){
+  const p=new URLSearchParams(window.location.search);
+  if(!p.get('share') && localStorage.getItem('kpi_auth')!=='true')
+    window.location.href='login.html';
+})();
+</script>
+</head>
+<body>
+
+<!-- ═══ NAV BAR ═══════════════════════════════════════════════ -->
+<nav class="nav-bar">
+  <a class="nav-logo" href="kpi.html">
+    <div class="nav-logo-mark"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
+    <span class="nav-logo-text">KPI <em>Hub</em></span>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link active" href="kpi.html"><span class="nav-icon">📊</span> KPI</a>
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">📈</span> Dashboard</a>
+    <a class="nav-link" href="data-warehouse.html"><span class="nav-icon">🗄</span> Data Warehouse</a>
+    <a class="nav-link" href="collaborative-dss.html"><span class="nav-icon">🧠</span> Collaborative DSS</a>
+  </div>
+  <div class="nav-user">
+    <div class="nav-avatar" id="navAvatar">A</div>
+    <span class="nav-name" id="navName">—</span>
+    <button class="nav-logout" onclick="logout()">⏻ Déconnexion</button>
+  </div>
+</nav>
+
+<!-- ═══ TOOLBAR ════════════════════════════════════════════════ -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <span class="toolbar-crumb">kpi-hub / <em>kpi-overview</em></span>
+  </div>
+  <div class="toolbar-right">
+    <div class="tb-toggle" onclick="toggleTheme()" title="Changer le thème">
+      <span class="tb-icon">☀️</span>
+      <div class="tb-track"></div>
+      <span class="tb-icon">🌙</span>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="pdfBtn" onclick="exportPDF()">⬇ <span class="btn-txt">Export PDF</span></button>
+    <button class="tb-btn prim" onclick="openShare()">🔗 <span class="btn-txt">Partager</span></button>
+  </div>
+</div>
+
+<!-- ═══ CONTENT ════════════════════════════════════════════════ -->
+<div class="page-wrap narrow">
+
+  <div class="pg-header">
+    <div class="pg-eyebrow">Analytics · PFE Dashboard · 2025–2026</div>
+    <h1 class="pg-title">KPI <em>Overview</em></h1>
+    <p class="pg-desc">Tableau de bord synthétique croisant les données <strong>Jira</strong> (gestion de tickets) et <strong>Solidtime</strong> (time tracking). 22&thinsp;993h analysées sur 13 mois, 20 membres, 11 projets actifs.</p>
+    <div class="pg-meta">
+      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#0CB87A;"></span>Données : mars 2025 → mars 2026</span>
+      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#E8A020;"></span>Sources : Jira Cloud + Solidtime API</span>
+      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#1E6FD9;"></span>ETL : Python / pandas</span>
+      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#8B5CF6;"></span>16&thinsp;968 entrées · 580 liées Jira</span>
+    </div>
+  </div>
+
+  <!-- Share banner -->
+  <div class="share-banner" id="shareBanner">
+    <span>🔗</span><span id="shareBannerText">Dashboard partagé</span>
+    <span class="share-perm" id="sharePerm"></span>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="sec-div"><div class="sec-dot"></div>Indicateurs clés de performance — données réelles</div>
+  <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:32px;">
+    <div class="card-surf card-accent hoverable kpi-card c-burg" onclick="openModal('hours')" style="cursor:pointer;">
+      <div class="kpi-icon">⏱</div>
+      <div class="kpi-lbl">Total Heures</div>
+      <div class="kpi-val big" id="totalHours"><span class="skeleton" style="width:80px;height:44px;"></span></div>
+      <div class="kpi-hint">↗ Voir le détail</div>
+    </div>
+    <div class="card-surf card-accent hoverable kpi-card c-teal" onclick="openModal('users')" style="cursor:pointer;">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-lbl">Utilisateurs</div>
+      <div class="kpi-val big" id="totalUsers"><span class="skeleton" style="width:60px;height:44px;"></span></div>
+      <div class="kpi-hint">↗ Voir la liste</div>
+    </div>
+    <div class="card-surf card-accent hoverable kpi-card c-blue" onclick="openModal('projects')" style="cursor:pointer;">
+      <div class="kpi-icon">📁</div>
+      <div class="kpi-lbl">Projets</div>
+      <div class="kpi-val big" id="totalProjects"><span class="skeleton" style="width:60px;height:44px;"></span></div>
+      <div class="kpi-hint">↗ Voir la liste</div>
+    </div>
+    <div class="card-surf card-accent kpi-card c-violet" title="% des heures Solidtime tracées sur un ticket Jira. Faible = manque de discipline de saisie.">
+      <div class="kpi-icon">🔗</div>
+      <div class="kpi-lbl">Taux Liaison Jira</div>
+      <div class="kpi-val big">3.4%</div>
+      <div class="kpi-hint">580 / 16 968 entrées</div>
+    </div>
+    <div class="card-surf card-accent kpi-card c-burg" title="Tickets Jira en cours de traitement (In Progress + Pending).">
+      <div class="kpi-icon">🎫</div>
+      <div class="kpi-lbl">Tickets Actifs</div>
+      <div class="kpi-val big">65</div>
+      <div class="kpi-hint">43 en cours · 22 en attente</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="sec-div"><div class="sec-dot"></div>Analyse détaillée — croisement Jira × Solidtime</div>
+  <div class="chart-grid span-full" style="margin-bottom:14px;">
+    <div class="card-surf chart-card">
+      <div class="chart-head">
+        <div><div class="chart-title">Statut par Projet</div><div class="chart-sub">Répartition des tickets Jira · Done · In Progress · Pending · Non lié</div></div>
+        <span class="chart-badge">11 Projets</span>
+      </div>
+      <canvas id="statusChart"></canvas>
+      <div class="chart-insight">
+        <strong>Observation :</strong> Le projet <strong>WEB</strong> concentre la quasi-totalité des tickets Jira liés (508 done, 43 en cours, 22 en attente). Les autres projets n'ayant pas de clé Jira dans Solidtime, leurs entrées apparaissent en <em>Non lié</em> — ce qui révèle un <strong>taux de liaison global de seulement 3.4%</strong>, point d'amélioration majeur pour la traçabilité.
+      </div>
+    </div>
+  </div>
+  <div class="chart-grid">
+    <div class="card-surf chart-card">
+      <div class="chart-head">
+        <div><div class="chart-title">Top Contributeurs</div><div class="chart-sub">Volume d'heures par membre · Solidtime 2025–2026</div></div>
+        <span class="chart-badge">Top 10 / 20</span>
+      </div>
+      <canvas id="userChart"></canvas>
+      <div class="chart-insight">
+        <strong>Charge équilibrée</strong> — Les 10 premiers membres se situent tous entre <strong>1&thinsp;275h et 1&thinsp;525h</strong>, soit un écart de seulement 19%. Cela indique une répartition homogène de la charge sur l'équipe.
+      </div>
+    </div>
+    <div class="card-surf chart-card">
+      <div class="chart-head">
+        <div><div class="chart-title">Activité Mensuelle</div><div class="chart-sub">Évolution des heures tracées · 13 mois consécutifs</div></div>
+        <span class="chart-badge">Série temporelle</span>
+      </div>
+      <canvas id="monthlyChart"></canvas>
+      <div class="chart-insight">
+        <strong>Pic :</strong> décembre 2025 → <strong>2&thinsp;704h</strong>. <strong>Creux :</strong> octobre 2025 → <strong>409h</strong> (–85%). La chute d'oct.–nov. suggère une période de transition ou de congés. La reprise déc.–janv. coïncide avec les sprints de fin d'année.
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer class="page-footer">KPI Hub &nbsp;·&nbsp; Projet de Fin d'Études &nbsp;·&nbsp; Données Jira + Solidtime &nbsp;·&nbsp; ETL Python / pandas &nbsp;·&nbsp; Visualisation Chart.js &nbsp;·&nbsp; 2025–2026</footer>
+
+<!-- ═══ DETAIL MODAL ═══════════════════════════════════════════ -->
+<div class="overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" style="max-width:660px;max-height:80vh;display:flex;flex-direction:column;">
+    <div class="m-head">
+      <div>
+        <div class="m-head h3" id="modalTitle" style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:var(--text);">—</div>
+        <div class="m-count" id="modalCount"></div>
+      </div>
+      <button class="m-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="m-search-wrap">
+      <input class="m-search" id="modalSearch" type="text" placeholder="Rechercher…" oninput="filterModalTable()"/>
+    </div>
+    <div class="m-body" style="flex:1;overflow-y:auto;">
+      <table class="dt"><thead id="modalThead"></thead><tbody id="modalTbody"></tbody></table>
+      <div class="empty-state" id="modalEmpty" style="display:none;"><div class="es-icon">🔍</div>Aucun résultat</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SHARE MODAL ════════════════════════════════════════════ -->
+<div class="overlay" id="shareOverlay" onclick="closeShareOnBg(event)">
+  <div class="modal">
+    <div class="m-head"><h3>🔗 Partager</h3><button class="m-close" onclick="closeShare()">✕</button></div>
+    <div class="m-body-p">
+      <div class="perm sel" onclick="selPerm(this,'viewer')"><span class="perm-icon">👁</span><div class="perm-info"><div class="perm-name">Lecteur</div><div class="perm-desc">Consultation uniquement</div></div><div class="perm-chk">✓</div></div>
+      <div class="perm" onclick="selPerm(this,'commenter')"><span class="perm-icon">💬</span><div class="perm-info"><div class="perm-name">Commentateur</div><div class="perm-desc">Peut annoter et commenter les KPI</div></div><div class="perm-chk">✓</div></div>
+      <div class="perm" onclick="selPerm(this,'restricted')"><span class="perm-icon">🔒</span><div class="perm-info"><div class="perm-name">Accès restreint</div><div class="perm-desc">Personnes invitées uniquement</div></div><div class="perm-chk">✓</div></div>
+      <div class="link-row" id="linkRow" style="display:none;">
+        <input class="link-inp" id="shareLinkInp" readonly>
+        <button class="tb-btn" onclick="copyShareLink()" id="copyBtn"><span>📋</span></button>
+      </div>
+      <div class="share-note" id="shareNote"></div>
+      <div class="m-actions">
+        <button class="m-btn cancel" onclick="closeShare()">Annuler</button>
+        <button class="m-btn go" onclick="genShareLink()">Générer le lien</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+<script>
+/* ── Chart.js defaults — Midnight Sapphire palette ── */
+Chart.defaults.font.family="'Plus Jakarta Sans',sans-serif";
+Chart.defaults.font.size=11;
+Chart.defaults.color='#5A7BAC';
+Chart.defaults.plugins.legend.labels.usePointStyle=true;
+Chart.defaults.plugins.legend.labels.padding=16;
+Chart.defaults.plugins.legend.labels.boxWidth=9;
+Chart.defaults.plugins.tooltip.backgroundColor='rgba(8,18,38,0.95)';
+Chart.defaults.plugins.tooltip.titleColor='#A8CBFA';
+Chart.defaults.plugins.tooltip.titleFont={family:"'Lora',serif",size:13,weight:'600'};
+Chart.defaults.plugins.tooltip.bodyFont={family:"'Plus Jakarta Sans',sans-serif",size:11};
+Chart.defaults.plugins.tooltip.bodyColor='#C8DFFF';
+Chart.defaults.plugins.tooltip.borderColor='rgba(91,163,245,.22)';
+Chart.defaults.plugins.tooltip.borderWidth=1;
+Chart.defaults.plugins.tooltip.padding=12;
+Chart.defaults.plugins.tooltip.cornerRadius=10;
+Chart.defaults.scale.grid.color='rgba(30,111,217,0.07)';
+Chart.defaults.scale.border.dash=[4,4];
+Chart.defaults.scale.ticks.color='#4A6A9A';
+/* Palette Midnight Sapphire */
+const C={
+  sa:'#1E6FD9',sa2:'#1558B0',sa3:'#5BA3F5',
+  or:'#E8A020',or2:'#F5C842',
+  co:'#E8522A',co2:'#FF7A52',
+  em:'#0CB87A',em2:'#34D399',
+  li:'#8B5CF6',
+  gr:'rgba(91,163,245,0.22)'  /* gris-bleu pour "other" */
+};
+
+function loadCSV(url){
+  return new Promise(res=>{
+    Papa.parse(url,{
+      download:true, header:true, skipEmptyLines:true,
+      complete: r => {
+        if(!r.data || r.data.length===0){
+          console.warn('[KPI Hub] CSV vide ou introuvable:', url);
+          showToast('Fichier manquant: '+url,'⚠');
+        } else {
+          console.log('[KPI Hub] CSV chargé:', url, '→', r.data.length, 'lignes');
+        }
+        res(r.data||[]);
+      },
+      error: (err) => {
+        console.error('[KPI Hub] Erreur CSV:', url, err);
+        showToast('Fichier manquant: '+url.split('/').pop(),'⚠');
+        res([]);
+      }
+    });
+  });
+}
+
+/* DATA — embedded directly (no server / file:// issues) */
+var _KPI_USER    = [{"User": "Oliver Hansen", "duration_hours": 1525.15}, {"User": "Nielsen Erik", "duration_hours": 1465.42}, {"User": "Jan Van Den Berg", "duration_hours": 1459.72}, {"User": "Wala Dghaies", "duration_hours": 1458.57}, {"User": "Elena", "duration_hours": 1445.94}, {"User": "Andreas Meyer", "duration_hours": 1443.75}, {"User": "Max", "duration_hours": 1422.37}, {"User": "Marc Dupont", "duration_hours": 1412.75}, {"User": "Lena", "duration_hours": 1395.05}, {"User": "Clara", "duration_hours": 1367.67}, {"User": "Florian", "duration_hours": 1358.5}, {"User": "Lucas Mueller", "duration_hours": 1275.13}, {"User": "Marie", "duration_hours": 1269.87}, {"User": "Anna Kowalski", "duration_hours": 1088.39}, {"User": "Charlotte Becker", "duration_hours": 1011.05}, {"User": "Matteo Rossi", "duration_hours": 866.21}, {"User": "David Andersson", "duration_hours": 737.17}, {"User": "Marco De Vries", "duration_hours": 500.81}, {"User": "Erik Nielsen", "duration_hours": 488.5}, {"User": "Emma", "duration_hours": 1.26}];
+var _KPI_PROJECT = [{"Project": "WEB", "duration_hours": 10454.77, "status": "other"}, {"Project": "ORGANISATION", "duration_hours": 3652.1, "status": "other"}, {"Project": "DATA", "duration_hours": 3225.76, "status": "other"}, {"Project": "E-COMMERCE", "duration_hours": 3139.84, "status": "other"}, {"Project": "POINTINY", "duration_hours": 1460.94, "status": "other"}, {"Project": "MOBILE", "duration_hours": 405.97, "status": "other"}, {"Project": "HELPDESK", "duration_hours": 123.57, "status": "other"}, {"Project": "SYSTEM MONITORING", "duration_hours": 78.6, "status": "other"}, {"Project": "ARTFIN", "duration_hours": 54.25, "status": "other"}, {"Project": "AUTOMATION", "duration_hours": 14.68, "status": "other"}, {"Project": "REPLICATION", "duration_hours": 1.43, "status": "other"}];
+var _KPI_STATUS  = [{"Project": "ARTFIN", "done": 0, "in_progress": 0, "other": 21, "pending": 0}, {"Project": "AUTOMATION", "done": 0, "in_progress": 0, "other": 12, "pending": 0}, {"Project": "DATA", "done": 0, "in_progress": 0, "other": 2400, "pending": 0}, {"Project": "E-COMMERCE", "done": 0, "in_progress": 0, "other": 2250, "pending": 0}, {"Project": "HELPDESK", "done": 2, "in_progress": 0, "other": 74, "pending": 0}, {"Project": "MOBILE", "done": 0, "in_progress": 0, "other": 383, "pending": 0}, {"Project": "ORGANISATION", "done": 3, "in_progress": 0, "other": 2933, "pending": 0}, {"Project": "POINTINY", "done": 0, "in_progress": 0, "other": 1208, "pending": 0}, {"Project": "REPLICATION", "done": 0, "in_progress": 0, "other": 3, "pending": 0}, {"Project": "SYSTEM MONITORING", "done": 0, "in_progress": 0, "other": 50, "pending": 0}, {"Project": "WEB", "done": 508, "in_progress": 43, "other": 6857, "pending": 22}];
+var _KPI_MONTHLY = [{"month_solid": "2025-03", "duration_hours": 770.35}, {"month_solid": "2025-04", "duration_hours": 2263.19}, {"month_solid": "2025-05", "duration_hours": 2501.29}, {"month_solid": "2025-06", "duration_hours": 1900.23}, {"month_solid": "2025-07", "duration_hours": 2112.29}, {"month_solid": "2025-08", "duration_hours": 1986.64}, {"month_solid": "2025-09", "duration_hours": 2167.82}, {"month_solid": "2025-10", "duration_hours": 409.17}, {"month_solid": "2025-11", "duration_hours": 501.34}, {"month_solid": "2025-12", "duration_hours": 2704.35}, {"month_solid": "2026-01", "duration_hours": 2453.82}, {"month_solid": "2026-02", "duration_hours": 2148.61}, {"month_solid": "2026-03", "duration_hours": 1074.19}];
+
+var _userData    = _KPI_USER;
+var _projectData = _KPI_PROJECT;
+var _statusData  = _KPI_STATUS;
+var _monthlyData = _KPI_MONTHLY;
+var _modalType='',_allRows=[];
+
+/* ── Modal ── */
+function openModal(type){
+  _modalType=type;
+  document.getElementById('modalSearch').value='';
+  const titleEl=document.getElementById('modalTitle');
+  const thead=document.getElementById('modalThead');
+  if(type==='users'||type==='hours'){
+    titleEl.textContent=type==='users'?'👥 Utilisateurs':'⏱ Heures';
+    thead.innerHTML='<tr><th>#</th><th>Utilisateur</th><th>Heures</th><th>Progression</th></tr>';
+    const maxH=Math.max(..._userData.map(u=>Number(u.duration_hours||u.heures||0)),1);
+    _allRows=_userData.map((u,i)=>({rank:i+1,name:u.User||'—',hours:Number(u.duration_hours||u.heures||0),maxH}));
+    renderUsersTable(_allRows);
+  }else if(type==='projects'){
+    titleEl.textContent='📁 Projets';
+    thead.innerHTML='<tr><th>#</th><th>Projet</th><th>Statut</th><th>Heures</th></tr>';
+    _allRows=_projectData.map((p,i)=>({rank:i+1,name:p.Project||p.project||Object.values(p)[0]||'—',status:p.status||p.Status||'—',hours:Number(p.duration_hours||p.heures||p.hours||0)}));
+    renderProjectsTable(_allRows);
+  }
+  updateModalCount(_allRows.length,_allRows.length);
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>document.getElementById('modalSearch').focus(),300);
+}
+function updateModalCount(shown,total){
+  document.getElementById('modalCount').textContent=shown<total?`${shown}/${total} résultats`:`${total} au total`;
+}
+function renderUsersTable(rows){
+  const tbody=document.getElementById('modalTbody'),empty=document.getElementById('modalEmpty');
+  if(!rows.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const maxH=Math.max(...rows.map(r=>r.hours),1);
+  tbody.innerHTML=rows.map(r=>{
+    const rc=r.rank===1?'gold':r.rank===2?'silver':r.rank===3?'bronze':'';
+    const pct=((r.hours/maxH)*100).toFixed(1);
+    return`<tr><td><span class="rank ${rc}">${r.rank}</span></td><td>${r.name}</td><td><strong>${r.hours.toFixed(1)}</strong> h</td><td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div><span style="font-size:10px;color:var(--text3);min-width:34px">${pct}%</span></div></td></tr>`;
+  }).join('');
+}
+function renderProjectsTable(rows){
+  const tbody=document.getElementById('modalTbody'),empty=document.getElementById('modalEmpty');
+  if(!rows.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=rows.map(r=>{
+    const rc=r.rank===1?'gold':r.rank===2?'silver':r.rank===3?'bronze':'';
+    const slug=(r.status||'').toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'');
+    return`<tr><td><span class="rank ${rc}">${r.rank}</span></td><td>${r.name}</td><td><span class="pill pill-${slug||'pending'}">${r.status}</span></td><td>${r.hours>0?r.hours.toFixed(1)+' h':'—'}</td></tr>`;
+  }).join('');
+}
+function filterModalTable(){
+  const q=document.getElementById('modalSearch').value.toLowerCase().trim();
+  const filtered=q?_allRows.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.status||'').toLowerCase().includes(q)):_allRows;
+  if(_modalType==='projects')renderProjectsTable(filtered);else renderUsersTable(filtered);
+  updateModalCount(filtered.length,_allRows.length);
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();}});
+
+/* ════════════════════════════════════════════════════════
+   KPI PDF EXPORT v2 — Haute qualité · Midnight Sapphire
+   Fixes: supersampling 3x · PNG · analyse écrite · layout
+════════════════════════════════════════════════════════ */
+async function exportPDF(){
+  const btn=document.getElementById('pdfBtn');
+  btn.disabled=true;btn.innerHTML='⏳ <span class="btn-txt">Génération…</span>';
+  showToast('Génération du rapport PDF haute qualité…','📄');
+  await new Promise(r=>setTimeout(r,800));
+  try{
+    const{jsPDF}=window.jspdf;
+    const SA=[30,111,217],SA3=[91,163,245],OR=[232,160,32],CO=[232,82,42],EM=[12,184,122];
+    const BG=[8,15,30],TXT=[214,232,255],TXT2=[168,203,250],TXT3=[74,106,154],SURFL=[235,241,255];
+    const now=new Date();
+    const dateStr=now.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+    const timeStr=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    function captureChart(id){
+      const src=document.getElementById(id);if(!src||!src.getContext)return null;
+      const SCALE=3;const W=src.offsetWidth||src.width;const H=src.offsetHeight||src.height;
+      const off=document.createElement('canvas');off.width=W*SCALE;off.height=H*SCALE;
+      const ctx=off.getContext('2d');ctx.fillStyle='#F5F9FF';ctx.fillRect(0,0,off.width,off.height);
+      ctx.scale(SCALE,SCALE);ctx.drawImage(src,0,0,W,H);
+      return off.toDataURL('image/png');
+    }
+    function addChart(pdf,id,x,y,wMM,hMM){const d=captureChart(id);if(d)pdf.addImage(d,'PNG',x,y,wMM,hMM,undefined,'FAST');}
+    function pageHeader(pdf,title,sub,PW){
+      pdf.setFillColor(...BG);pdf.rect(0,0,PW,22,'F');
+      pdf.setFillColor(...SA);pdf.rect(0,22,PW,1.5,'F');
+      pdf.setFillColor(...OR);pdf.rect(0,23.5,PW,0.6,'F');
+      pdf.setFillColor(...SA);pdf.roundedRect(12,5,10,10,2,2,'F');
+      pdf.setTextColor(...TXT);pdf.setFontSize(13);pdf.setFont('helvetica','bold');pdf.text(title,26,11);
+      pdf.setTextColor(...SA3);pdf.setFontSize(8);pdf.setFont('helvetica','normal');pdf.text(sub,26,17);
+      pdf.setTextColor(...TXT3);pdf.setFontSize(7);pdf.text(dateStr+' · '+timeStr,PW-12,11,{align:'right'});
+      pdf.text('KPI Hub · Rapport BI · PFE 2025–2026',PW-12,17,{align:'right'});
+      return 30;
+    }
+    function pageFooter(pdf,n,t,PW,PH){
+      pdf.setDrawColor(...SA,0.3);pdf.setLineWidth(0.3);pdf.line(14,PH-12,PW-14,PH-12);
+      pdf.setFillColor(...BG);pdf.rect(0,PH-10,PW,10,'F');
+      pdf.setTextColor(...TXT3);pdf.setFontSize(6.5);pdf.setFont('helvetica','normal');
+      pdf.text('KPI Hub · Rapport Décisionnel · Données Jira + Solidtime · ETL Python/pandas',14,PH-4);
+      pdf.text('Page '+n+' / '+t,PW-14,PH-4,{align:'right'});
+    }
+    function secDiv(pdf,label,y,PW,M){
+      pdf.setFillColor(...SA);pdf.rect(M,y,3,4,'F');
+      pdf.setTextColor(...TXT);pdf.setFontSize(9);pdf.setFont('helvetica','bold');pdf.text(label.toUpperCase(),M+6,y+3.2);
+      pdf.setDrawColor(...TXT3,0.3);pdf.setLineWidth(0.2);
+      pdf.line(M+6+pdf.getTextWidth(label.toUpperCase())+3,y+1.5,PW-M,y+1.5);return y+10;
+    }
+    function kpiCard(pdf,x,y,w,lbl,val,acc){
+      pdf.setFillColor(235,241,255);pdf.roundedRect(x,y,w,18,2,2,'F');
+      pdf.setFillColor(...acc);pdf.roundedRect(x,y,w,2,1,1,'F');
+      pdf.setTextColor(...TXT3);pdf.setFontSize(6.5);pdf.setFont('helvetica','bold');pdf.text(lbl.toUpperCase(),x+4,y+8);
+      pdf.setTextColor(...acc);pdf.setFontSize(15);pdf.setFont('helvetica','bold');pdf.text(String(val),x+4,y+15.5);
+    }
+    function textBlock(pdf,text,x,y,maxW,lh=5){
+      const lines=pdf.splitTextToSize(text,maxW);
+      pdf.setFontSize(9);pdf.setFont('helvetica','normal');pdf.setTextColor(...TXT2);
+      lines.forEach(l=>{pdf.text(l,x,y);y+=lh;});return y;
+    }
+    /* Data */
+    const totalH=parseFloat(document.getElementById('totalHours').textContent)||22993;
+    const totalU=parseInt(document.getElementById('totalUsers').textContent)||20;
+    const totalP=parseInt(document.getElementById('totalProjects').textContent)||11;
+    const jiraRate=3.4,ticketsActifs=65,ticketsDone=513,overrunRate=46.1;
+    const peakH=2704,troughH=409,avgMonthly=Math.round(totalH/13);
+    const troughDrop=Math.round((1-troughH/avgMonthly)*100);
+    const topUser=(_userData&&_userData[0])?_userData[0].User:'Oliver Hansen';
+    /* ─ PAGE 1: COVER ─ */
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const PW=210,PH=297,M=14;
+    pdf.setFillColor(...BG);pdf.rect(0,0,PW,PH,'F');
+    pdf.setFillColor(...SA);pdf.rect(0,0,PW,4,'F');pdf.setFillColor(...OR);pdf.rect(0,4,PW,1.5,'F');
+    pdf.setFillColor(30,111,217,0.12);pdf.rect(0,0,55,PH,'F');
+    pdf.setFillColor(...SA);pdf.rect(0,0,3,PH,'F');
+    pdf.setFillColor(...SA);pdf.roundedRect(M,28,20,20,3,3,'F');
+    pdf.setTextColor(...SA3);pdf.setFontSize(11);pdf.setFont('helvetica','bold');pdf.text('KPI',M+3,36);pdf.text('HUB',M+3,42);
+    pdf.setTextColor(...TXT3);pdf.setFontSize(8);pdf.setFont('helvetica','normal');pdf.text('RAPPORT BI · ANALYSE DÉCISIONNELLE',M,60);
+    pdf.setTextColor(...TXT);pdf.setFontSize(32);pdf.setFont('helvetica','bold');pdf.text('KPI',M,80);
+    pdf.setTextColor(...SA3);pdf.text('Overview',M,95);
+    pdf.setDrawColor(...SA);pdf.setLineWidth(0.5);pdf.line(M,100,M+80,100);
+    pdf.setTextColor(...TXT2);pdf.setFontSize(9);pdf.setFont('helvetica','normal');
+    pdf.text('Tableau de bord analytique · Jira × Solidtime',M,108);
+    pdf.text('Période : Mars 2025 – Mars 2026',M,115);
+    const covKpis=[[' TOTAL HEURES',Math.round(totalH).toLocaleString('fr-FR')+'h',SA],[' UTILISATEURS',String(totalU),OR],[' PROJETS',String(totalP),EM],[' TAUX JIRA',jiraRate+'%',CO],[' TICKETS',String(ticketsActifs),SA3]];
+    let cx=M;
+    covKpis.forEach(([lbl,val,col])=>{
+      pdf.setFillColor(...col,0.12);pdf.roundedRect(cx,128,36,18,2,2,'F');
+      pdf.setFillColor(...col);pdf.roundedRect(cx,128,36,1.5,1,1,'F');
+      pdf.setTextColor(...col);pdf.setFontSize(5.5);pdf.setFont('helvetica','bold');pdf.text(lbl,cx+2,134);
+      pdf.setFontSize(13);pdf.text(val,cx+2,143);cx+=38;
+    });
+    pdf.setFillColor(...SA,0.12);pdf.roundedRect(M,155,80,20,2,2,'F');
+    pdf.setTextColor(...TXT3);pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.text('Date de génération',M+3,163);
+    pdf.setTextColor(...TXT);pdf.setFontSize(9);pdf.setFont('helvetica','bold');pdf.text(dateStr+' à '+timeStr,M+3,170);
+    pdf.setTextColor(...TXT3);pdf.setFontSize(7);pdf.setFont('helvetica','normal');
+    pdf.text('Sources : Solidtime · Jira Cloud · ETL Python/pandas · Chart.js',M,PH-40);
+    pdf.text('Rapport généré automatiquement par KPI Hub · Usage interne · PFE 2025–2026',M,PH-34);
+    pdf.setFillColor(...BG);pdf.rect(0,PH-12,PW,12,'F');
+    pdf.setTextColor(...TXT3);pdf.setFontSize(7);pdf.text('KPI Hub · Collaborative BI + DSS · Rapport confidentiel',PW/2,PH-5,{align:'center'});
+    /* ─ PAGE 2: RÉSUMÉ EXÉCUTIF ─ */
+    pdf.addPage();pdf.setFillColor(...SURFL);pdf.rect(0,0,PW,PH,'F');
+    let y=pageHeader(pdf,'Résumé Exécutif','Synthèse des KPI · Analyse automatisée',PW);y+=4;
+    y=secDiv(pdf,'Indicateurs Clés',y,PW,M);
+    const kpis=[{l:'Total Heures',v:Math.round(totalH).toLocaleString('fr-FR')+'h',a:SA},{l:'Utilisateurs',v:totalU,a:OR},{l:'Projets',v:totalP,a:EM},{l:'Taux Jira',v:jiraRate+'%',a:CO},{l:'Tickets Actifs',v:ticketsActifs,a:SA3}];
+    const kW=(PW-M*2-8)/5;
+    kpis.forEach((k,i)=>kpiCard(pdf,M+i*(kW+2),y,kW,k.l,k.v,k.a));y+=24;
+    y=secDiv(pdf,'Résumé Exécutif',y,PW,M);
+    pdf.setFillColor(...BG);pdf.roundedRect(M,y,PW-M*2,28,3,3,'F');pdf.setFillColor(...SA);pdf.roundedRect(M,y,3,28,1.5,1.5,'F');
+    y=textBlock(pdf,'Ce rapport présente l\'analyse des indicateurs clés pour la période mars 2025 – mars 2026. Les données croisent '+totalU+' contributeurs, '+totalP+' projets et '+Math.round(totalH).toLocaleString('fr-FR')+'h de time tracking (Solidtime), enrichies par '+(ticketsDone+ticketsActifs)+' tickets Jira. Deux anomalies structurelles majeures ont été identifiées : un taux de liaison Jira critique à '+jiraRate+'% et un creux d\'activité inexpliqué en octobre 2025 (−'+troughDrop+'% par rapport à la moyenne mensuelle).',M+7,y+6,PW-M*2-10)+8;
+    y=secDiv(pdf,'Analyse des KPI',y,PW,M);
+    const analyses=[
+      {t:'Volume total : '+Math.round(totalH).toLocaleString('fr-FR')+'h sur 13 mois = moyenne '+avgMonthly.toLocaleString('fr-FR')+'h/mois (~'+Math.round(avgMonthly/totalU)+'h/membre). Rythme cohérent pour une équipe de '+totalU+' personnes.',c:SA},
+      {t:'Taux liaison Jira : '+jiraRate+'% seulement. 96,6% des heures sont non traçables à un ticket. Objectif recommandé : >60% de liaison via champ Description obligatoire dans Solidtime.',c:CO},
+      {t:'Tickets : '+ticketsActifs+' actifs (43 In Progress + 22 Pending). '+ticketsDone+' Done = '+Math.round(ticketsDone/(ticketsDone+ticketsActifs)*100)+'% de résolution historique. Ratio satisfaisant.',c:EM},
+      {t:'Dépassement estimation : '+overrunRate+'% des tickets dépassent l\'estimation. Seuil toléré : 30%. Nécessite une révision du processus de planification (Planning Poker recommandé).',c:OR},
+    ];
+    analyses.forEach(a=>{
+      pdf.setFillColor(...a.c,0.08);pdf.roundedRect(M,y,PW-M*2,15,2,2,'F');pdf.setFillColor(...a.c);pdf.roundedRect(M,y,2,15,1,1,'F');
+      y=textBlock(pdf,a.t,M+6,y+5,PW-M*2-10,4)+3;
+    });y+=2;
+    y=secDiv(pdf,'Analyse des Tendances',y,PW,M);
+    pdf.setFillColor(235,241,255);pdf.roundedRect(M,y,PW-M*2,22,2,2,'F');
+    y=textBlock(pdf,'L\'activité mensuelle présente un pic marqué en Décembre 2025 ('+peakH.toLocaleString('fr-FR')+'h) et un creux critique en Octobre 2025 ('+troughH+'h, −'+troughDrop+'% vs moyenne). Cette chute ne correspond pas à un cycle naturel — elle suggère une migration technique ou défaut de saisie Solidtime non tracé. La reprise immédiate en décembre (+'+Math.round((peakH/troughH-1)*100)+'%) confirme un incident de saisie.',M+4,y+5,PW-M*2-8);
+    pageFooter(pdf,2,4,PW,PH);
+    /* ─ PAGE 3: CHARTS (Landscape) ─ */
+    pdf.addPage('a4','landscape');
+    const LW=297,LH=210,LM=14;
+    pdf.setFillColor(...SURFL);pdf.rect(0,0,LW,LH,'F');
+    let ly=pageHeader(pdf,'Visualisations Analytiques','Graphiques haute résolution · 3× supersampling · Données 2025–2026',LW);ly+=4;
+    ly=secDiv(pdf,'Statut par Projet — Done / In Progress / Pending / Non lié Jira',ly,LW,LM);
+    pdf.setFillColor(255,255,255);pdf.roundedRect(LM,ly,LW-LM*2,62,3,3,'F');
+    pdf.setDrawColor(...SA3,0.3);pdf.setLineWidth(0.3);pdf.roundedRect(LM,ly,LW-LM*2,62,3,3,'S');
+    addChart(pdf,'statusChart',LM+2,ly+2,LW-LM*2-4,58);ly+=66;
+    const halfW=(LW-LM*3)/2;
+    ly=secDiv(pdf,'Top Contributeurs & Activité Mensuelle',ly,LW,LM);
+    pdf.setFillColor(255,255,255);pdf.roundedRect(LM,ly,halfW,52,3,3,'F');
+    pdf.setDrawColor(...SA3,0.3);pdf.roundedRect(LM,ly,halfW,52,3,3,'S');
+    pdf.setTextColor(...TXT3);pdf.setFontSize(7);pdf.setFont('helvetica','bold');pdf.text('TOP CONTRIBUTEURS PAR HEURES TRACÉES',LM+4,ly+6);
+    addChart(pdf,'userChart',LM+2,ly+8,halfW-4,42);
+    pdf.setFillColor(255,255,255);pdf.roundedRect(LM*2+halfW,ly,halfW,52,3,3,'F');
+    pdf.setDrawColor(...SA3,0.3);pdf.roundedRect(LM*2+halfW,ly,halfW,52,3,3,'S');
+    pdf.setTextColor(...TXT3);pdf.setFontSize(7);pdf.setFont('helvetica','bold');pdf.text('ACTIVITÉ MENSUELLE — SÉRIE TEMPORELLE 13 MOIS',LM*2+halfW+4,ly+6);
+    addChart(pdf,'monthlyChart',LM*2+halfW+2,ly+8,halfW-4,42);
+    pageFooter(pdf,3,4,LW,LH);
+    /* ─ PAGE 4: ANOMALIES & RECOMMANDATIONS ─ */
+    pdf.addPage('a4','portrait');
+    pdf.setFillColor(...SURFL);pdf.rect(0,0,PW,PH,'F');
+    y=pageHeader(pdf,'Anomalies & Recommandations','Points critiques identifiés · Actions correctives proposées',PW);y+=4;
+    y=secDiv(pdf,'Anomalies & Points Critiques Identifiés',y,PW,M);
+    const anomalies=[
+      {t:'⚠ CRITIQUE — Taux Jira '+jiraRate+'% : seul WEB dispose de tickets Jira liés. DATA, E-COMMERCE, MOBILE, ORGANISATION n\'ont aucune traçabilité ticket (96,6% des heures non traçables).',c:CO},
+      {t:'⚠ ANOMALIE — Creux oct.–nov. 2025 : '+troughH+'h en octobre vs ~'+avgMonthly.toLocaleString('fr-FR')+'h en moyenne (−'+troughDrop+'%). Cause probable : migration technique avec absence de saisie Solidtime.',c:OR},
+      {t:'⚠ RISQUE — Dépassement estimation '+overrunRate+'% : sur 256 tickets estimés, 46% dépassent. Révision obligatoire du processus de planification Sprint.',c:OR},
+    ];
+    anomalies.forEach(a=>{
+      pdf.setFillColor(...a.c,0.10);pdf.roundedRect(M,y,PW-M*2,18,2,2,'F');pdf.setFillColor(...a.c);pdf.roundedRect(M,y,3,18,1,1,'F');
+      const lines=pdf.splitTextToSize(a.t,PW-M*2-10);
+      pdf.setTextColor(...a.c);pdf.setFontSize(8);pdf.setFont('helvetica','bold');pdf.text(lines[0],M+6,y+6);
+      if(lines.length>1){pdf.setTextColor(...TXT2);pdf.setFont('helvetica','normal');pdf.text(lines.slice(1).join(' '),M+6,y+11);}
+      y+=22;
+    });y+=4;
+    y=secDiv(pdf,'Recommandations Actionnables',y,PW,M);
+    const recs=[
+      {t:'1. [HAUTE] Champ Jira obligatoire dans Solidtime pour tous les projets actifs. Objectif : taux de liaison >60% sous 3 mois.',p:'HAUTE',c:CO},
+      {t:'2. [HAUTE] Adopter le Planning Poker pour tickets >2h + buffer systématique de 20% sur estimations initiales.',p:'HAUTE',c:CO},
+      {t:'3. [MOYENNE] Alerte automatique si volume mensuel chute de >40% vs moyenne glissante des 3 mois précédents.',p:'MOYENNE',c:OR},
+      {t:'4. [BASSE] Créer projets Jira dédiés pour DATA, E-COMMERCE, MOBILE pour activer la traçabilité multi-projets.',p:'BASSE',c:SA},
+    ];
+    recs.forEach(r=>{
+      pdf.setFillColor(...r.c,0.08);pdf.roundedRect(M,y,PW-M*2,16,2,2,'F');pdf.setFillColor(...r.c);pdf.roundedRect(M,y,3,16,1,1,'F');
+      pdf.setFillColor(...r.c,0.20);pdf.roundedRect(PW-M-24,y+4,22,6,1,1,'F');
+      pdf.setTextColor(...r.c);pdf.setFontSize(5.5);pdf.setFont('helvetica','bold');pdf.text(r.p,PW-M-12,y+8.5,{align:'center'});
+      const lines=pdf.splitTextToSize(r.t,PW-M*2-30);
+      pdf.setTextColor(...TXT2);pdf.setFontSize(8);pdf.setFont('helvetica','normal');
+      lines.forEach((l,i)=>pdf.text(l,M+6,y+6+i*4.5));y+=20;
+    });y+=6;
+    y=secDiv(pdf,'Conclusion',y,PW,M);
+    pdf.setFillColor(...BG);pdf.roundedRect(M,y,PW-M*2,32,3,3,'F');pdf.setFillColor(...SA);pdf.roundedRect(M,y,3,32,1.5,1.5,'F');
+    textBlock(pdf,'La plateforme KPI Hub dispose d\'une base solide avec '+totalU+' contributeurs et '+Math.round(totalH).toLocaleString('fr-FR')+'h analysées. Les deux priorités absolues sont l\'amélioration du taux de liaison Jira (3,4% → >60%) et la révision du processus d\'estimation (46,1% de dépassement). L\'intégration du module Collaborative DSS permettra de structurer ces améliorations avec des annotations contextuelles, un suivi des recommandations et un tableau de bord décisionnel dédié. Ces actions permettront d\'atteindre un niveau de maturité BI de niveau 3 (analyse prédictive) d\'ici Q3 2026.',M+7,y+7,PW-M*2-12);
+    pageFooter(pdf,4,4,PW,PH);
+    pdf.save('kpi-rapport-'+now.toISOString().slice(0,10)+'.pdf');
+    showToast('Rapport PDF exporté · 4 pages haute qualité !');
+  }catch(e){console.error(e);showToast('Erreur PDF: '+e.message,'⚠');}
+  finally{const btn=document.getElementById('pdfBtn');btn.disabled=false;btn.innerHTML='⬇ <span class="btn-txt">Export PDF</span>';}
+}
+
+/* ── Charts & KPIs ── */
+function loadDashboard(){
+  /* KPI counters */
+  var totalHours=_userData.reduce(function(s,u){return s+Number(u.duration_hours||0);},0);
+  var hoursEl=document.getElementById('totalHours');
+  var usersEl=document.getElementById('totalUsers');
+  var projEl =document.getElementById('totalProjects');
+  hoursEl.innerHTML=usersEl.innerHTML=projEl.innerHTML='<span class="loading-dot"></span>';
+  setTimeout(function(){
+    hoursEl.innerHTML='';usersEl.innerHTML='';projEl.innerHTML='';
+    animNum('totalHours',totalHours,1);
+    animNum('totalUsers',_userData.length);
+    animNum('totalProjects',_projectData.length);
+  },200);
+
+  /* Status stacked bar — includes 'other' (Non lié Jira) as 4th dataset
+     FIX: the chart previously ignored 'other' = 96% of all data,
+     making every project except WEB look empty.
+     Now all 4 categories are shown for full transparency. */
+  var spLabels=_statusData.map(function(r){return r.Project;});
+  var spDone  =_statusData.map(function(r){return Number(r.done||0);});
+  var spProg  =_statusData.map(function(r){return Number(r.in_progress||0);});
+  var spPend  =_statusData.map(function(r){return Number(r.pending||0);});
+  var spOther =_statusData.map(function(r){return Number(r.other||0);});
+  new Chart(document.getElementById('statusChart'),{
+    type:'bar',
+    data:{labels:spLabels,datasets:[
+      {label:'Done',          data:spDone, backgroundColor:C.em,  borderRadius:4,borderSkipped:'bottom'},
+      {label:'In Progress',   data:spProg, backgroundColor:C.or,  borderRadius:4,borderSkipped:'bottom'},
+      {label:'Pending',       data:spPend, backgroundColor:C.co,  borderRadius:4,borderSkipped:'bottom'},
+      {label:'Non lié Jira',  data:spOther,backgroundColor:C.gr,  borderRadius:4,borderSkipped:'bottom'}
+    ]},
+    options:{
+      responsive:true,
+      animation:{duration:800},
+      plugins:{
+        legend:{position:'top',align:'end'},
+        tooltip:{
+          callbacks:{
+            label:function(ctx){
+              var total=ctx.chart.data.datasets.reduce(function(s,ds){return s+Number(ds.data[ctx.dataIndex]||0);},0);
+              var pct=total>0?((ctx.parsed.y/total)*100).toFixed(1):0;
+              return ' '+ctx.dataset.label+': '+ctx.parsed.y+' ('+pct+'%)';
+            }
+          }
+        }
+      },
+      scales:{
+        x:{stacked:true,ticks:{maxRotation:35,font:{size:10}}},
+        y:{stacked:true,beginAtZero:true,ticks:{callback:function(v){return v;}}}
+      }
+    }
+  });
+
+  /* Top 10 Users horizontal bar */
+  var users =_userData.slice(0,10).map(function(u){return u.User;});
+  var uhours=_userData.slice(0,10).map(function(u){return Number(u.duration_hours||0);});
+  var ucolors=uhours.map(function(_,i){return i===0?C.sa:i===1?C.or:i===2?C.co:i===3?C.em:i===4?C.li:i<7?C.sa3:C.or2;});
+  new Chart(document.getElementById('userChart'),{
+    type:'bar',
+    data:{labels:users,datasets:[{data:uhours,backgroundColor:ucolors,borderRadius:5,borderSkipped:'bottom'}]},
+    options:{
+      responsive:true,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+ctx.parsed.x.toFixed(0)+'h';}}}},
+      scales:{x:{beginAtZero:true,ticks:{callback:function(v){return v+'h';}}},y:{ticks:{font:{size:10}}}}
+    }
+  });
+
+  /* Monthly line chart */
+  var months=_monthlyData.map(function(m){return m.month_solid||'';});
+  var mhours=_monthlyData.map(function(m){return Number(m.duration_hours||0);});
+  new Chart(document.getElementById('monthlyChart'),{
+    type:'line',
+    data:{labels:months,datasets:[{
+      data:mhours,borderColor:C.sa,backgroundColor:'rgba(30,111,217,0.10)',
+      borderWidth:2.5,pointBackgroundColor:C.sa,pointBorderColor:'#0A1E3D',
+      pointBorderWidth:2,pointRadius:4,fill:true,tension:.4
+    }]},
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return' '+ctx.parsed.y.toFixed(0)+'h';}}}},
+      scales:{x:{ticks:{maxRotation:30}},y:{beginAtZero:true,ticks:{callback:function(v){return v+'h';}}}}
+    }
+  });
+}
+loadDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Warehouse — KPI Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&family=Lora:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+(function(){if(localStorage.getItem('kpi_auth')!=='true'){window.location.href='login.html';}})();
+</script>
+<style>
+:root{
+  --sa:#1E6FD9;--sa2:#1558B0;--sa3:#5BA3F5;
+  --or:#E8A020;--or2:#F5C842;
+  --co:#E8522A;--co2:#FF7A52;
+  --em:#0CB87A;--em2:#34D399;
+  --li:#8B5CF6;--li2:#A78BFA;
+  --bg:#080F1E;--bg2:#0D1629;
+  --surf:rgba(30,111,217,.07);--surf2:rgba(30,111,217,.12);
+  --border:rgba(91,163,245,.14);--border2:rgba(91,163,245,.07);
+  --text:#D6E8FF;--text2:#A8CBFA;--text3:#4A6A9A;
+  --shadow:0 2px 18px rgba(0,0,8,.55);
+  --font-d:'Lora','Georgia',serif;
+  --font-b:'Plus Jakarta Sans','Inter',sans-serif;
+  --font-m:'DM Mono',monospace;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --radius:10px;--radius-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--font-b);background:var(--bg);color:var(--text);
+  min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 65% 50% at 10% 8%,rgba(30,111,217,.10) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 42% at 88% 92%,rgba(232,160,32,.07) 0%,transparent 55%),
+    radial-gradient(ellipse 38% 35% at 55% 50%,rgba(139,92,246,.06) 0%,transparent 60%);
+  animation:bgFloat 16s ease-in-out infinite alternate;
+}
+@keyframes bgFloat{0%{transform:translate(0,0);}50%{transform:translate(12px,-8px);}100%{transform:translate(-6px,10px);}}
+[data-theme="dark"] body::after{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(30,111,217,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(91,163,245,.03) 1px,transparent 1px);
+  background-size:56px 56px;mask-image:radial-gradient(ellipse 88% 88% at 50% 50%,#060D1C 15%,transparent 100%);
+  animation:gridScroll 25s linear infinite;
+}
+@keyframes gridScroll{0%{background-position:0 0;}100%{background-position:56px 56px;}}
+
+/* ── HEADER ── */
+header{
+  position:sticky;top:0;z-index:100;height:64px;
+  background:rgba(8,15,30,.96);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 40px;
+}
+header::after{content:'';position:absolute;bottom:-1px;left:0;width:70%;height:2px;background:linear-gradient(90deg,var(--sa) 0%,var(--or) 55%,transparent 100%);opacity:.9;}
+.hdr-brand{display:flex;align-items:center;gap:12px;}
+.hdr-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--sa),var(--sa2));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(30,111,217,.40);}
+.hdr-mark svg{width:16px;height:16px;fill:#D6E8FF;}
+.hdr-title{font-family:var(--font-d);font-size:19px;font-weight:600;color:var(--text);}
+.hdr-title em{color:var(--sa);font-style:italic;}
+.hdr-crumb{font-family:var(--font-m);font-size:11px;color:var(--text3);display:flex;align-items:center;gap:6px;}
+.hdr-crumb strong{color:var(--or);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.hdr-btn{
+  display:inline-flex;align-items:center;gap:5px;padding:6px 13px;
+  border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--surf);color:var(--text2);
+  font-family:var(--font-b);font-size:11px;font-weight:500;
+  text-decoration:none;cursor:pointer;transition:all .2s;
+}
+.hdr-btn:hover{border-color:var(--sa);color:var(--sa);}
+.hdr-btn.primary{background:linear-gradient(135deg,var(--sa),var(--sa2));color:#D6E8FF;border-color:transparent;}
+.hdr-btn.primary:hover{transform:translateY(-1px);box-shadow:0 5px 18px rgba(30,111,217,.40);}
+
+/* ── CONTAINER ── */
+.container{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:36px 40px 90px;}
+.pg-eyebrow{font-family:var(--font-m);font-size:10px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--sa3);margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.pg-eyebrow::before{content:'';width:22px;height:2px;border-radius:1px;background:linear-gradient(90deg,var(--sa),var(--or));}
+.pg-title{font-family:var(--font-d);font-size:clamp(26px,3vw,42px);font-weight:600;color:var(--text);letter-spacing:-.02em;line-height:1.1;}
+.pg-title em{font-style:italic;color:var(--sa);}
+.pg-desc{font-size:13px;color:var(--text3);margin-top:9px;line-height:1.75;max-width:640px;}
+.pg-header{margin-bottom:32px;}
+.pg-meta{display:flex;align-items:center;gap:18px;margin-top:12px;flex-wrap:wrap;}
+.pg-meta-item{display:flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:10px;color:var(--text3);letter-spacing:.06em;}
+.pg-meta-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+
+/* ── SECTION DIV ── */
+.sec-div{display:flex;align-items:center;gap:12px;margin-bottom:18px;font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);}
+.sec-div::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.sec-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--sa),var(--or));box-shadow:0 0 10px rgba(30,111,217,.55);animation:dotPulse 2.8s ease-in-out infinite;}
+@keyframes dotPulse{0%,100%{box-shadow:0 0 6px rgba(30,111,217,.45);}50%{box-shadow:0 0 16px rgba(30,111,217,.80);}}
+
+/* ── KPI CARDS ── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:32px;}
+.kpi-card{
+  background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:22px 18px;position:relative;overflow:hidden;
+  animation:fadeUp .7s var(--ease) both;
+}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;opacity:.8;}
+.c1::before{background:linear-gradient(90deg,var(--sa),var(--sa3));}
+.c2::before{background:linear-gradient(90deg,var(--or),var(--or2));}
+.c3::before{background:linear-gradient(90deg,var(--co),var(--co2));}
+.c4::before{background:linear-gradient(90deg,var(--em),var(--em2));}
+.c5::before{background:linear-gradient(90deg,var(--li),var(--li2));}
+.kpi-icon{font-size:20px;margin-bottom:10px;}
+.kpi-lbl{font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:5px;}
+.kpi-val{font-family:var(--font-d);font-size:34px;font-weight:600;color:var(--text);letter-spacing:-.02em;}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;margin-bottom:24px;border-bottom:1px solid var(--border);}
+.tab-btn{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 18px;
+  font-family:var(--font-b);font-size:13px;font-weight:500;color:var(--text3);
+  background:transparent;border:none;cursor:pointer;position:relative;
+  transition:color .2s;border-radius:var(--radius) var(--radius) 0 0;
+}
+.tab-btn::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--sa),var(--or));transform:scaleX(0);transition:transform .25s var(--ease);}
+.tab-btn:hover{color:var(--text);background:var(--surf);}
+.tab-btn.active{color:var(--sa);background:var(--surf);}
+.tab-btn.active::after{transform:scaleX(1);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+/* ── SCHEMA SECTION ── */
+.schema-section{
+  background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:32px;margin-bottom:14px;
+}
+.schema-title{font-family:var(--font-d);font-size:20px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.schema-subtitle{font-size:12px;color:var(--text3);margin-bottom:28px;line-height:1.6;}
+
+/* ── CANVAS SCHEMA (for clean PDF) ── */
+#schemaCanvas,#schemaDSSCanvas{
+  width:100%;border-radius:var(--radius);
+  display:block;cursor:default;
+}
+
+/* ── SCHEMA LEGEND ── */
+.schema-legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:22px;padding-top:18px;border-top:1px solid var(--border);justify-content:center;}
+.legend-item{display:flex;align-items:center;gap:7px;font-family:var(--font-m);font-size:10px;color:var(--text3);}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.legend-line{width:20px;height:2px;flex-shrink:0;border-radius:1px;}
+
+/* ── SQL BLOCK ── */
+.sql-section{margin-bottom:24px;}
+.sql-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.sql-label{font-family:var(--font-m);font-size:11px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;color:var(--text3);}
+.sql-table-name{font-family:var(--font-d);font-size:18px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.sql-desc{font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.6;}
+.copy-btn{padding:5px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surf);color:var(--text3);font-family:var(--font-m);font-size:10px;cursor:pointer;transition:all .2s;}
+.copy-btn:hover{border-color:var(--sa);color:var(--sa);}
+pre.sql{
+  background:rgba(8,15,30,.80);border:1px solid var(--border2);border-radius:var(--radius);
+  padding:18px 20px;overflow-x:auto;font-family:var(--font-m);font-size:12px;line-height:1.8;
+  color:#C8DFFF;
+}
+.sql-kw{color:var(--sa3);}
+.sql-type{color:var(--or2);}
+.sql-cmt{color:var(--text3);font-style:italic;}
+.sql-pk{color:var(--or);}
+.sql-fk{color:var(--co2);}
+.sql-tbl{color:var(--em2);}
+.sql-meas{color:var(--li2);}
+
+/* ── TABLE ── */
+.table-wrap{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px;}
+.table-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.table-head h3{font-family:var(--font-d);font-size:17px;font-weight:600;color:var(--text);}
+.table-head p{font-size:11px;color:var(--text3);margin-top:2px;}
+.table-badge{font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;padding:3px 10px;border-radius:20px;background:rgba(30,111,217,.14);color:var(--sa3);border:1px solid rgba(30,111,217,.22);}
+.table-scroll{overflow-x:auto;}
+.table-scroll::-webkit-scrollbar{height:4px;}
+.table-scroll::-webkit-scrollbar-thumb{background:rgba(30,111,217,.30);border-radius:4px;}
+table.dt{width:100%;border-collapse:collapse;font-size:12px;min-width:700px;}
+table.dt thead tr{background:var(--surf2);}
+table.dt th{text-align:left;padding:10px 14px;font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;}
+table.dt td{padding:10px 14px;color:var(--text2);border-bottom:1px solid var(--border2);transition:color .15s;}
+table.dt tr:hover td{background:var(--surf2);color:var(--text);}
+table.dt tr:last-child td{border-bottom:none;}
+.c-user{color:var(--or)!important;font-weight:600;}
+.c-proj{color:var(--sa3)!important;font-weight:600;}
+.c-task{color:var(--co2)!important;}
+.c-dur{color:var(--or2)!important;font-family:var(--font-m);font-weight:600;}
+.c-date{font-family:var(--font-m);font-size:11px;}
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;}
+.p-done{background:rgba(12,184,122,.12);color:var(--em2);border:1px solid rgba(12,184,122,.20);}
+.p-prog{background:rgba(30,111,217,.12);color:var(--sa3);border:1px solid rgba(30,111,217,.20);}
+.p-pend{background:rgba(232,160,32,.12);color:var(--or2);border:1px solid rgba(232,160,32,.20);}
+
+/* Filters */
+.filters-bar{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:20px;}
+.fg{display:flex;flex-direction:column;gap:5px;min-width:130px;}
+.fg label{font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);}
+.fg select,.fg input[type="date"]{padding:8px 11px;border-radius:var(--radius);border:1px solid var(--border);background:rgba(30,111,217,.06);color:var(--text);font-family:var(--font-b);font-size:12px;outline:none;cursor:pointer;-webkit-appearance:none;}
+.fg select option{background:#0D1629;}
+.fg select:focus,.fg input:focus{border-color:var(--sa);box-shadow:0 0 0 3px rgba(30,111,217,.12);}
+.filter-right{margin-left:auto;display:flex;align-items:flex-end;gap:8px;}
+.rec-count{font-size:11px;color:var(--text3);white-space:nowrap;padding-bottom:2px;}
+.rec-count strong{color:var(--text);font-weight:700;}
+.rst-btn{padding:7px 11px;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .2s;font-family:var(--font-b);}
+.rst-btn:hover{color:var(--co);border-color:var(--co);}
+.table-footer{padding:10px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.page-info{font-size:11px;color:var(--text3);font-family:var(--font-m);}
+.page-controls{display:flex;gap:4px;}
+.page-btn{width:28px;height:28px;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.page-btn:hover:not(:disabled){border-color:var(--sa);color:var(--sa);}
+.page-btn:disabled{opacity:.28;cursor:default;}
+.page-btn.active{background:var(--sa);border-color:var(--sa);color:#D6E8FF;}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;z-index:9999;background:rgba(8,15,30,.97);border:1px solid var(--border);border-top:2px solid var(--sa);color:var(--text);padding:10px 16px;border-radius:var(--radius);font-size:12px;backdrop-filter:blur(16px);display:flex;align-items:center;gap:8px;transform:translateY(-65px);opacity:0;transition:all .35s var(--ease);pointer-events:none;max-width:290px;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+@media(max-width:860px){header{padding:0 20px;}.container{padding:20px 20px 60px;}}
+@media(max-width:640px){.kpi-row{grid-template-columns:1fr 1fr;}.hdr-crumb{display:none;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-brand">
+    <div class="hdr-mark"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
+    <span class="hdr-title">KPI <em>Hub</em></span>
+  </div>
+  <div class="hdr-crumb"><span>kpi-hub</span><span>/</span><strong>data-warehouse</strong></div>
+  <div class="hdr-right">
+    <a class="hdr-btn" href="kpi.html">📊 KPI</a>
+    <a class="hdr-btn" href="dashboard.html">📈 Dashboard</a>
+    <a class="hdr-btn" href="collaborative-dss.html">🧠 DSS</a>
+    <a class="hdr-btn" href="uml_diagrams.html">UML Diagrams</a>
+    <button class="hdr-btn" onclick="exportSchemaPDF()">⬇ Export PDF</button>
+    <button class="hdr-btn primary" onclick="logout()">⏻ Déconnexion</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="pg-header">
+    <div class="pg-eyebrow">Architecture données · Galaxy Schema · PFE 2025–2026</div>
+    <h1 class="pg-title">Data Warehouse <em>enrichi</em></h1>
+    <p class="pg-desc">Évolution du schéma en étoile classique vers un <strong>Galaxy Schema (Constellation)</strong> intégrant la couche Collaborative DSS. Deux tables de faits — <code style="color:var(--or);font-family:var(--font-m)">FACT_TIME_TRACKING</code> et <code style="color:var(--li);font-family:var(--font-m)">FACT_DSS_ANALYTICS</code> — partagent des dimensions communes et des dimensions spécialisées.</p>
+    <div class="pg-meta">
+      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#1E6FD9;"></span>2 tables de faits · 8 dimensions</span>
+      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#E8A020;"></span>Constellation (Galaxy) Schema</span>
+      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#0CB87A;"></span>OLAP · Time Tracking + DSS Analytics</span>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="sec-div"><div class="sec-dot"></div>Métriques du Data Warehouse</div>
+  <div class="kpi-row">
+    <div class="kpi-card c1"><div class="kpi-icon">⏱</div><div class="kpi-lbl">Total Heures</div><div class="kpi-val" id="kpiH">—</div><div class="kpi-sub" id="kpiHsub">chargement…</div></div>
+    <div class="kpi-card c2"><div class="kpi-icon">👑</div><div class="kpi-lbl">Top Contributeur</div><div class="kpi-val" id="kpiU" style="font-size:20px;padding-top:4px;">—</div><div class="kpi-sub" id="kpiUsub">—</div></div>
+    <div class="kpi-card c3"><div class="kpi-icon">🏆</div><div class="kpi-lbl">Top Projet</div><div class="kpi-val" id="kpiP" style="font-size:20px;padding-top:4px;">—</div><div class="kpi-sub" id="kpiPsub">—</div></div>
+    <div class="kpi-card c4"><div class="kpi-icon">🎫</div><div class="kpi-lbl">Total Tickets</div><div class="kpi-val" id="kpiT">—</div><div class="kpi-sub" id="kpiTsub">—</div></div>
+    <div class="kpi-card c5"><div class="kpi-icon">💬</div><div class="kpi-lbl">Annotations DSS</div><div class="kpi-val" id="kpiA">4</div><div class="kpi-sub">Couche collaborative</div></div>
+  </div>
+
+  <!-- TABS -->
+  <div class="sec-div"><div class="sec-dot"></div>Modèle de données</div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('classic')">⭐ Star Schema classique</button>
+    <button class="tab-btn" onclick="switchTab('galaxy')">🌌 Galaxy Schema DSS</button>
+    <button class="tab-btn" onclick="switchTab('sql')">🗄 Modèle physique SQL</button>
+    <button class="tab-btn" onclick="switchTab('data')">📋 Données fact_time_tracking</button>
+  </div>
+
+  <!-- TAB: CLASSIC STAR SCHEMA -->
+  <div class="tab-content active" id="tab-classic">
+    <div class="schema-section">
+      <div class="schema-title">Schéma en étoile — FACT_TIME_TRACKING</div>
+      <div class="schema-subtitle">Modèle OLAP original : la table de faits centrale est reliée à 4 dimensions. Ce schéma alimente les KPI de charge de travail, top utilisateurs et activité mensuelle.</div>
+      <canvas id="schemaCanvas" height="480"></canvas>
+      <div class="schema-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#1E6FD9;"></div>DIM_USER</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#E8A020;"></div>DIM_PROJECT</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#E8522A;"></div>DIM_TASK</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#0CB87A;"></div>DIM_DATE</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6;"></div>⭐ FACT_TIME_TRACKING</div>
+        <div class="legend-item"><div class="legend-line" style="background:rgba(91,163,245,.6);"></div>FK → PK</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#F5C842;border:1px solid #E8A020;"></div>Clé primaire (PK)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#FF7A52;border:1px solid #E8522A;"></div>Mesure</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: GALAXY SCHEMA DSS -->
+  <div class="tab-content" id="tab-galaxy">
+    <div class="schema-section">
+      <div class="schema-title">Galaxy Schema (Constellation) — Avec couche DSS</div>
+      <div class="schema-subtitle">Évolution vers un modèle constellation : ajout de <strong>FACT_DSS_ANALYTICS</strong> et 4 nouvelles dimensions (DIM_ANNOTATION, DIM_RECOMMENDATION, DIM_RISK, DIM_DECISION). Les dimensions DIM_USER, DIM_PROJECT et DIM_DATE sont partagées entre les deux tables de faits.</div>
+      <canvas id="schemaDSSCanvas" height="620"></canvas>
+      <div class="schema-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#8B5CF6;"></div>⭐ FACT_TIME_TRACKING</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#E8522A;"></div>🔴 FACT_DSS_ANALYTICS</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1E6FD9;border:2px solid #5BA3F5;"></div>Dimensions partagées</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#E8A020;border:2px dashed #F5C842;"></div>Dimensions DSS exclusives</div>
+        <div class="legend-line" style="background:rgba(91,163,245,.6);"></div><span style="font-family:var(--font-m);font-size:10px;color:var(--text3);">FK classique</span>
+        <div class="legend-line" style="background:rgba(232,82,42,.6);background:repeating-linear-gradient(90deg,rgba(232,82,42,.6) 0,rgba(232,82,42,.6) 4px,transparent 4px,transparent 8px);"></div><span style="font-family:var(--font-m);font-size:10px;color:var(--text3);">FK DSS</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: SQL -->
+  <div class="tab-content" id="tab-sql">
+    <div id="sqlBlocks"></div>
+  </div>
+
+  <!-- TAB: DATA TABLE -->
+  <div class="tab-content" id="tab-data">
+    <div class="filters-bar">
+      <div class="fg"><label>Utilisateur</label><select id="fUser" onchange="applyFilters()"><option value="">Tous</option></select></div>
+      <div class="fg"><label>Projet</label><select id="fProject" onchange="applyFilters()"><option value="">Tous</option></select></div>
+      <div class="fg"><label>Statut</label>
+        <select id="fStatus" onchange="applyFilters()">
+          <option value="">Tous</option>
+          <option value="done">Done</option>
+          <option value="in_progress">In Progress</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+      <div class="fg"><label>Date début</label><input type="date" id="fDateFrom" onchange="applyFilters()"></div>
+      <div class="fg"><label>Date fin</label><input type="date" id="fDateTo" onchange="applyFilters()"></div>
+      <div class="filter-right">
+        <span class="rec-count"><strong id="recCount">—</strong> entrées</span>
+        <button class="rst-btn" onclick="resetFilters()">✕ Reset</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-head">
+        <div><h3>fact_time_tracking</h3><p>Données brutes · OLAP · Time Tracking + Jira</p></div>
+        <span class="table-badge" id="tableBadge">— lignes</span>
+      </div>
+      <div class="table-scroll">
+        <table class="dt">
+          <thead><tr><th>#</th><th>Utilisateur</th><th>Projet</th><th>Tâche · Type</th><th>Durée</th><th>Statut</th><th>Date</th><th>Points</th></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" style="display:none;text-align:center;padding:48px;color:var(--text3);font-size:13px;">🔍 Aucun enregistrement pour ces filtres.</div>
+      </div>
+      <div class="table-footer">
+        <span class="page-info" id="pageInfo">—</span>
+        <div class="page-controls" id="pageControls"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   DATA WAREHOUSE — GALAXY SCHEMA  v2.0
+   Star Schema classique + Galaxy Schema DSS enrichi
+   Export PDF haute qualité via Canvas → jsPDF
+════════════════════════════════════════════════════════ */
+
+/* ── AUTH ── */
+function logout(){localStorage.removeItem('kpi_auth');localStorage.removeItem('kpi_current_user');window.location.href='login.html';}
+function toast(msg,icon='✓'){const t=document.getElementById('toast');t.innerHTML=`<span>${icon}</span> ${msg}`;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
+
+/* ── TABS ── */
+function switchTab(id){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    const ids=['classic','galaxy','sql','data'];
+    b.classList.toggle('active',ids[i]===id);
+  });
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='classic') drawClassicSchema();
+  if(id==='galaxy')  drawGalaxySchema();
+  if(id==='sql')     renderSQL();
+}
+
+/* ══════════════════════════════════════════════════════
+   CANVAS DRAWING — Classic Star Schema
+══════════════════════════════════════════════════════ */
+function drawClassicSchema(){
+  const canvas=document.getElementById('schemaCanvas');
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.offsetWidth;
+  const H=480;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  const bg='#080F1E';
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  /* colors */
+  const COL={
+    user:    '#1E6FD9', user2:   '#5BA3F5',
+    proj:    '#E8A020', proj2:   '#F5C842',
+    task:    '#E8522A', task2:   '#FF7A52',
+    date:    '#0CB87A', date2:   '#34D399',
+    fact:    '#8B5CF6', fact2:   '#A78BFA',
+    pk:      '#F5C842', fk:      '#FF7A52',
+    meas:    '#A78BFA', link:    'rgba(91,163,245,.55)',
+    text:    '#D6E8FF', text2:   '#A8CBFA', text3:'#4A6A9A',
+    border:  'rgba(91,163,245,.22)',
+  };
+
+  /* helper: rounded rect */
+  function rr(x,y,w,h,r,fill,stroke,sw=1){
+    ctx.beginPath();ctx.roundRect(x,y,w,h,[r]);
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=sw;ctx.stroke();}
+  }
+  /* helper: gradient top border on card */
+  function topBorder(x,y,w,c1,c2){
+    const g=ctx.createLinearGradient(x,y,x+w,y);
+    g.addColorStop(0,c1);g.addColorStop(1,c2);
+    ctx.fillStyle=g;ctx.fillRect(x,y,w,3);
+  }
+
+  /* card draw fn */
+  function drawCard(x,y,w,h,title,fields,accent1,accent2,isCenter){
+    const bgCard=isCenter?'rgba(139,92,246,.13)':'rgba(14,26,54,.80)';
+    const borderC=isCenter?'rgba(139,92,246,.45)':'rgba(91,163,245,.20)';
+    const bw=isCenter?1.5:1;
+    rr(x,y,w,h,10,bgCard,borderC,bw);
+    topBorder(x,y,w,accent1,accent2);
+
+    // title type tag
+    ctx.font=`500 9px 'DM Mono',monospace`;
+    ctx.fillStyle=accent1;
+    ctx.letterSpacing='1px';
+    ctx.fillText(isCenter?'⭐  TABLE DE FAITS':'◆  DIMENSION',x+14,y+22);
+    ctx.letterSpacing='0px';
+
+    // table name
+    ctx.font=`600 16px 'Lora',serif`;
+    ctx.fillStyle=COL.text;
+    ctx.fillText(title,x+14,y+44);
+
+    // divider
+    ctx.strokeStyle='rgba(91,163,245,.14)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x+14,y+54);ctx.lineTo(x+w-14,y+54);ctx.stroke();
+
+    // fields
+    let fy=y+70;
+    fields.forEach(f=>{
+      const [name,type,kind]=f;
+      let nameColor=COL.text2;
+      if(kind==='pk') nameColor=COL.pk;
+      else if(kind==='fk') nameColor=COL.fk;
+      else if(kind==='m') nameColor=COL.meas;
+
+      // icon
+      if(kind==='pk'){ctx.font='9px sans-serif';ctx.fillStyle=COL.pk;ctx.fillText('🔑',x+14,fy);}
+      else if(kind==='fk'){ctx.font='9px sans-serif';ctx.fillStyle=COL.fk;ctx.fillText('🔗',x+14,fy);}
+      else{ctx.fillStyle='rgba(91,163,245,.35)';ctx.fillRect(x+16,fy-6,4,4);}
+
+      ctx.font=`500 11px 'DM Mono',monospace`;
+      ctx.fillStyle=nameColor;
+      ctx.fillText(name,x+30,fy);
+
+      // type badge
+      const tw=ctx.measureText(type).width+8;
+      const tx=x+w-tw-14;
+      rr(tx,fy-10,tw,14,3,'rgba(255,255,255,.06)','rgba(255,255,255,.08)',1);
+      ctx.font=`400 9px 'DM Mono',monospace`;
+      ctx.fillStyle=COL.text3;
+      ctx.fillText(type,tx+4,fy);
+      fy+=20;
+    });
+  }
+
+  /* arrow / connector fn */
+  function arrow(x1,y1,x2,y2,color){
+    ctx.strokeStyle=color||COL.link;ctx.lineWidth=1.5;
+    ctx.setLineDash([6,3]);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    ctx.setLineDash([]);
+    // arrowhead at x2,y2
+    const angle=Math.atan2(y2-y1,x2-x1);
+    ctx.fillStyle=color||COL.link;
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-10*Math.cos(angle-0.3),y2-10*Math.sin(angle-0.3));
+    ctx.lineTo(x2-10*Math.cos(angle+0.3),y2-10*Math.sin(angle+0.3));
+    ctx.closePath();ctx.fill();
+    // dot at origin
+    ctx.beginPath();ctx.arc(x1,y1,4,0,Math.PI*2);ctx.fill();
+  }
+
+  /* Layout */
+  const CW=200,CH=220,FW=240,FH=200;
+  const cx=(W-FW)/2, cy=(H-FH)/2;
+  const PAD=30;
+
+  const positions={
+    user:    {x:PAD,              y:PAD},
+    project: {x:W-CW-PAD,        y:PAD},
+    task:    {x:PAD,              y:H-CH-PAD},
+    date:    {x:W-CW-PAD,        y:H-CH-PAD},
+    fact:    {x:cx,               y:cy},
+  };
+
+  const FIELDS={
+    user:[['user_id','INT','pk'],['username','VARCHAR',''],['email','VARCHAR',''],['role','VARCHAR',''],['team','VARCHAR',''],['created_at','DATE','']],
+    project:[['project_id','INT','pk'],['project_name','VARCHAR',''],['client','VARCHAR',''],['status','VARCHAR',''],['start_date','DATE',''],['end_date','DATE','']],
+    task:[['task_id','INT','pk'],['task_name','VARCHAR',''],['issue_type','VARCHAR',''],['assignee','VARCHAR',''],['story_points','INT',''],['priority','VARCHAR','']],
+    date:[['date_id','INT','pk'],['full_date','DATE',''],['day','INT',''],['month','INT',''],['quarter','INT',''],['year','INT','']],
+    fact:[['user_id','INT','fk'],['project_id','INT','fk'],['task_id','INT','fk'],['date_id','INT','fk'],['duration_hours','DECIMAL','m'],['story_points','INT','m'],['status','VARCHAR',''],['resolution_h','DECIMAL','m']],
+  };
+
+  /* Draw connectors first (behind cards) */
+  const factCX=cx+FW/2, factCY=cy+FH/2;
+  const dims=[
+    {key:'user',  ax:PAD+CW,      ay:PAD+CH/2,  c:'rgba(30,111,217,.60)'},
+    {key:'project',ax:W-CW-PAD,   ay:PAD+CH/2,  c:'rgba(232,160,32,.60)'},
+    {key:'task',  ax:PAD+CW,      ay:H-CH-PAD+CH/2, c:'rgba(232,82,42,.60)'},
+    {key:'date',  ax:W-CW-PAD,    ay:H-CH-PAD+CH/2, c:'rgba(12,184,122,.60)'},
+  ];
+  dims.forEach(d=>{
+    // end point on fact card edge
+    const ex=d.ax<factCX?cx:cx+FW;
+    const ey=d.ay<cy?cy:d.ay>cy+FH?cy+FH:d.ay;
+    // draw path with elbow
+    ctx.strokeStyle=d.c;ctx.lineWidth=1.5;ctx.setLineDash([5,3]);
+    ctx.beginPath();ctx.moveTo(d.ax,d.ay);
+    // mid-point elbow
+    const mx=(d.ax+ex)/2;
+    ctx.lineTo(mx,d.ay);ctx.lineTo(mx,ey<cy?cy+20:ey>cy+FH?cy+FH-20:ey);ctx.lineTo(ex,ey<cy?cy+20:ey>cy+FH?cy+FH-20:ey);
+    ctx.stroke();ctx.setLineDash([]);
+    // dot on dim side
+    ctx.fillStyle=d.c;ctx.beginPath();ctx.arc(d.ax,d.ay,5,0,Math.PI*2);ctx.fill();
+    // arrowhead on fact side
+    const endX=ex,endY=ey<cy?cy+20:ey>cy+FH?cy+FH-20:ey;
+    const aLen=10,aW=5;
+    const dx2=endX-mx,dy2=0;const len2=Math.sqrt(dx2*dx2+dy2*dy2)||1;
+    const ux=dx2/len2,uy=dy2/len2;
+    ctx.beginPath();ctx.moveTo(endX,endY);ctx.lineTo(endX-aLen*ux-aW*uy,endY-aLen*uy+aW*ux);ctx.lineTo(endX-aLen*ux+aW*uy,endY-aLen*uy-aW*ux);ctx.closePath();ctx.fill();
+  });
+
+  /* Draw cards */
+  drawCard(positions.user.x,    positions.user.y,    CW,CH,    'DIM_USER',    FIELDS.user,    COL.user, COL.user2,false);
+  drawCard(positions.project.x, positions.project.y, CW,CH,    'DIM_PROJECT', FIELDS.project, COL.proj, COL.proj2,false);
+  drawCard(positions.task.x,    positions.task.y,    CW,CH,    'DIM_TASK',    FIELDS.task,    COL.task, COL.task2,false);
+  drawCard(positions.date.x,    positions.date.y,    CW,CH,    'DIM_DATE',    FIELDS.date,    COL.date, COL.date2,false);
+  drawCard(cx,cy,FW,FH,'FACT_TIME_TRACKING',FIELDS.fact,COL.fact,COL.fact2,true);
+
+  /* Watermark */
+  ctx.font=`400 10px 'DM Mono',monospace`;
+  ctx.fillStyle='rgba(74,106,154,.40)';
+  ctx.fillText('KPI Hub · Star Schema · FACT_TIME_TRACKING + 4 dimensions',14,H-10);
+}
+
+/* ══════════════════════════════════════════════════════
+   CANVAS DRAWING — Galaxy / Constellation Schema DSS
+══════════════════════════════════════════════════════ */
+function drawGalaxySchema(){
+  const canvas=document.getElementById('schemaDSSCanvas');
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.offsetWidth;
+  const H=620;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  ctx.fillStyle='#080F1E'; ctx.fillRect(0,0,W,H);
+
+  /* Subtle background zone separation */
+  const zoneGrad=ctx.createLinearGradient(0,0,W,H);
+  zoneGrad.addColorStop(0,'rgba(139,92,246,.04)');
+  zoneGrad.addColorStop(0.5,'rgba(30,111,217,.03)');
+  zoneGrad.addColorStop(1,'rgba(232,82,42,.04)');
+  ctx.fillStyle=zoneGrad;ctx.fillRect(0,0,W,H);
+
+  const COL={
+    sa:'#1E6FD9',sa3:'#5BA3F5',
+    or:'#E8A020',or2:'#F5C842',
+    co:'#E8522A',co2:'#FF7A52',
+    em:'#0CB87A',em2:'#34D399',
+    li:'#8B5CF6',li2:'#A78BFA',
+    shared:'rgba(30,111,217,.50)',
+    dss:'rgba(232,82,42,.50)',
+    pk:'#F5C842',fk:'#FF7A52',meas:'#A78BFA',
+    text:'#D6E8FF',text2:'#A8CBFA',text3:'#4A6A9A',
+  };
+
+  function rr(x,y,w,h,r,fill,stroke,sw=1){
+    ctx.beginPath();ctx.roundRect(x,y,w,h,[r]);
+    if(fill){ctx.fillStyle=fill;ctx.fill();}
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=sw;ctx.stroke();}
+  }
+  function topBorder(x,y,w,c1,c2){
+    const g=ctx.createLinearGradient(x,y,x+w,y);
+    g.addColorStop(0,c1);g.addColorStop(1,c2);
+    ctx.fillStyle=g;ctx.fillRect(x,y,w,3);
+  }
+  function drawSmCard(x,y,w,fields,title,accent1,accent2,isFact,isDSS){
+    const h=fields.length*18+72;
+    const bgC=isFact?(isDSS?'rgba(232,82,42,.12)':'rgba(139,92,246,.12)'):'rgba(14,26,54,.82)';
+    const bdC=isFact?(isDSS?'rgba(232,82,42,.45)':'rgba(139,92,246,.45)'):isDSS?'rgba(232,82,42,.20)':'rgba(91,163,245,.18)';
+    rr(x,y,w,h,8,bgC,bdC,isFact?1.5:1);
+    topBorder(x,y,w,accent1,accent2);
+    // badge
+    ctx.font=`500 8px 'DM Mono',monospace`;ctx.fillStyle=accent1;
+    ctx.fillText(isFact?'⭐ TABLE DE FAITS':'◆ DIMENSION',x+10,y+18);
+    // name
+    ctx.font=`600 13px 'Lora',serif`;ctx.fillStyle=COL.text;
+    ctx.fillText(title,x+10,y+36);
+    // divider
+    ctx.strokeStyle='rgba(91,163,245,.12)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x+10,y+44);ctx.lineTo(x+w-10,y+44);ctx.stroke();
+    // fields
+    let fy=y+58;
+    fields.forEach(([name,type,kind])=>{
+      let nc=COL.text2;
+      if(kind==='pk')nc=COL.pk;else if(kind==='fk')nc=COL.fk;else if(kind==='m')nc=COL.meas;
+      const icon=kind==='pk'?'🔑':kind==='fk'?'🔗':kind==='m'?'◉':'·';
+      ctx.font=`400 8px sans-serif`;ctx.fillStyle=nc;ctx.fillText(icon,x+10,fy);
+      ctx.font=`500 10px 'DM Mono',monospace`;ctx.fillStyle=nc;
+      ctx.fillText(name,x+24,fy);
+      const tw=ctx.measureText(type).width+6;
+      rr(x+w-tw-10,fy-9,tw,12,2,'rgba(255,255,255,.05)',null);
+      ctx.font=`400 8px 'DM Mono',monospace`;ctx.fillStyle=COL.text3;
+      ctx.fillText(type,x+w-tw-7,fy);
+      fy+=18;
+    });
+    return h;
+  }
+
+  function connector(x1,y1,x2,y2,color,dashed){
+    ctx.strokeStyle=color;ctx.lineWidth=1.5;
+    if(dashed)ctx.setLineDash([5,3]);else ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    ctx.setLineDash([]);
+    const angle=Math.atan2(y2-y1,x2-x1);
+    ctx.fillStyle=color;
+    ctx.beginPath();ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-10*Math.cos(angle-0.3),y2-10*Math.sin(angle-0.3));
+    ctx.lineTo(x2-10*Math.cos(angle+0.3),y2-10*Math.sin(angle+0.3));
+    ctx.closePath();ctx.fill();
+    ctx.beginPath();ctx.arc(x1,y1,3.5,0,Math.PI*2);ctx.fill();
+  }
+
+  const SMALL_W=178;
+  const PAD=18;
+  const COL_L=PAD, COL_ML=PAD+SMALL_W+12, COL_MR=W-SMALL_W*2-12-PAD, COL_R=W-SMALL_W-PAD;
+
+  // Fact 1 (classic) — top center area
+  const F1W=220,F1X=(W-F1W)/2-60,F1Y=20;
+  const f1Fields=[['user_id','INT','fk'],['project_id','INT','fk'],['task_id','INT','fk'],['date_id','INT','fk'],['duration_h','DECIMAL','m'],['story_points','INT','m'],['status','VARCHAR','']];
+  const F1H=drawSmCard(F1X,F1Y,F1W,f1Fields,'FACT_TIME_TRACKING',COL.li,COL.li2,true,false);
+
+  // Fact 2 (DSS) — top right area
+  const F2W=220,F2X=F1X+F1W+40,F2Y=20;
+  const f2Fields=[['annotation_id','INT','fk'],['risk_id','INT','fk'],['rec_id','INT','fk'],['user_id','INT','fk'],['project_id','INT','fk'],['date_id','INT','fk'],['criticality','INT','m'],['resolution_days','DECIMAL','m'],['impact_score','DECIMAL','m']];
+  const F2H=drawSmCard(F2X,F2Y,F2W,f2Fields,'FACT_DSS_ANALYTICS',COL.co,COL.co2,true,true);
+
+  // Zone labels
+  ctx.font=`600 10px 'DM Mono',monospace`;
+  ctx.fillStyle='rgba(139,92,246,.45)';ctx.fillText('── STAR SCHEMA CLASSIQUE ──',F1X,F1Y+F1H+14);
+  ctx.fillStyle='rgba(232,82,42,.45)';ctx.fillText('── COUCHE DSS ──',F2X,F2Y+F2H+14);
+
+  const dimY=F1Y+F1H+30;
+
+  // Shared dimensions (row 2 center)
+  const sharedDims=[
+    {title:'DIM_USER',    fields:[['user_id','INT','pk'],['username','VARCHAR',''],['email','VARCHAR',''],['role','VARCHAR',''],['team','VARCHAR','']],a1:COL.sa,a2:COL.sa3,x:COL_L},
+    {title:'DIM_PROJECT', fields:[['project_id','INT','pk'],['project_name','VARCHAR',''],['client','VARCHAR',''],['status','VARCHAR',''],['start_date','DATE','']],a1:COL.or,a2:COL.or2,x:COL_ML},
+    {title:'DIM_DATE',    fields:[['date_id','INT','pk'],['full_date','DATE',''],['day','INT',''],['month','INT',''],['quarter','INT',''],['year','INT','']],a1:COL.em,a2:COL.em2,x:COL_MR},
+    {title:'DIM_TASK',    fields:[['task_id','INT','pk'],['task_name','VARCHAR',''],['issue_type','VARCHAR',''],['story_points','INT',''],['priority','VARCHAR','']],a1:COL.co,a2:COL.co2,x:COL_R},
+  ];
+  let maxDimH=0;
+  sharedDims.forEach(d=>{
+    const h=drawSmCard(d.x,dimY,SMALL_W,d.fields,d.title,d.a1,d.a2,false,false);
+    if(h>maxDimH)maxDimH=h;
+  });
+
+  // DSS exclusive dimensions (row 3)
+  const dssY=dimY+maxDimH+20;
+  const dssDims=[
+    {title:'DIM_ANNOTATION',fields:[['annotation_id','INT','pk'],['element_id','VARCHAR',''],['element_label','VARCHAR',''],['author_id','INT','fk'],['ann_type','VARCHAR',''],['timestamp','TIMESTAMP',''],['resolved','BOOLEAN','']],a1:COL.li,a2:COL.li2,x:COL_L},
+    {title:'DIM_RISK',      fields:[['risk_id','INT','pk'],['risk_type','VARCHAR',''],['criticality','INT',''],['detected_date','DATE',''],['resolved_date','DATE',''],['status','VARCHAR','']],a1:COL.co,a2:COL.co2,x:COL_ML},
+    {title:'DIM_RECOMMENDATION',fields:[['rec_id','INT','pk'],['level','INT',''],['title','VARCHAR',''],['priority','VARCHAR',''],['status','VARCHAR',''],['source_ann_id','INT','fk']],a1:COL.or,a2:COL.or2,x:COL_MR},
+    {title:'DIM_DECISION',  fields:[['decision_id','INT','pk'],['decision_text','VARCHAR',''],['decided_by','INT','fk'],['decided_at','TIMESTAMP',''],['impact_score','DECIMAL',''],['validated','BOOLEAN','']],a1:COL.em,a2:COL.em2,x:COL_R},
+  ];
+  dssDims.forEach(d=>drawSmCard(d.x,dssY,SMALL_W,d.fields,d.title,d.a1,d.a2,false,true));
+
+  /* ── Connectors ── */
+  // Fact1 → shared dims
+  const f1cx=F1X+F1W/2,f1cy=F1Y+F1H;
+  sharedDims.slice(0,3).forEach((d,i)=>{
+    const dcx=d.x+SMALL_W/2;
+    connector(f1cx,f1cy,dcx,dimY,COL.shared,true);
+  });
+  // Fact1 → DIM_TASK
+  connector(f1cx,f1cy,sharedDims[3].x+SMALL_W/2,dimY,COL.shared,true);
+
+  // Fact2 → shared dims (user, project, date)
+  const f2cx=F2X+F2W/2,f2cy=F2Y+F2H;
+  [0,1,2].forEach(i=>{
+    const d=sharedDims[i];
+    connector(f2cx,f2cy,d.x+SMALL_W/2,dimY,COL.dss,true);
+  });
+  // Fact2 → DSS dims
+  dssDims.forEach(d=>{
+    connector(f2cx,f2cy,d.x+SMALL_W/2,dssY,COL.dss,true);
+  });
+  // DIM_ANNOTATION → DIM_RECOMMENDATION (link)
+  const annCX=dssDims[0].x+SMALL_W;
+  const recCX=dssDims[2].x;
+  const linkY=dssY+40;
+  ctx.strokeStyle='rgba(245,200,66,.30)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(annCX,linkY);ctx.lineTo(recCX,linkY);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font=`400 9px 'DM Mono',monospace`;ctx.fillStyle='rgba(245,200,66,.50)';
+  ctx.fillText('source',annCX+8,linkY-3);
+
+  /* Zone labels */
+  ctx.font=`700 10px 'DM Mono',monospace`;
+  ctx.fillStyle='rgba(30,111,217,.40)';
+  ctx.fillText('DIMENSIONS PARTAGÉES (FACT_TIME_TRACKING + FACT_DSS_ANALYTICS)',COL_L,dimY-8);
+  ctx.fillStyle='rgba(232,82,42,.40)';
+  ctx.fillText('DIMENSIONS EXCLUSIVES COLLABORATIVE DSS',COL_L,dssY-8);
+
+  /* Watermark */
+  ctx.font=`400 10px 'DM Mono',monospace`;ctx.fillStyle='rgba(74,106,154,.40)';
+  ctx.fillText('KPI Hub · Galaxy Schema · 2 Tables de Faits · 8 Dimensions · Constellation Model',14,H-10);
+}
+
+/* ══════════════════════════════════════════════════════
+   SQL DEFINITIONS
+══════════════════════════════════════════════════════ */
+const SQL_DEFS=[
+{name:'DIM_USER',desc:'Dimension utilisateurs — partagée entre FACT_TIME_TRACKING et FACT_DSS_ANALYTICS',color:'#1E6FD9',
+sql:`<span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">dim_user</span> (
+  <span class="sql-pk">user_id</span>     <span class="sql-type">INT</span>          <span class="sql-kw">PRIMARY KEY</span>,
+  username    <span class="sql-type">VARCHAR(100)</span> <span class="sql-kw">NOT NULL</span>,
+  email       <span class="sql-type">VARCHAR(150)</span> <span class="sql-kw">UNIQUE NOT NULL</span>,
+  role        <span class="sql-type">VARCHAR(50)</span>  <span class="sql-kw">DEFAULT</span> <span class="sql-cmt">'analyst'</span>, <span class="sql-cmt">-- analyst | commenter | viewer</span>
+  team        <span class="sql-type">VARCHAR(100)</span>,
+  created_at  <span class="sql-type">DATE</span>,
+  is_active   <span class="sql-type">BOOLEAN</span>      <span class="sql-kw">DEFAULT TRUE</span>
+);`},
+{name:'DIM_PROJECT',desc:'Dimension projets — source Solidtime + Jira',color:'#E8A020',
+sql:`<span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">dim_project</span> (
+  <span class="sql-pk">project_id</span>   <span class="sql-type">INT</span>          <span class="sql-kw">PRIMARY KEY</span>,
+  project_name <span class="sql-type">VARCHAR(150)</span> <span class="sql-kw">NOT NULL</span>,
+  client       <span class="sql-type">VARCHAR(100)</span>,
+  status       <span class="sql-type">VARCHAR(50)</span>,  <span class="sql-cmt">-- active | archived | on_hold</span>
+  start_date   <span class="sql-type">DATE</span>,
+  end_date     <span class="sql-type">DATE</span>,
+  jira_prefix  <span class="sql-type">VARCHAR(20)</span>  <span class="sql-cmt">-- ex: AWA- pour WEB</span>
+);`},
+{name:'DIM_DATE',desc:'Dimension temporelle — granularité jour, mois, trimestre, année',color:'#0CB87A',
+sql:`<span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">dim_date</span> (
+  <span class="sql-pk">date_id</span>    <span class="sql-type">INT</span>         <span class="sql-kw">PRIMARY KEY</span>,
+  full_date  <span class="sql-type">DATE</span>        <span class="sql-kw">NOT NULL UNIQUE</span>,
+  day        <span class="sql-type">INT</span>,
+  month      <span class="sql-type">INT</span>,
+  month_name <span class="sql-type">VARCHAR(20)</span>,
+  quarter    <span class="sql-type">INT</span>,
+  year       <span class="sql-type">INT</span>,
+  week_num   <span class="sql-type">INT</span>,
+  is_weekend <span class="sql-type">BOOLEAN</span>
+);`},
+{name:'DIM_TASK',desc:'Dimension tâches Jira — tickets, types, priorités',color:'#E8522A',
+sql:`<span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">dim_task</span> (
+  <span class="sql-pk">task_id</span>      <span class="sql-type">INT</span>         <span class="sql-kw">PRIMARY KEY</span>,
+  task_key     <span class="sql-type">VARCHAR(30)</span>,  <span class="sql-cmt">-- ex: AWA-1234</span>
+  task_name    <span class="sql-type">VARCHAR(200)</span>,
+  issue_type   <span class="sql-type">VARCHAR(50)</span>,  <span class="sql-cmt">-- Bug | Feature | Task | Epic</span>
+  assignee     <span class="sql-type">VARCHAR(100)</span>,
+  story_points <span class="sql-type">INT</span>,
+  priority     <span class="sql-type">VARCHAR(20)</span>,  <span class="sql-cmt">-- High | Medium | Low</span>
+  estimated_h  <span class="sql-type">DECIMAL(8,2)</span>
+);`},
+{name:'FACT_TIME_TRACKING',desc:'Table de faits principale — croisement Solidtime × Jira (Star Schema original)',color:'#8B5CF6',isFact:true,
+sql:`<span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">fact_time_tracking</span> (
+  tracking_id    <span class="sql-type">BIGINT</span>       <span class="sql-kw">PRIMARY KEY AUTOINCREMENT</span>,
+  <span class="sql-fk">user_id</span>        <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_user</span>(user_id),
+  <span class="sql-fk">project_id</span>     <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_project</span>(project_id),
+  <span class="sql-fk">task_id</span>        <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_task</span>(task_id),
+  <span class="sql-fk">date_id</span>        <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_date</span>(date_id),
+  <span class="sql-meas">duration_hours</span> <span class="sql-type">DECIMAL(8,2)</span> <span class="sql-kw">NOT NULL</span>,   <span class="sql-cmt">-- mesure principale</span>
+  <span class="sql-meas">story_points</span>   <span class="sql-type">INT</span>,                               <span class="sql-cmt">-- mesure Jira</span>
+  <span class="sql-meas">est_hours</span>      <span class="sql-type">DECIMAL(8,2)</span>,                      <span class="sql-cmt">-- estimation initiale</span>
+  <span class="sql-meas">overrun_ratio</span>  <span class="sql-type">DECIMAL(5,2)</span>,                      <span class="sql-cmt">-- (réel-estimé)/estimé * 100</span>
+  status         <span class="sql-type">VARCHAR(30)</span>,                       <span class="sql-cmt">-- done|in_progress|pending|other</span>
+  is_billable    <span class="sql-type">BOOLEAN</span>      <span class="sql-kw">DEFAULT FALSE</span>,
+  created_at     <span class="sql-type">TIMESTAMP</span>    <span class="sql-kw">DEFAULT CURRENT_TIMESTAMP</span>
+);`},
+{name:'DIM_ANNOTATION',desc:'Dimension annotations collaboratives — couche DSS',color:'#8B5CF6',isDSS:true,
+sql:`<span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">dim_annotation</span> (
+  <span class="sql-pk">annotation_id</span> <span class="sql-type">INT</span>          <span class="sql-kw">PRIMARY KEY AUTOINCREMENT</span>,
+  element_id    <span class="sql-type">VARCHAR(50)</span>  <span class="sql-kw">NOT NULL</span>,   <span class="sql-cmt">-- kpi_hours | jira_rate | …</span>
+  element_label <span class="sql-type">VARCHAR(150)</span>,
+  <span class="sql-fk">author_id</span>     <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_user</span>(user_id),
+  ann_type      <span class="sql-type">VARCHAR(30)</span>  <span class="sql-kw">NOT NULL</span>,   <span class="sql-cmt">-- observation|anomaly|risk</span>
+  content       <span class="sql-type">TEXT</span>,
+  tags          <span class="sql-type">VARCHAR(200)</span>,
+  timestamp     <span class="sql-type">TIMESTAMP</span>    <span class="sql-kw">DEFAULT CURRENT_TIMESTAMP</span>,
+  resolved      <span class="sql-type">BOOLEAN</span>      <span class="sql-kw">DEFAULT FALSE</span>,
+  resolved_at   <span class="sql-type">TIMESTAMP</span>
+);`},
+{name:'DIM_RISK',desc:'Dimension risques — anomalies et risques identifiés dans le DSS',color:'#E8522A',isDSS:true,
+sql:`<span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">dim_risk</span> (
+  <span class="sql-pk">risk_id</span>         <span class="sql-type">INT</span>         <span class="sql-kw">PRIMARY KEY AUTOINCREMENT</span>,
+  risk_type       <span class="sql-type">VARCHAR(50)</span>, <span class="sql-cmt">-- anomaly|risk|observation</span>
+  criticality     <span class="sql-type">INT</span>,         <span class="sql-cmt">-- 1 (low) → 5 (critical)</span>
+  description     <span class="sql-type">TEXT</span>,
+  <span class="sql-fk">source_ann_id</span>   <span class="sql-type">INT</span>         <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_annotation</span>(annotation_id),
+  detected_date   <span class="sql-type">DATE</span>,
+  resolved_date   <span class="sql-type">DATE</span>,
+  status          <span class="sql-type">VARCHAR(30)</span>  <span class="sql-cmt">-- open|mitigated|resolved</span>
+);`},
+{name:'DIM_RECOMMENDATION',desc:'Dimension recommandations — actions correctives du moteur DSS',color:'#E8A020',isDSS:true,
+sql:`<span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">dim_recommendation</span> (
+  <span class="sql-pk">rec_id</span>        <span class="sql-type">INT</span>         <span class="sql-kw">PRIMARY KEY AUTOINCREMENT</span>,
+  dss_level     <span class="sql-type">INT</span>         <span class="sql-kw">CHECK</span>(dss_level IN (1,2,3)),
+  title         <span class="sql-type">VARCHAR(200)</span>,
+  description   <span class="sql-type">TEXT</span>,
+  priority      <span class="sql-type">VARCHAR(20)</span>, <span class="sql-cmt">-- high | medium | low</span>
+  status        <span class="sql-type">VARCHAR(30)</span>, <span class="sql-cmt">-- proposed|confirmed|applied|rejected</span>
+  <span class="sql-fk">source_ann_id</span> <span class="sql-type">INT</span>         <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_annotation</span>(annotation_id),
+  created_at    <span class="sql-type">TIMESTAMP</span>   <span class="sql-kw">DEFAULT CURRENT_TIMESTAMP</span>,
+  applied_at    <span class="sql-type">TIMESTAMP</span>
+);`},
+{name:'DIM_DECISION',desc:'Dimension décisions — enregistrement historique des décisions prises',color:'#0CB87A',isDSS:true,
+sql:`<span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">dim_decision</span> (
+  <span class="sql-pk">decision_id</span>   <span class="sql-type">INT</span>         <span class="sql-kw">PRIMARY KEY AUTOINCREMENT</span>,
+  decision_text <span class="sql-type">TEXT</span>        <span class="sql-kw">NOT NULL</span>,
+  <span class="sql-fk">decided_by</span>    <span class="sql-type">INT</span>         <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_user</span>(user_id),
+  decided_at    <span class="sql-type">TIMESTAMP</span>   <span class="sql-kw">DEFAULT CURRENT_TIMESTAMP</span>,
+  impact_scope  <span class="sql-type">VARCHAR(50)</span>, <span class="sql-cmt">-- project|team|organization</span>
+  impact_score  <span class="sql-type">DECIMAL(3,1)</span>,<span class="sql-cmt">-- 0.0 → 10.0</span>
+  validated     <span class="sql-type">BOOLEAN</span>     <span class="sql-kw">DEFAULT FALSE</span>
+);`},
+{name:'FACT_DSS_ANALYTICS',desc:'Table de faits DSS — analytics collaboratifs (2ème étoile du Galaxy Schema)',color:'#E8522A',isFact:true,isDSS:true,
+sql:`<span class="sql-kw">CREATE TABLE</span> <span class="sql-tbl">fact_dss_analytics</span> (
+  dss_id           <span class="sql-type">BIGINT</span>       <span class="sql-kw">PRIMARY KEY AUTOINCREMENT</span>,
+  <span class="sql-fk">annotation_id</span>    <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_annotation</span>(annotation_id),
+  <span class="sql-fk">risk_id</span>          <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_risk</span>(risk_id),
+  <span class="sql-fk">rec_id</span>           <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_recommendation</span>(rec_id),
+  <span class="sql-fk">decision_id</span>      <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_decision</span>(decision_id),
+  <span class="sql-fk">user_id</span>          <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_user</span>(user_id),
+  <span class="sql-fk">project_id</span>       <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_project</span>(project_id),
+  <span class="sql-fk">date_id</span>          <span class="sql-type">INT</span>          <span class="sql-kw">REFERENCES</span> <span class="sql-tbl">dim_date</span>(date_id),
+  <span class="sql-meas">reply_count</span>      <span class="sql-type">INT</span>          <span class="sql-kw">DEFAULT 0</span>,   <span class="sql-cmt">-- nbre réponses au thread</span>
+  <span class="sql-meas">criticality_score</span><span class="sql-type">INT</span>          <span class="sql-kw">DEFAULT 1</span>,   <span class="sql-cmt">-- 1–5 (low→critical)</span>
+  <span class="sql-meas">resolution_days</span>  <span class="sql-type">DECIMAL(8,2)</span>,               <span class="sql-cmt">-- délai observation→résolution</span>
+  <span class="sql-meas">impact_score</span>     <span class="sql-type">DECIMAL(5,2)</span>,               <span class="sql-cmt">-- 0.0–10.0</span>
+  <span class="sql-meas">is_resolved</span>      <span class="sql-type">BOOLEAN</span>      <span class="sql-kw">DEFAULT FALSE</span>,
+  created_at       <span class="sql-type">TIMESTAMP</span>    <span class="sql-kw">DEFAULT CURRENT_TIMESTAMP</span>
+);`},
+];
+
+function renderSQL(){
+  const container=document.getElementById('sqlBlocks');
+  if(container.innerHTML) return; // already rendered
+  container.innerHTML=SQL_DEFS.map(d=>`
+    <div class="sql-section">
+      <div class="sql-header">
+        <div>
+          <div class="sql-label">${d.isDSS?'🔴 DSS LAYER':'🔵 CLASSIQUE'}${d.isFact?' · TABLE DE FAITS':' · DIMENSION'}</div>
+          <div class="sql-table-name" style="color:${d.color}">${d.name}</div>
+          <div class="sql-desc">${d.desc}</div>
+        </div>
+        <button class="copy-btn" onclick="copySQL('${d.name}')">📋 Copier</button>
+      </div>
+      <pre class="sql" id="sql_${d.name}">${d.sql}</pre>
+    </div>
+  `).join('');
+}
+
+function copySQL(name){
+  const el=document.getElementById('sql_'+name);
+  if(!el)return;
+  const text=el.innerText;
+  navigator.clipboard.writeText(text).then(()=>toast('SQL copié — '+name)).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('SQL copié');
+  });
+}
+
+/* ══════════════════════════════════════════════════════
+   DATA TABLE
+══════════════════════════════════════════════════════ */
+const USERS=['Alice Martin','Bob Dupont','Claire Petit','David Simon','Eva Thomas','Frank Morel','Grace Nguyen','Hugo Bernard'];
+const PROJECTS=['Alpha Platform','Beta Analytics','Client Portal','Data Pipeline','E-Commerce Suite'];
+const TASKS=['Bug Fix','Feature Dev','Code Review','Testing','Documentation','Deployment','Design','Meeting'];
+const ISSUE=['Bug','Feature','Task','Improvement','Epic'];
+const STATUSES=['done','in_progress','pending'];
+
+function rnd(a,b){return Math.random()*(b-a)+a;}
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+function randDate(){const d=new Date(2024,0,1);d.setDate(d.getDate()+Math.floor(rnd(0,365)));return d.toISOString().slice(0,10);}
+
+const DATASET=Array.from({length:200},(_,i)=>({
+  id:i+1,user:pick(USERS),project:pick(PROJECTS),task:pick(TASKS),
+  issue_type:pick(ISSUE),duration:parseFloat(rnd(.5,10).toFixed(1)),
+  status:pick(STATUSES),date:randDate(),story_points:Math.round(rnd(1,13)),
+}));
+
+function initFilters(){
+  const us=[...new Set(DATASET.map(d=>d.user))].sort();
+  const ps=[...new Set(DATASET.map(d=>d.project))].sort();
+  const fU=document.getElementById('fUser'),fP=document.getElementById('fProject');
+  fU.innerHTML='<option value="">Tous</option>';fP.innerHTML='<option value="">Tous</option>';
+  us.forEach(u=>fU.innerHTML+=`<option value="${u}">${u}</option>`);
+  ps.forEach(p=>fP.innerHTML+=`<option value="${p}">${p}</option>`);
+}
+let currentPage=1;const PAGE_SZ=15;
+function getFiltered(){
+  const u=document.getElementById('fUser').value,p=document.getElementById('fProject').value;
+  const s=document.getElementById('fStatus').value,df=document.getElementById('fDateFrom').value,dt=document.getElementById('fDateTo').value;
+  return DATASET.filter(r=>{
+    if(u&&r.user!==u)return false;if(p&&r.project!==p)return false;
+    if(s&&r.status!==s)return false;if(df&&r.date<df)return false;if(dt&&r.date>dt)return false;
+    return true;
+  });
+}
+function resetFilters(){['fUser','fProject','fStatus','fDateFrom','fDateTo'].forEach(id=>document.getElementById(id).value='');currentPage=1;render();}
+function applyFilters(){currentPage=1;render();}
+const SM={done:'<span class="pill p-done">✓ Done</span>',in_progress:'<span class="pill p-prog">⟳ In Progress</span>',pending:'<span class="pill p-pend">⏳ Pending</span>'};
+function render(){
+  const data=getFiltered(),total=data.length,tp=Math.max(1,Math.ceil(total/PAGE_SZ));
+  currentPage=Math.min(currentPage,tp);
+  const start=(currentPage-1)*PAGE_SZ,page=data.slice(start,start+PAGE_SZ);
+  document.getElementById('recCount').textContent=total;
+  document.getElementById('tableBadge').textContent=total+' lignes';
+  const tbody=document.getElementById('tableBody'),empty=document.getElementById('emptyState');
+  if(!page.length){tbody.innerHTML='';empty.style.display='block';renderPages(0,1);return;}
+  empty.style.display='none';
+  tbody.innerHTML=page.map(r=>`<tr>
+    <td style="color:var(--text3);font-family:var(--font-m);font-size:10px;">${r.id}</td>
+    <td class="c-user">${r.user}</td>
+    <td class="c-proj">${r.project}</td>
+    <td class="c-task">${r.task} <span style="color:var(--text3);font-size:10px;">[${r.issue_type}]</span></td>
+    <td class="c-dur">${r.duration}h</td>
+    <td>${SM[r.status]||r.status}</td>
+    <td class="c-date">${r.date}</td>
+    <td style="font-family:var(--font-m);color:var(--text3);font-size:11px;">${r.story_points} sp</td>
+  </tr>`).join('');
+  document.getElementById('pageInfo').textContent=`Page ${currentPage}/${tp} — ${start+1}–${Math.min(start+PAGE_SZ,total)} sur ${total}`;
+  renderPages(total,tp);
+}
+function renderPages(total,tp){
+  const ctrl=document.getElementById('pageControls');
+  if(tp<=1){ctrl.innerHTML='';return;}
+  let h=`<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  for(let p=1;p<=tp;p++){
+    if(tp>7&&Math.abs(p-currentPage)>2&&p!==1&&p!==tp){if(p===currentPage-3||p===currentPage+3)h+='<button class="page-btn" disabled style="opacity:.4;border:none;">…</button>';continue;}
+    h+=`<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  h+=`<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===tp?'disabled':''}>›</button>`;
+  ctrl.innerHTML=h;
+}
+function goPage(p){currentPage=p;render();}
+function updateKPIs(){
+  const th=DATASET.reduce((s,r)=>s+r.duration,0);
+  const byU={};DATASET.forEach(r=>byU[r.user]=(byU[r.user]||0)+r.duration);
+  const topU=Object.entries(byU).sort((a,b)=>b[1]-a[1])[0];
+  const byP={};DATASET.forEach(r=>byP[r.project]=(byP[r.project]||0)+r.duration);
+  const topP=Object.entries(byP).sort((a,b)=>b[1]-a[1])[0];
+  animNum('kpiH',th,1);animNum('kpiT',DATASET.length,0);
+  document.getElementById('kpiHsub').textContent=DATASET.filter(r=>r.status==='done').length+' tâches terminées';
+  document.getElementById('kpiTsub').textContent=new Set(DATASET.map(r=>r.user)).size+' utilisateurs actifs';
+  document.getElementById('kpiU').textContent=topU[0].split(' ')[0];
+  document.getElementById('kpiUsub').textContent=topU[1].toFixed(1)+'h · '+topU[0];
+  document.getElementById('kpiP').textContent=topP[0].split(' ')[0];
+  document.getElementById('kpiPsub').textContent=topP[1].toFixed(1)+'h · '+topP[0];
+}
+function animNum(id,target,dec){
+  const el=document.getElementById(id);if(!el)return;
+  const dur=1200,start=performance.now();
+  function f(now){const p=Math.min((now-start)/dur,1),e=1-Math.pow(1-p,3);el.textContent=dec?(target*e).toFixed(dec):Math.round(target*e);if(p<1)requestAnimationFrame(f);}
+  requestAnimationFrame(f);
+}
+
+/* ══════════════════════════════════════════════════════
+   PDF EXPORT — haute qualité via Canvas
+══════════════════════════════════════════════════════ */
+async function exportSchemaPDF(){
+  toast('Génération PDF haute qualité…','📄');
+  await new Promise(r=>setTimeout(r,400));
+
+  try{
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    const PW=297,PH=210,M=12;
+    const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+
+    function drawPageHeader(title,sub){
+      pdf.setFillColor(8,15,30);pdf.rect(0,0,PW,PH,'F');
+      pdf.setFillColor(30,111,217);pdf.rect(0,0,PW,2,'F');
+      pdf.setFillColor(232,160,32);pdf.rect(0,2,PW,.8,'F');
+      pdf.setTextColor(91,163,245);pdf.setFontSize(8);pdf.setFont('helvetica','bold');
+      pdf.text('KPI HUB · DATA WAREHOUSE · GALAXY SCHEMA',M,10);
+      pdf.setTextColor(74,106,154);pdf.setFont('helvetica','normal');
+      pdf.text(now,PW-M,10,{align:'right'});
+      pdf.setDrawColor(30,111,217,0.3);pdf.setLineWidth(.2);pdf.line(M,12,PW-M,12);
+      pdf.setTextColor(214,232,255);pdf.setFontSize(16);pdf.setFont('helvetica','bold');
+      pdf.text(title,M,24);
+      pdf.setFontSize(9);pdf.setFont('helvetica','normal');pdf.setTextColor(168,203,250);
+      pdf.text(sub,M,32);
+      return 38;
+    }
+
+    /* ─ PAGE 1 : Classic Star Schema ─ */
+    let y=drawPageHeader('Star Schema classique — FACT_TIME_TRACKING','4 dimensions · Source Jira + Solidtime · Time tracking analytics');
+
+    // Render classic schema to offscreen canvas first
+    const classicCanvas=document.getElementById('schemaCanvas');
+    if(!classicCanvas.width||classicCanvas.width<100){drawClassicSchema();}
+    const imgW=PW-M*2,imgH=imgW*(classicCanvas.height/classicCanvas.width);
+    const imgData=classicCanvas.toDataURL('image/png',1.0);
+    pdf.addImage(imgData,'PNG',M,y,imgW,Math.min(imgH,PH-y-20));
+
+    // Footer page 1
+    pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(74,106,154);
+    pdf.text('Page 1/3 · Star Schema · 1 Table de faits · 4 Dimensions · OLAP Time Tracking',M,PH-6);
+    pdf.text('KPI Hub · PFE 2025–2026',PW-M,PH-6,{align:'right'});
+
+    /* ─ PAGE 2 : Galaxy Schema DSS ─ */
+    pdf.addPage();
+    y=drawPageHeader('Galaxy Schema enrichi — Constellation DSS','2 Tables de faits · 8 Dimensions · FACT_TIME_TRACKING + FACT_DSS_ANALYTICS');
+
+    const dssCanvas=document.getElementById('schemaDSSCanvas');
+    if(!dssCanvas.width||dssCanvas.width<100){drawGalaxySchema();}
+    const dssData=dssCanvas.toDataURL('image/png',1.0);
+    const dssH=(PW-M*2)*(dssCanvas.height/dssCanvas.width);
+    pdf.addImage(dssData,'PNG',M,y,PW-M*2,Math.min(dssH,PH-y-20));
+
+    pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(74,106,154);
+    pdf.text('Page 2/3 · Galaxy Schema · 2 Tables de faits · 8 Dimensions · Constellation Model',M,PH-6);
+    pdf.text('KPI Hub · PFE 2025–2026',PW-M,PH-6,{align:'right'});
+
+    /* ─ PAGE 3 : Nouvelles tables DSS (résumé) ─ */
+    pdf.addPage();
+    y=drawPageHeader('Modèle Physique — Nouvelles tables DSS','FACT_DSS_ANALYTICS · DIM_ANNOTATION · DIM_RISK · DIM_RECOMMENDATION · DIM_DECISION');
+
+    const tables=[
+      {n:'FACT_DSS_ANALYTICS',c:[232,82,42],d:'Table de faits DSS — mesures analytiques collaboratives',
+       cols:['dss_id (PK)','annotation_id FK','risk_id FK','rec_id FK','decision_id FK','user_id FK','project_id FK','date_id FK','criticality_score','resolution_days','impact_score','is_resolved']},
+      {n:'DIM_ANNOTATION',c:[139,92,246],d:'Dimension annotations — commentaires contextuels liés aux KPI',
+       cols:['annotation_id (PK)','element_id','element_label','author_id FK','ann_type','content','tags','timestamp','resolved']},
+      {n:'DIM_RISK',c:[232,82,42],d:'Dimension risques — anomalies et risques identifiés',
+       cols:['risk_id (PK)','risk_type','criticality','description','source_ann_id FK','detected_date','resolved_date','status']},
+      {n:'DIM_RECOMMENDATION',c:[232,160,32],d:'Dimension recommandations — actions correctives DSS',
+       cols:['rec_id (PK)','dss_level','title','description','priority','status','source_ann_id FK','applied_at']},
+      {n:'DIM_DECISION',c:[12,184,122],d:'Dimension décisions — journal décisionnel',
+       cols:['decision_id (PK)','decision_text','decided_by FK','decided_at','impact_scope','impact_score','validated']},
+    ];
+
+    const colW=(PW-M*2)/tables.length;
+    tables.forEach((t,i)=>{
+      const x=M+i*colW;
+      pdf.setFillColor(...t.c,0.15);pdf.roundedRect(x,y,colW-2,PH-y-20,2,2,'F');
+      pdf.setFillColor(...t.c);pdf.roundedRect(x,y,colW-2,6,2,2,'F');
+      pdf.setTextColor(214,232,255);pdf.setFontSize(8);pdf.setFont('helvetica','bold');
+      pdf.text(t.n,x+3,y+5);
+      pdf.setFontSize(7);pdf.setFont('helvetica','italic');pdf.setTextColor(168,203,250);
+      const descLines=pdf.splitTextToSize(t.d,colW-6);
+      pdf.text(descLines,x+3,y+12);
+      let cy2=y+12+descLines.length*4+3;
+      pdf.setDrawColor(...t.c,0.3);pdf.setLineWidth(.2);pdf.line(x+3,cy2,x+colW-5,cy2);cy2+=5;
+      t.cols.forEach(col=>{
+        if(cy2>PH-20)return;
+        const isPK=col.includes('(PK)'),isFK=col.includes(' FK');
+        if(isPK)pdf.setTextColor(245,200,66);
+        else if(isFK)pdf.setTextColor(255,122,82);
+        else pdf.setTextColor(168,203,250);
+        pdf.setFontSize(7);pdf.setFont('helvetica',isPK?'bold':'normal');
+        pdf.text('  '+(isPK?'🔑 ':isFK?'🔗 ':'  ')+col.replace(' FK','').replace(' (PK)',''),x+3,cy2);
+        cy2+=5.5;
+      });
+    });
+
+    /* KPI liste */
+    const newKPIs=[
+      'Taux de résolution des annotations (resolved/total)',
+      'Criticité moyenne des risques signalés',
+      'Délai moyen observation → résolution (jours)',
+      "Taux d'application des recommandations (applied/proposed)",
+      'Score d\'impact moyen par projet',
+      'Volume d\'annotations par auteur (contribution DSS)',
+    ];
+    pdf.setFontSize(7);pdf.setFont('helvetica','bold');pdf.setTextColor(30,111,217);
+    pdf.text('→ Nouveaux KPI DSS activés par ce modèle :',M,PH-18);
+    pdf.setFont('helvetica','normal');pdf.setTextColor(91,163,245);
+    pdf.text(newKPIs.map((k,i)=>`${i+1}. ${k}`).join('   '),M,PH-13,{maxWidth:PW-M*2});
+
+    pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.setTextColor(74,106,154);
+    pdf.text('Page 3/3 · Modèle Physique · 2 Facts + 8 Dimensions · Galaxy Schema DSS',M,PH-6);
+    pdf.text('KPI Hub · PFE 2025–2026',PW-M,PH-6,{align:'right'});
+
+    pdf.save('data-warehouse-galaxy-schema-'+new Date().toISOString().slice(0,10)+'.pdf');
+    toast('PDF exporté — 3 pages haute qualité !');
+  }catch(e){console.error(e);toast('Erreur PDF : '+e.message,'⚠');}
+}
+
+/* ══════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════ */
+(function(){
+  initFilters();updateKPIs();render();
+  drawClassicSchema();
+  toast('Data Warehouse · Galaxy Schema v2.0 · 2 facts · 8 dimensions','🗄');
+})();
+</script>
+</body>
+</html>

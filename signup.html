@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créer un compte — KPI Hub</title>
+
+<!-- EmailJS SDK -->
+<!-- EmailJS retiré — remplacé par Resend.com -->
+<!-- Fonts imported via auth.css -->
+
+<link rel="stylesheet" href="auth.css">
+</head>
+<body>
+
+<!-- ── Video Background ─────────────────────────────────── -->
+<div class="video-bg">
+  <!-- Same video as login for consistency. Replace src as desired. -->
+  <video
+    autoplay
+    muted
+    loop
+    playsinline
+    src="https://videos.pexels.com/video-files/3129671/3129671-uhd_2560_1440_30fps.mp4"
+  ></video>
+</div>
+<div class="overlay"></div>
+<div class="grid"></div>
+
+<!-- ── Card ─────────────────────────────────────────────── -->
+<div class="card">
+
+  <!-- ✅ Logo links back to login -->
+  <a class="logo" href="login.html">
+    <div class="logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg>
+    </div>
+    <span class="logo-text">KPI <em>Hub</em></span>
+  </a>
+
+  <h2>Créer un compte</h2>
+  <p class="sub" id="stepLabel">Étape 1 — Informations</p>
+
+  <!-- Step progress bar -->
+  <div class="steps">
+    <div class="step active" id="s1"></div>
+    <div class="step" id="s2"></div>
+    <div class="step" id="s3"></div>
+  </div>
+
+  <!-- Error banner -->
+  <div class="global-err" id="globalErr"><span>⛔</span><span id="globalErrText"></span></div>
+
+  <!-- ══ STEP 1: Informations ══ -->
+  <div id="step1">
+    <div class="field">
+      <label>Adresse email</label>
+      <div class="field-row">
+        <input type="email" id="email" placeholder="vous@exemple.com" oninput="validateEmail()" autocomplete="email">
+      </div>
+      <div class="field-msg" id="emailMsg"></div>
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <div class="field-row">
+        <input type="password" id="password" placeholder="Minimum 6 caractères" oninput="validatePass()" style="padding-right:44px;" autocomplete="new-password">
+        <span class="eye" id="eye1" onclick="toggleEye('password','eye1')">👁</span>
+      </div>
+      <div class="field-msg" id="passMsg"></div>
+    </div>
+    <div class="field">
+      <label>Confirmer le mot de passe</label>
+      <div class="field-row">
+        <input type="password" id="confirm" placeholder="Répéter le mot de passe" oninput="validateConfirm()" style="padding-right:44px;" autocomplete="new-password">
+        <span class="eye" id="eye2" onclick="toggleEye('confirm','eye2')">👁</span>
+      </div>
+      <div class="field-msg" id="confirmMsg"></div>
+    </div>
+    <button class="btn" id="btn1" onclick="goStep2()">Continuer →</button>
+  </div>
+
+  <!-- ══ STEP 2: Envoyer le code ══ -->
+  <div id="step2" style="display:none;">
+    <div class="info-box show" id="infoBox">
+      Un code de vérification à 6 chiffres va être envoyé à<br>
+      <strong id="emailDisplay" style="color:#e8a0b0;font-weight:600;"></strong>
+    </div>
+    <button class="btn" id="btn2" onclick="sendCode()">📧 Envoyer le code par email</button>
+    <p style="text-align:center;font-size:11px;color:rgba(255,255,255,.22);margin-top:14px;">
+      Vérifiez aussi vos spams / courrier indésirable
+    </p>
+  </div>
+
+  <!-- ══ STEP 3: Vérifier le code ══ -->
+  <div id="step3" style="display:none;">
+    <p style="text-align:center;font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px;">
+      Code envoyé à <span style="color:#e8a0b0;" id="emailDisplay3"></span>
+    </p>
+    <div class="code-wrap">
+      <input class="code-box" maxlength="1" data-idx="0" oninput="codeInput(this)" onkeydown="codeKey(event,this)" inputmode="numeric">
+      <input class="code-box" maxlength="1" data-idx="1" oninput="codeInput(this)" onkeydown="codeKey(event,this)" inputmode="numeric">
+      <input class="code-box" maxlength="1" data-idx="2" oninput="codeInput(this)" onkeydown="codeKey(event,this)" inputmode="numeric">
+      <input class="code-box" maxlength="1" data-idx="3" oninput="codeInput(this)" onkeydown="codeKey(event,this)" inputmode="numeric">
+      <input class="code-box" maxlength="1" data-idx="4" oninput="codeInput(this)" onkeydown="codeKey(event,this)" inputmode="numeric">
+      <input class="code-box" maxlength="1" data-idx="5" oninput="codeInput(this)" onkeydown="codeKey(event,this)" inputmode="numeric">
+    </div>
+    <div class="resend">
+      <button id="resendBtn" onclick="resendCode()" disabled>Renvoyer le code</button>
+      <span class="resend-timer" id="resendTimer"></span>
+    </div>
+    <button class="btn" id="btn3" onclick="verifyCode()">✓ Créer mon compte</button>
+  </div>
+
+  <!-- ══ STEP 4 (Success state) ══ -->
+  <div id="step4" style="display:none;">
+    <div class="success-icon">✓</div>
+    <p style="text-align:center;color:rgba(74,222,128,.9);font-size:15px;font-weight:600;margin-bottom:8px;">Compte créé avec succès !</p>
+    <p style="text-align:center;font-size:12px;color:rgba(255,255,255,.4);margin-bottom:20px;">Redirection vers la page de connexion…</p>
+    <div style="height:3px;border-radius:2px;background:rgba(74,222,128,.15);overflow:hidden;">
+      <div id="successBar" style="height:100%;width:0%;background:linear-gradient(90deg,#4ade80,#22c55e);border-radius:2px;transition:width 1.4s linear;"></div>
+    </div>
+  </div>
+
+  <!-- ✅ FIXED: "Se connecter" link properly points to login.html -->
+  <div class="link" id="loginLink">
+    Déjà un compte ? <a href="login.html">Se connecter</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Variables globales ────────────────────────────────────────────────
+let _generatedCode = '';
+let _resendCount   = 0;
+let _resendInterval = null;
+let _verifyLocked  = false;
+
+/* ════════════════════════════════════════════════════════════════
+   CONFIGURATION EMAIL — Resend.com
+   1. Créez un compte gratuit : https://resend.com  (3 000 emails/mois free)
+   2. Ajoutez et vérifiez votre domaine dans "Domains"
+      → Pour tester sans domaine : utilisez from = onboarding@resend.dev
+        mais le destinataire DOIT être l'email vérifié du compte Resend
+   3. Créez une API Key : Settings > API Keys > Create API Key
+   4. Remplacez RESEND_API_KEY ci-dessous par votre vraie clé (re_xxxx...)
+════════════════════════════════════════════════════════════════ */
+const RESEND_API_KEY = 'VOTRE_RESEND_API_KEY';  // ← REMPLACER (re_xxxxxxxxx)
+const FROM_EMAIL     = 'onboarding@resend.dev'; // ← votre adresse expéditrice vérifiée
+const DEMO_MODE      = (RESEND_API_KEY === 'VOTRE_RESEND_API_KEY');
+
+// ── Toast ────────────────────────────────────────────────────────────
+function toast(msg, type='ok'){
+  const t = document.getElementById('toast');
+  t.innerHTML = `<span>${type==='ok'?'✓':'⚠'}</span> ${msg}`;
+  t.style.borderColor = type==='ok' ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)';
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), 3800);
+}
+
+// ── Erreur globale ────────────────────────────────────────────────────
+function showGlobal(msg){
+  document.getElementById('globalErrText').textContent = msg;
+  document.getElementById('globalErr').classList.add('show');
+}
+function hideGlobal(){ document.getElementById('globalErr').classList.remove('show'); }
+
+// ── Champs ────────────────────────────────────────────────────────────
+function setField(id, msgId, state, msg){
+  const inp = document.getElementById(id);
+  const msgEl = document.getElementById(msgId);
+  inp.classList.remove('ok','err');
+  msgEl.classList.remove('show','error','success');
+  if(state){
+    inp.classList.add(state==='ok'?'ok':'err');
+    msgEl.textContent = msg;
+    msgEl.classList.add('show', state==='ok'?'success':'error');
+  }
+}
+function toggleEye(inputId, eyeId){
+  const inp = document.getElementById(inputId);
+  const eye = document.getElementById(eyeId);
+  inp.type = inp.type==='password' ? 'text' : 'password';
+  if(eye) eye.textContent = inp.type==='password' ? '👁' : '🙈';
+}
+
+// ── Navigation étapes ─────────────────────────────────────────────────
+function setStep(n){
+  ['step1','step2','step3'].forEach((id,i)=>{
+    document.getElementById(id).style.display = i+1===n ? 'block' : 'none';
+  });
+  const labels = ['Étape 1 — Informations','Étape 2 — Confirmation email','Étape 3 — Code de vérification'];
+  document.getElementById('stepLabel').textContent = labels[n-1];
+  document.getElementById('loginLink').style.display = (n===2||n===3) ? 'none' : '';
+  ['s1','s2','s3'].forEach((id,i)=>{
+    const el = document.getElementById(id);
+    el.className = 'step' + (i+1<n?' done':i+1===n?' active':'');
+  });
+}
+
+// ── Validation étape 1 ────────────────────────────────────────────────
+function validateEmail(){
+  const v = document.getElementById('email').value.trim();
+  if(!v){setField('email','emailMsg',null,null);return false;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){setField('email','emailMsg','err','Email invalide');return false;}
+  setField('email','emailMsg','ok','Email valide ✓');
+  return true;
+}
+function validatePass(){
+  const v = document.getElementById('password').value;
+  if(!v){setField('password','passMsg',null,null);return false;}
+  if(v.length<6){setField('password','passMsg','err','Minimum 6 caractères');return false;}
+  setField('password','passMsg','ok','Mot de passe valide ✓');
+  validateConfirm();
+  return true;
+}
+function validateConfirm(){
+  const p = document.getElementById('password').value;
+  const c = document.getElementById('confirm').value;
+  if(!c){setField('confirm','confirmMsg',null,null);return false;}
+  if(p!==c){setField('confirm','confirmMsg','err','Les mots de passe ne correspondent pas');return false;}
+  setField('confirm','confirmMsg','ok','Confirmation correcte ✓');
+  return true;
+}
+
+function goStep2(){
+  hideGlobal();
+  if(!validateEmail()||!validatePass()||!validateConfirm()) return;
+  const email = document.getElementById('email').value.trim();
+  const users = JSON.parse(localStorage.getItem('kpi_users')||'[]');
+  if(users.find(u=>u.email===email)){
+    showGlobal('Un compte avec cet email existe déjà'); return;
+  }
+  document.getElementById('emailDisplay').textContent = email;
+  setStep(2);
+}
+
+// ── Génération du code ─────────────────────────────────────────────────
+function generateCode(){ return String(Math.floor(100000 + Math.random()*900000)); }
+
+// ── Envoi du code par email (Resend.com) ──────────────────────────────
+async function sendCode() {
+  const btn   = document.getElementById('btn2');
+  const email = document.getElementById('email').value.trim();
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Envoi en cours…';
+  hideGlobal();
+
+  _generatedCode = generateCode();
+  sessionStorage.setItem('kpi_signup_code',   _generatedCode);
+  sessionStorage.setItem('kpi_signup_expiry', Date.now() + 10*60*1000);
+  sessionStorage.setItem('kpi_signup_email',  email);
+
+  // ── MODE DÉMO (clé API non configurée) ────────────────────────────
+  if (DEMO_MODE) {
+    await new Promise(r => setTimeout(r, 900));
+    toast(`Mode démo — Code : ${_generatedCode}  (configurez Resend pour envoyer des vrais emails)`, '⚠');
+    document.getElementById('emailDisplay3').textContent = email;
+    setStep(3);
+    startResendTimer();
+    btn.disabled = false;
+    btn.innerHTML = '📧 Envoyer le code par email';
+    return;
+  }
+
+  // ── ENVOI RÉEL via Resend.com API ─────────────────────────────────
+  try {
+    const resp = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: `KPI Hub <${FROM_EMAIL}>`,
+        to:   [email],
+        subject: `[KPI Hub] Code de vérification : ${_generatedCode}`,
+        html: `<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background:#f5f0f2;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr><td align="center" style="padding:40px 20px;">
+    <table width="480" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+      <tr><td style="background:linear-gradient(135deg,#800020,#a3254a);padding:28px 32px;">
+        <h1 style="color:white;margin:0;font-size:22px;font-weight:600;">KPI Hub</h1>
+        <p style="color:rgba(255,255,255,0.75);margin:4px 0 0;font-size:13px;">Vérification de votre compte</p>
+      </td></tr>
+      <tr><td style="padding:36px 32px;">
+        <p style="color:#333;font-size:15px;line-height:1.6;margin:0 0 24px;">
+          Bonjour,<br><br>
+          Voici votre code de vérification pour créer votre compte KPI Hub :
+        </p>
+        <div style="background:#fff5f7;border:2px dashed #800020;border-radius:12px;padding:28px;text-align:center;margin-bottom:28px;">
+          <span style="font-size:44px;font-weight:800;letter-spacing:16px;color:#800020;font-family:'Courier New',monospace;">
+            ${_generatedCode}
+          </span>
+        </div>
+        <p style="color:#888;font-size:12px;line-height:1.8;margin:0;">
+          ⏰ Ce code est valable <strong>10 minutes</strong>.<br>
+          🔒 Si vous n'avez pas demandé ce code, ignorez cet email.
+        </p>
+      </td></tr>
+      <tr><td style="background:#fafafa;padding:16px 32px;border-top:1px solid #f0e8ea;">
+        <p style="color:#bbb;font-size:11px;margin:0;text-align:center;">
+          © KPI Hub — Ne pas répondre à cet email
+        </p>
+      </td></tr>
+    </table>
+  </td></tr>
+</table>
+</body></html>`
+      })
+    });
+
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      throw new Error(errData.message || `Erreur HTTP ${resp.status}`);
+    }
+
+    toast('Code envoyé ! Vérifiez votre boîte mail 📬');
+    document.getElementById('emailDisplay3').textContent = email;
+    setStep(3);
+    startResendTimer();
+
+  } catch(err) {
+    console.error('Email send error:', err);
+    showGlobal(`Erreur d'envoi : ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '📧 Envoyer le code par email';
+  }
+}
+
+// ── Timer renvoi ──────────────────────────────────────────────────────
+function startResendTimer(){
+  const btn = document.getElementById('resendBtn');
+  const timer = document.getElementById('resendTimer');
+  btn.disabled = true;
+  let secs = 60;
+  if(_resendInterval) clearInterval(_resendInterval);
+  _resendInterval = setInterval(()=>{
+    secs--;
+    timer.textContent = `(${secs}s)`;
+    if(secs<=0){ clearInterval(_resendInterval); btn.disabled=false; timer.textContent=''; }
+  },1000);
+}
+async function resendCode(){
+  _resendCount++;
+  if(_resendCount>3){ toast('Trop de tentatives. Rechargez la page.','⚠'); return; }
+  await sendCode();
+}
+
+// ── Saisie code à 6 chiffres ──────────────────────────────────────────
+function codeInput(el){
+  el.value = el.value.replace(/\D/g,'');
+  el.classList.toggle('filled', el.value.length>0);
+  el.classList.remove('error-shake');
+  if(el.value && +el.dataset.idx < 5){
+    document.querySelector(`[data-idx="${+el.dataset.idx+1}"]`).focus();
+  }
+  const boxes = document.querySelectorAll('.code-box');
+  if([...boxes].every(b=>b.value.length===1)) setTimeout(verifyCode, 200);
+}
+function codeKey(e, el){
+  if(e.key==='Backspace' && !el.value && +el.dataset.idx>0){
+    document.querySelector(`[data-idx="${+el.dataset.idx-1}"]`).focus();
+  }
+  if((e.ctrlKey||e.metaKey) && e.key==='v'){
+    e.preventDefault();
+    navigator.clipboard.readText().then(text=>{
+      const digits = text.replace(/\D/g,'').slice(0,6);
+      if(digits.length===6){
+        document.querySelectorAll('.code-box').forEach((box,i)=>{
+          box.value=digits[i]||'';
+          box.classList.toggle('filled',!!box.value);
+        });
+        setTimeout(verifyCode, 200);
+      }
+    }).catch(()=>{});
+  }
+}
+
+// ── Vérification et création du compte ────────────────────────────────
+function verifyCode(){
+  if(_verifyLocked) return;
+  const boxes   = [...document.querySelectorAll('.code-box')];
+  const entered = boxes.map(b=>b.value).join('');
+  if(entered.length < 6){ showGlobal('Entrez les 6 chiffres du code'); return; }
+
+  const stored = sessionStorage.getItem('kpi_signup_code');
+  const expiry = Number(sessionStorage.getItem('kpi_signup_expiry')||0);
+  const email  = sessionStorage.getItem('kpi_signup_email');
+
+  if(Date.now() > expiry){
+    showGlobal('Code expiré. Cliquez "Renvoyer le code".');
+    boxes.forEach(b=>{b.value='';b.classList.remove('filled');});
+    boxes[0].focus();
+    return;
+  }
+  if(entered !== stored){
+    showGlobal('Code incorrect. Vérifiez votre email.');
+    boxes.forEach(b=>b.classList.add('error-shake'));
+    setTimeout(()=>{
+      boxes.forEach(b=>{b.classList.remove('error-shake');b.value='';b.classList.remove('filled');});
+      boxes[0].focus();
+    }, 400);
+    return;
+  }
+
+  _verifyLocked = true;
+  const password = document.getElementById('password').value;
+  const users    = JSON.parse(localStorage.getItem('kpi_users')||'[]');
+  users.push({
+    email, password,
+    accessCode: stored,
+    name: email.split('@')[0],
+    createdAt: Date.now(),
+    verified: true
+  });
+  localStorage.setItem('kpi_users', JSON.stringify(users));
+  sessionStorage.clear();
+
+  toast('Compte créé avec succès ! Redirection…');
+  setTimeout(()=> window.location.href='login.html', 1400);
+}
+
+// ── Touche Entrée sur l'étape 1 ───────────────────────────────────────
+document.addEventListener('keydown', e=>{
+  if(e.key==='Enter'){
+    if(document.getElementById('step1').style.display !== 'none') goStep2();
+  }
+});
+</script>
+</body>
+</html>

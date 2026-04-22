@@ -1,0 +1,317 @@
+<!DOCTYPE html><html lang="fr" data-theme="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>KPI Overview — KPI Hub</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"><style>
+:root{--burg:#800020;--burg2:#a3254a;--rose:#c96e80;--teal:#2a9d8f;--blue:#3a86b8;--gold:#c9a84c;--violet:#7b5ea7;--ease:cubic-bezier(.4,0,.2,1);}
+[data-theme="dark"]{--bg:#09060a;--surf:rgba(255,255,255,.045);--surf2:rgba(255,255,255,.07);--border:rgba(255,255,255,.09);--text:#f0ebe6;--text2:#b8a9a0;--text3:#6e5e58;--nav-bg:rgba(9,6,10,.96);--sh:0 2px 20px rgba(0,0,0,.45);--ibg:rgba(255,255,255,.05);--badge:rgba(128,0,32,.25);--badge-c:#e8a0b0;--stripe:rgba(255,255,255,.02);}
+[data-theme="light"]{--bg:#faf9f4;--surf:#fff;--surf2:#f7f5ee;--border:rgba(128,0,32,.12);--text:#1a1210;--text2:#6b5c54;--text3:#a89991;--nav-bg:rgba(250,249,244,.96);--sh:0 2px 14px rgba(26,18,16,.06);--ibg:#f7f5ee;--badge:rgba(128,0,32,.08);--badge-c:#800020;--stripe:rgba(128,0,32,.03);}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .4s,color .4s;}
+body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 80% 50% at 10% -5%,rgba(128,0,32,.05) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 90% 105%,rgba(128,0,32,.04) 0%,transparent 50%);}
+nav{position:sticky;top:0;z-index:200;height:56px;background:var(--nav-bg);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;transition:background .4s;}
+.nl{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:24px;flex-shrink:0;}
+.nm{width:30px;height:30px;border-radius:8px;background:var(--burg);display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(128,0,32,.38);}
+.nm svg{width:15px;height:15px;fill:white;}
+.nt{font-family:"Cormorant Garamond",serif;font-size:17px;font-weight:500;color:var(--text);}
+.nt em{color:var(--burg);font-style:normal;}
+.nlinks{display:flex;align-items:center;gap:2px;flex:1;}
+.nlink{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:9px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;transition:background .2s,color .2s;}
+.nlink:hover{background:var(--surf2);color:var(--text);}
+.nlink.active{background:var(--burg);color:white;}
+.nr{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.tog{display:flex;align-items:center;gap:5px;cursor:pointer;padding:4px;user-select:none;}
+.togtr{position:relative;width:34px;height:19px;background:rgba(255,255,255,.12);border-radius:10px;border:1px solid var(--border);transition:background .3s;flex-shrink:0;}
+.togtr::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#c96e80;transition:transform .3s var(--ease);box-shadow:0 1px 3px rgba(0,0,0,.2);}
+[data-theme="light"] .togtr::after{background:#800020;transform:translateX(15px);}
+.togic{font-size:12px;}
+.wrap{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:32px 32px 80px;}
+.sdiv{display:flex;align-items:center;gap:12px;margin:28px 0 18px;font-family:"DM Mono",monospace;font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--text3);}
+.sdiv::after{content:"";flex:1;height:1px;background:var(--border);}
+.sdot{width:6px;height:6px;border-radius:50%;background:var(--burg);box-shadow:0 0 6px rgba(128,0,32,.5);flex-shrink:0;}
+.card{background:var(--surf);border:1px solid var(--border);border-radius:14px;box-shadow:var(--sh);transition:background .4s,border-color .4s;}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px;}
+.kcard{padding:20px;position:relative;overflow:hidden;cursor:default;transition:transform .3s,box-shadow .3s;}
+.kcard::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--burg),var(--rose));opacity:0;transition:opacity .3s;}
+.kcard:hover{transform:translateY(-3px);}
+.kcard:hover::before{opacity:1;}
+.kicon{width:32px;height:32px;border-radius:8px;background:var(--badge);display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:12px;}
+.klbl{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;}
+.kval{font-family:"Cormorant Garamond",serif;font-size:34px;font-weight:300;line-height:1;color:var(--text);letter-spacing:-.02em;}
+.ksub{font-size:10px;color:var(--text3);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ktip{font-size:10px;color:var(--rose);margin-top:3px;}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.cgrid.full{grid-template-columns:1fr;}
+.ccard{padding:22px;}
+.chead{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
+.ctitle{font-family:"Cormorant Garamond",serif;font-size:17px;font-weight:500;color:var(--text);}
+.csub{font-size:11px;color:var(--text3);margin-top:2px;}
+.cbadge{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:20px;background:var(--badge);color:var(--badge-c);white-space:nowrap;}
+canvas{max-height:300px;}
+.fbar{padding:13px 17px;display:flex;flex-wrap:wrap;gap:11px;align-items:flex-end;margin-bottom:18px;}
+.fg{display:flex;flex-direction:column;gap:4px;min-width:115px;}
+.fg label{font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text3);font-family:"DM Mono",monospace;}
+.fg select,.fg input{padding:7px 10px;border-radius:9px;border:1px solid var(--border);background:var(--ibg);color:var(--text);font-family:"DM Sans",sans-serif;font-size:12px;outline:none;cursor:pointer;transition:border-color .2s;-webkit-appearance:none;appearance:none;}
+.fg select option{background:#1c1515;}
+[data-theme="light"] .fg select option{background:#fff;}
+.fg select:focus{border-color:var(--burg);box-shadow:0 0 0 3px rgba(128,0,32,.1);}
+.fright{margin-left:auto;display:flex;align-items:flex-end;gap:8px;}
+.rc{font-size:11px;color:var(--text3);white-space:nowrap;padding-bottom:2px;}
+.rc strong{color:var(--text);font-weight:600;}
+.rbtn,.ebtn{padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;transition:all .2s;font-family:"DM Sans",sans-serif;}
+.rbtn:hover{color:var(--burg);border-color:var(--burg);}
+.ebtn{background:var(--burg);color:white;border-color:var(--burg);}
+.ebtn:hover{opacity:.85;}
+.tw{overflow-x:auto;}
+.thead{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.thead h3{font-family:"Cormorant Garamond",serif;font-size:17px;font-weight:500;color:var(--text);}
+.thead p{font-size:11px;color:var(--text3);margin-top:2px;}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px;}
+thead tr{background:var(--surf2);}
+th{text-align:left;padding:9px 13px;font-family:"DM Mono",monospace;font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;}
+th:hover{color:var(--burg);}
+td{padding:9px 13px;color:var(--text2);border-bottom:1px solid rgba(255,255,255,.04);}
+tr:nth-child(even) td{background:var(--stripe);}
+tr:hover td{background:rgba(128,0,32,.07);color:var(--text);}
+tr:last-child td{border-bottom:none;}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;}
+.bdone{background:rgba(34,197,94,.15);color:#4ade80;}
+.bprog{background:rgba(128,0,32,.15);color:#e8a0b0;}
+.bpend{background:rgba(201,168,76,.15);color:#c9a84c;}
+.both{background:rgba(110,94,88,.15);color:#a89991;}
+.pbar-wrap{display:flex;align-items:center;gap:6px;}
+.pbar{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;}
+.pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--burg),var(--rose));}
+.toast{position:fixed;top:18px;right:18px;z-index:9999;background:rgba(9,6,10,.97);border:1px solid rgba(255,255,255,.1);color:white;padding:10px 16px;border-radius:11px;font-size:12px;backdrop-filter:blur(12px);display:flex;align-items:center;gap:8px;transform:translateY(-60px);opacity:0;transition:all .38s var(--ease);pointer-events:none;max-width:280px;}
+.toast.show{transform:translateY(0);opacity:1;}
+@media(max-width:860px){.cgrid{grid-template-columns:1fr !important;}.wrap{padding:16px 16px 60px;}}
+@media(max-width:640px){.kgrid{grid-template-columns:1fr 1fr;}.nlinks .nlink:not(.active){display:none;}}
+</style></head><body><nav>
+  <a class="nl" href="dashboard.html">
+    <div class="nm"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
+    <span class="nt">KPI <em>Hub</em></span>
+  </a>
+  <div class="nlinks"><a class="nlink active" href="kpi.html">&#128202; KPI</a>
+<a class="nlink" href="dashboard.html">&#128200; Dashboard</a>
+<a class="nlink" href="data_warehouse.html">&#128452; Data Warehouse</a>
+</div>
+  <div class="nr">
+    <div class="tog" onclick="toggleTheme()">
+      <span class="togic">&#9728;&#65039;</span><div class="togtr"></div><span class="togic">&#127769;</span>
+    </div>
+  </div>
+</nav><div class="toast" id="toast"></div><div class="wrap">
+<div class="sdiv"><div class="sdot"></div>Indicateurs clés</div>
+<div class="kgrid">
+  <div class="card kcard" title="Somme de toutes les entrées Solidtime">
+    <div class="kicon">&#9201;</div><div class="klbl">Total Heures</div>
+    <div class="kval">22,993</div><div class="ksub">16,968 entrées</div>
+  </div>
+  <div class="card kcard">
+    <div class="kicon">&#128101;</div><div class="klbl">Membres actifs</div>
+    <div class="kval">20</div><div class="ksub">Top : Oliver Hansen</div>
+  </div>
+  <div class="card kcard">
+    <div class="kicon">&#128193;</div><div class="klbl">Projets</div>
+    <div class="kval">12</div><div class="ksub">Top : WEB</div>
+  </div>
+  <div class="card kcard">
+    <div class="kicon">&#127243;</div><div class="klbl">Tickets Jira</div>
+    <div class="kval">1452</div><div class="ksub">issues trackées</div>
+  </div>
+  <div class="card kcard" title="% tickets où réel dépasse estimé">
+    <div class="kicon">&#128202;</div><div class="klbl">Taux dépassement</div>
+    <div class="kval">46.1%</div>
+    <div class="ksub">sur 256 tickets</div>
+    <div class="ktip">Écart moy : +66.3% / -0.15h</div>
+  </div>
+  <div class="card kcard">
+    <div class="kicon">&#9878;&#65039;</div><div class="klbl">Médiane écart</div>
+    <div class="kval">+0%</div>
+    <div class="ksub">estimation vs réel</div>
+  </div>
+  <div class="card kcard" title="Heures Test / Heures Développement">
+    <div class="kicon">&#129514;</div><div class="klbl">Ratio Test/Dev</div>
+    <div class="kval">21.8%</div>
+    <div class="ksub">2641h test · 12087h dev</div>
+  </div>
+  <div class="card kcard" title="Heures réunion / heures d'exécution">
+    <div class="kicon">&#128172;</div><div class="klbl">Réunion/Exécution</div>
+    <div class="kval">30.4%</div>
+    <div class="ksub">5367h réunion sur 22993h total</div>
+  </div>
+</div>
+
+<div class="sdiv"><div class="sdot"></div>Productivité</div>
+<div class="cgrid">
+  <div class="card ccard"><div class="chead"><div>
+    <div class="ctitle">Top Utilisateurs</div><div class="csub">Heures totales par membre</div>
+  </div><span class="cbadge">Top 20</span></div><canvas id="cUser"></canvas></div>
+  <div class="card ccard"><div class="chead"><div>
+    <div class="ctitle">Heures par Projet</div><div class="csub">Distribution du volume</div>
+  </div><span class="cbadge">Projets</span></div><canvas id="cProj"></canvas></div>
+</div>
+
+<div class="sdiv"><div class="sdot"></div>Qualité &amp; Activité</div>
+<div class="cgrid">
+  <div class="card ccard"><div class="chead"><div>
+    <div class="ctitle">Top Tags Solidtime</div><div class="csub">Heures par activité</div>
+  </div><span class="cbadge">Tags</span></div><canvas id="cTags"></canvas></div>
+  <div class="card ccard"><div class="chead"><div>
+    <div class="ctitle">Issue Type Jira</div><div class="csub">Heures par type (tickets liés)</div>
+  </div><span class="cbadge">Jira</span></div><canvas id="cItype"></canvas></div>
+</div>
+
+<div class="sdiv"><div class="sdot"></div>Criticité &amp; Tendances</div>
+<div class="cgrid">
+  <div class="card ccard"><div class="chead"><div>
+    <div class="ctitle">Heures par Criticité</div><div class="csub">Critique · Majeur · Medium · Mineur</div>
+  </div><span class="cbadge">Criticité</span></div><canvas id="cCrit"></canvas></div>
+  <div class="card ccard"><div class="chead"><div>
+    <div class="ctitle">Activité Mensuelle</div><div class="csub">Time series mois par mois</div>
+  </div><span class="cbadge">Tendance</span></div><canvas id="cMonth"></canvas></div>
+</div>
+
+<div class="sdiv"><div class="sdot"></div>Estimation vs Réel — Top 30 tickets</div>
+<div class="card">
+  <div class="thead"><div>
+    <h3>Précision des estimations</h3>
+    <p>Tickets avec Original Estimate Jira + heures Solidtime · Écart moy : +66.3% · Dépassement : 46.1%</p>
+  </div></div>
+  <div class="tw"><table>
+    <thead><tr>
+      <th>Issue Key</th><th>Type</th>
+      <th title="Original Estimate Jira en heures">Estimé (h)</th>
+      <th title="Heures réelles Solidtime">Réel (h)</th>
+      <th>Écart %</th>
+    </tr></thead>
+    <tbody><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13769</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>8.0h</td><td style='font-family:DM Mono,monospace;'>4.2h</td><td><span class='badge bdone'>-46.9%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13754</td><td>Task</td><td style='font-family:DM Mono,monospace;'>32.0h</td><td style='font-family:DM Mono,monospace;'>10.1h</td><td><span class='badge bdone'>-68.5%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13752</td><td>Bug</td><td style='font-family:DM Mono,monospace;'>1.0h</td><td style='font-family:DM Mono,monospace;'>1.2h</td><td><span class='badge bprog'>+25.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13737</td><td>Technical Task</td><td style='font-family:DM Mono,monospace;'>8.0h</td><td style='font-family:DM Mono,monospace;'>27.0h</td><td><span class='badge bprog'>+237.5%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13735</td><td>Support</td><td style='font-family:DM Mono,monospace;'>0.2h</td><td style='font-family:DM Mono,monospace;'>0.2h</td><td><span class='badge bprog'>+48.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13733</td><td>Support</td><td style='font-family:DM Mono,monospace;'>0.2h</td><td style='font-family:DM Mono,monospace;'>0.2h</td><td><span class='badge bprog'>+30.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13732</td><td>Support</td><td style='font-family:DM Mono,monospace;'>0.2h</td><td style='font-family:DM Mono,monospace;'>0.2h</td><td><span class='badge bprog'>+48.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13728</td><td>Task</td><td style='font-family:DM Mono,monospace;'>16.0h</td><td style='font-family:DM Mono,monospace;'>19.1h</td><td><span class='badge bprog'>+19.2%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13725</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>2.0h</td><td style='font-family:DM Mono,monospace;'>0.8h</td><td><span class='badge bdone'>-60.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13722</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>3.0h</td><td style='font-family:DM Mono,monospace;'>3.2h</td><td><span class='badge bprog'>+5.7%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13721</td><td>Bug</td><td style='font-family:DM Mono,monospace;'>1.5h</td><td style='font-family:DM Mono,monospace;'>1.8h</td><td><span class='badge bprog'>+16.7%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13711</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>3.0h</td><td style='font-family:DM Mono,monospace;'>1.8h</td><td><span class='badge bdone'>-41.7%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13706</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>0.5h</td><td style='font-family:DM Mono,monospace;'>1.4h</td><td><span class='badge bprog'>+184.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13705</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>2.0h</td><td style='font-family:DM Mono,monospace;'>2.3h</td><td><span class='badge bprog'>+16.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13702</td><td>Support</td><td style='font-family:DM Mono,monospace;'>0.2h</td><td style='font-family:DM Mono,monospace;'>0.5h</td><td><span class='badge bprog'>+100.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13700</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>2.0h</td><td style='font-family:DM Mono,monospace;'>1.4h</td><td><span class='badge bdone'>-32.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13698</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>1.0h</td><td style='font-family:DM Mono,monospace;'>0.7h</td><td><span class='badge bdone'>-33.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13693</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>3.0h</td><td style='font-family:DM Mono,monospace;'>1.2h</td><td><span class='badge bdone'>-61.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13691</td><td>Sub-task</td><td style='font-family:DM Mono,monospace;'>8.0h</td><td style='font-family:DM Mono,monospace;'>3.6h</td><td><span class='badge bdone'>-55.2%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13446</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>4.0h</td><td style='font-family:DM Mono,monospace;'>2.2h</td><td><span class='badge bdone'>-45.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13330</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>1.0h</td><td style='font-family:DM Mono,monospace;'>0.4h</td><td><span class='badge bdone'>-56.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13328</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>1.5h</td><td style='font-family:DM Mono,monospace;'>0.5h</td><td><span class='badge bdone'>-66.7%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13325</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>3.0h</td><td style='font-family:DM Mono,monospace;'>2.1h</td><td><span class='badge bdone'>-31.7%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13316</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>2.0h</td><td style='font-family:DM Mono,monospace;'>3.2h</td><td><span class='badge bprog'>+62.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-13312</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>1.0h</td><td style='font-family:DM Mono,monospace;'>0.8h</td><td><span class='badge bdone'>-18.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-12961</td><td>Bug</td><td style='font-family:DM Mono,monospace;'>0.2h</td><td style='font-family:DM Mono,monospace;'>0.3h</td><td><span class='badge bdone'>0.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-12959</td><td>Bug</td><td style='font-family:DM Mono,monospace;'>0.2h</td><td style='font-family:DM Mono,monospace;'>0.3h</td><td><span class='badge bdone'>0.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-12958</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>1.0h</td><td style='font-family:DM Mono,monospace;'>1.9h</td><td><span class='badge bprog'>+94.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-12955</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>1.0h</td><td style='font-family:DM Mono,monospace;'>1.0h</td><td><span class='badge bdone'>0.0%</span></td></tr><tr><td style='font-family:DM Mono,monospace;color:var(--rose);font-size:10px;'>AWA-12951</td><td>Xray Test</td><td style='font-family:DM Mono,monospace;'>5.0h</td><td style='font-family:DM Mono,monospace;'>6.7h</td><td><span class='badge bprog'>+34.4%</span></td></tr></tbody>
+  </table></div>
+</div>
+</div><script>
+function toggleTheme(){
+  var d=document.documentElement;
+  var n=d.getAttribute("data-theme")==="dark"?"light":"dark";
+  d.setAttribute("data-theme",n);localStorage.setItem("kh-theme",n);
+}
+(function(){var t=localStorage.getItem("kh-theme");if(t)document.documentElement.setAttribute("data-theme",t);})();
+
+function showToast(msg,icon){
+  if(!icon)icon="&#10003;";
+  var t=document.getElementById("toast");
+  t.innerHTML="<span>"+icon+"</span> "+msg;
+  t.classList.add("show");clearTimeout(t._t);
+  t._t=setTimeout(function(){t.classList.remove("show");},3200);
+}
+
+/* Chart.js defaults */
+Chart.defaults.font.family="DM Sans,sans-serif";
+Chart.defaults.font.size=11;
+Chart.defaults.color="#a89991";
+Chart.defaults.plugins.legend.labels.usePointStyle=true;
+Chart.defaults.plugins.legend.labels.padding=14;
+Chart.defaults.plugins.legend.labels.boxWidth=8;
+Chart.defaults.plugins.tooltip.backgroundColor="rgba(9,6,10,.94)";
+Chart.defaults.plugins.tooltip.titleFont={family:"Cormorant Garamond,serif",size:13};
+Chart.defaults.plugins.tooltip.bodyFont={family:"DM Sans,sans-serif",size:11};
+Chart.defaults.plugins.tooltip.padding=10;
+Chart.defaults.plugins.tooltip.cornerRadius=8;
+Chart.defaults.scale.grid.color="rgba(128,0,32,0.06)";
+Chart.defaults.scale.border.dash=[4,4];
+
+var C={b:"#800020",b2:"#a3254a",r:"#c96e80",t:"#c9a84c",m:"#2a9d8f",v:"#7b5ea7",g:"#6e5e58",bl:"#3a86b8"};
+var PAL=[C.b,C.b2,C.r,C.t,C.m,C.v,C.bl,"#9a7a60","#e8a0b0","#48cae4"];
+
+/* Animated counter */
+function animNum(id,target,dec){
+  if(!dec)dec=0;
+  var el=document.getElementById(id);if(!el)return;
+  var dur=900,start=performance.now();
+  function f(now){
+    var p=Math.min((now-start)/dur,1),e=1-Math.pow(1-p,3);
+    el.textContent=dec?(target*e).toFixed(dec):Math.round(target*e).toLocaleString();
+    if(p<1)requestAnimationFrame(f);
+  }
+  requestAnimationFrame(f);
+}
+
+/* CSV export helper */
+function csvExport(rows,filename){
+  if(!rows.length)return;
+  var keys=Object.keys(rows[0]);
+  var lines=[keys.join(",")].concat(rows.map(function(r){
+    return keys.map(function(k){
+      var v=r[k];if(v===null||v===undefined)return"";
+      var s=String(v);
+      return(s.indexOf(",")>=0||s.indexOf('"')>=0)?'"'+s.replace(/"/g,'""')+'"':s;
+    }).join(",");
+  }));
+  var blob=new Blob([lines.join("\n")],{type:"text/csv;charset=utf-8;"});
+  var a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download=filename;a.click();
+  showToast("Export CSV t\u00e9l\u00e9charg\u00e9 !");
+}
+
+/* Reusable chart builders */
+function hbar(id,labels,vals){
+  var el=document.getElementById(id);if(!el)return null;
+  return new Chart(el,{
+    type:"bar",
+    data:{labels:labels,datasets:[{data:vals,
+      backgroundColor:labels.map(function(_,i){return PAL[i%PAL.length];}),
+      maxBarThickness:26,borderRadius:5,borderSkipped:"bottom"}]},
+    options:{responsive:true,indexAxis:"y",
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return " "+ctx.parsed.x.toFixed(1)+"h";}}}},
+      scales:{x:{beginAtZero:true,ticks:{callback:function(v){return v+"h";}}},y:{ticks:{font:{size:10}}}}}
+  });
+}
+function vbar(id,labels,vals){
+  var el=document.getElementById(id);if(!el)return null;
+  return new Chart(el,{
+    type:"bar",
+    data:{labels:labels,datasets:[{data:vals,
+      backgroundColor:labels.map(function(_,i){return PAL[i%PAL.length];}),
+      maxBarThickness:34,borderRadius:5,borderSkipped:"bottom"}]},
+    options:{responsive:true,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return " "+ctx.parsed.y.toFixed(1)+"h";}}}},
+      scales:{x:{ticks:{maxRotation:35}},y:{beginAtZero:true,ticks:{callback:function(v){return v+"h";}}}}}
+  });
+}
+function donut(id,labels,vals,colors){
+  var el=document.getElementById(id);if(!el)return null;
+  var tot=vals.reduce(function(a,b){return a+b;},0);
+  return new Chart(el,{
+    type:"doughnut",
+    data:{labels:labels,datasets:[{data:vals,backgroundColor:colors||PAL,borderWidth:0,hoverOffset:5}]},
+    options:{responsive:true,cutout:"60%",
+      plugins:{legend:{position:"bottom"},tooltip:{callbacks:{label:function(ctx){
+        var pct=tot>0?((ctx.parsed/tot)*100).toFixed(1):0;
+        return " "+ctx.label+": "+ctx.parsed.toFixed(1)+"h ("+pct+"%)";
+      }}}}}
+  });
+}
+function lineChart(id,labels,vals){
+  var el=document.getElementById(id);if(!el)return null;
+  return new Chart(el,{
+    type:"line",
+    data:{labels:labels,datasets:[{label:"Heures",data:vals,
+      borderColor:C.b,backgroundColor:"rgba(128,0,32,.07)",
+      borderWidth:2.5,pointBackgroundColor:C.b,pointBorderColor:"#fff",
+      pointBorderWidth:2,pointRadius:4,fill:true,tension:.42}]},
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{maxRotation:35}},y:{beginAtZero:true,ticks:{callback:function(v){return v+"h";}}}}}
+  });
+}
+function stackedBar(id,labels,datasets){
+  var el=document.getElementById(id);if(!el)return null;
+  return new Chart(el,{
+    type:"bar",data:{labels:labels,datasets:datasets},
+    options:{responsive:true,plugins:{legend:{position:"top",align:"end"}},
+      scales:{x:{stacked:true,ticks:{maxRotation:35}},y:{stacked:true,beginAtZero:true,ticks:{callback:function(v){return v+"h";}}}}}
+  });
+}
+</script><script>var UD=[{"User":"Oliver Hansen","h":1525.15},{"User":"Nielsen Erik","h":1465.4191666667},{"User":"Jan Van Den Berg","h":1459.7219444444},{"User":"Wala Dghaies","h":1458.5736111111},{"User":"Elena","h":1445.9355555556},{"User":"Andreas Meyer","h":1443.7488888889},{"User":"Max","h":1422.3738888889},{"User":"Marc Dupont","h":1412.7488888889},{"User":"Lena","h":1395.0508333333},{"User":"Clara","h":1367.6663888889},{"User":"Florian","h":1358.5},{"User":"Lucas Mueller","h":1275.1311111111},{"User":"Marie","h":1269.8705555556},{"User":"Anna Kowalski","h":1088.3888888889},{"User":"Charlotte Becker","h":1011.05},{"User":"Matteo Rossi","h":866.2105555556},{"User":"David Andersson","h":737.1666666667},{"User":"Marco De Vries","h":500.8147222222},{"User":"Erik Nielsen","h":488.5005555556},{"User":"Emma","h":1.2591666667}];var PD=[{"Project":"WEB","h":10454.7716666667},{"Project":"ORGANISATION","h":3652.1},{"Project":"DATA","h":3225.7619444444},{"Project":"E-COMMERCE","h":3139.845},{"Project":"POINTINY","h":1460.9363888889},{"Project":"MOBILE","h":405.9719444444},{"Project":"INCONNU","h":381.3505555556},{"Project":"HELPDESK","h":123.5736111111},{"Project":"SYSTEM MONITORING","h":78.6033333333},{"Project":"ARTFIN","h":54.25},{"Project":"AUTOMATION","h":14.6833333333},{"Project":"REPLICATION","h":1.4336111111}];var MD=[{"month_solid":"2025-03","h":770.3475},{"month_solid":"2025-04","h":2263.1894444444},{"month_solid":"2025-05","h":2501.2855555556},{"month_solid":"2025-06","h":1900.2333333333},{"month_solid":"2025-07","h":2112.2905555556},{"month_solid":"2025-08","h":1986.6444444444},{"month_solid":"2025-09","h":2167.8216666667},{"month_solid":"2025-10","h":409.1675},{"month_solid":"2025-11","h":501.34},{"month_solid":"2025-12","h":2704.3452777778},{"month_solid":"2026-01","h":2453.8166666667},{"month_solid":"2026-02","h":2148.6055555556},{"month_solid":"2026-03","h":1074.1938888889}];var TG=[{"Tag":"Feature Development","h":9154.1288888889},{"Tag":"Réunion","h":5240.5558333333},{"Tag":"Testing","h":2317.02},{"Tag":"Non tagué","h":1839.4486111111},{"Tag":"Bug Fixing","h":1380.6925},{"Tag":"Unclassified","h":1245.0108333333},{"Tag":"Documentation","h":1054.1630555556},{"Tag":"Test Automation","h":323.9591666667},{"Tag":"Optimization","h":307.6375},{"Tag":"Training and Development","h":218.0966666667},{"Tag":"Reporting","h":131.2722222222},{"Tag":"Client Communication","h":126.5175},{"Tag":"Peer Code Review","h":78.8591666667}];var IT=[{"Issue Type":"Bug","h":290.9794444444,"n":225},{"Issue Type":"Technical Task","h":242.6341666667,"n":117},{"Issue Type":"Xray Test","h":112.3647222222,"n":89},{"Issue Type":"Task","h":89.0022222222,"n":42},{"Issue Type":"Story","h":71.6088888889,"n":29},{"Issue Type":"Support","h":35.175,"n":36},{"Issue Type":"Integration Task","h":32.75,"n":12},{"Issue Type":"Improvement","h":26.2025,"n":20},{"Issue Type":"Sub-task","h":22.8333333333,"n":8},{"Issue Type":"Exigence","h":6.0,"n":2}];var CR=[{"c":"Non définie","h":623.3208333333},{"c":"🔴 Critique","h":184.6930555556},{"c":"🟠 Majeur","h":67.5708333333},{"c":"🟡 Medium","h":40.0488888889},{"c":"🔵 Mineure","h":13.9166666667}];
+hbar("cUser",UD.map(function(r){return r.User;}),UD.map(function(r){return +r.h.toFixed(1);}));
+vbar("cProj",PD.map(function(r){return r.Project;}),PD.map(function(r){return +r.h.toFixed(1);}));
+hbar("cTags",TG.map(function(r){return r.Tag;}),TG.map(function(r){return +r.h.toFixed(1);}));
+hbar("cItype",IT.map(function(r){return r["Issue Type"];}),IT.map(function(r){return +r.h.toFixed(1);}));
+hbar("cCrit",CR.map(function(r){return r.c;}),CR.map(function(r){return +r.h.toFixed(1);}));
+lineChart("cMonth",MD.map(function(r){return r.month_solid;}),MD.map(function(r){return +r.h.toFixed(1);}));
+</script></body></html>
