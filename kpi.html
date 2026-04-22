@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="fr" data-theme="light">
 <head>
@@ -591,3 +592,309 @@ loadDashboard();
 </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KPI Overview — KPI Hub</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+/* Auth guard */
+(function(){
+  const p=new URLSearchParams(window.location.search);
+  if(!p.get('share') && localStorage.getItem('kpi_auth')!=='true')
+    window.location.href='login.html';
+})();
+</script>
+</head>
+<body>
+
+<!-- ═══ NAV BAR ═══════════════════════════════════════════════ -->
+<nav class="nav-bar">
+  <a class="nav-logo" href="kpi.html">
+    <div class="nav-logo-mark"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
+    <span class="nav-logo-text">KPI <em>Hub</em></span>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link active" href="kpi.html"><span class="nav-icon">📊</span> KPI</a>
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">📈</span> Dashboard</a>
+    <a class="nav-link" href="data-warehouse.html"><span class="nav-icon">🗄</span> Data Warehouse</a>
+  </div>
+  <div class="nav-user">
+    <div class="nav-avatar" id="navAvatar">A</div>
+    <span class="nav-name" id="navName">—</span>
+    <button class="nav-logout" onclick="logout()">⏻ Déconnexion</button>
+  </div>
+</nav>
+
+<!-- ═══ TOOLBAR ════════════════════════════════════════════════ -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <span class="toolbar-crumb">kpi-hub / <em>kpi-overview</em></span>
+  </div>
+  <div class="toolbar-right">
+    <div class="tb-toggle" onclick="toggleTheme()" title="Changer le thème">
+      <span class="tb-icon">☀️</span>
+      <div class="tb-track"></div>
+      <span class="tb-icon">🌙</span>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="pdfBtn" onclick="exportPDF()">⬇ <span class="btn-txt">Export PDF</span></button>
+    <button class="tb-btn prim" onclick="openShare()">🔗 <span class="btn-txt">Partager</span></button>
+  </div>
+</div>
+
+<!-- ═══ CONTENT ════════════════════════════════════════════════ -->
+<div class="page-wrap narrow">
+
+  <div class="pg-header">
+    <div class="pg-eyebrow">Analytics</div>
+    <h1 class="pg-title">KPI <em>Overview</em></h1>
+    <p class="pg-desc">Vue synthétique des indicateurs clés. Cliquez sur une carte pour explorer les détails.</p>
+  </div>
+
+  <!-- Share banner -->
+  <div class="share-banner" id="shareBanner">
+    <span>🔗</span><span id="shareBannerText">Dashboard partagé</span>
+    <span class="share-perm" id="sharePerm"></span>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="sec-div"><div class="sec-dot"></div>Indicateurs clés</div>
+  <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:32px;">
+    <div class="card-surf card-accent hoverable kpi-card c-burg" onclick="openModal('hours')" style="cursor:pointer;">
+      <div class="kpi-icon">⏱</div>
+      <div class="kpi-lbl">Total Heures</div>
+      <div class="kpi-val big" id="totalHours"><span class="skeleton" style="width:80px;height:44px;"></span></div>
+      <div class="kpi-hint">↗ Voir le détail</div>
+    </div>
+    <div class="card-surf card-accent hoverable kpi-card c-teal" onclick="openModal('users')" style="cursor:pointer;">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-lbl">Utilisateurs</div>
+      <div class="kpi-val big" id="totalUsers"><span class="skeleton" style="width:60px;height:44px;"></span></div>
+      <div class="kpi-hint">↗ Voir la liste</div>
+    </div>
+    <div class="card-surf card-accent hoverable kpi-card c-blue" onclick="openModal('projects')" style="cursor:pointer;">
+      <div class="kpi-icon">📁</div>
+      <div class="kpi-lbl">Projets</div>
+      <div class="kpi-val big" id="totalProjects"><span class="skeleton" style="width:60px;height:44px;"></span></div>
+      <div class="kpi-hint">↗ Voir la liste</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="sec-div"><div class="sec-dot"></div>Analyse détaillée</div>
+  <div class="chart-grid span-full" style="margin-bottom:14px;">
+    <div class="card-surf chart-card">
+      <div class="chart-head">
+        <div><div class="chart-title">Statut par Projet</div><div class="chart-sub">Répartition done / in progress / pending</div></div>
+        <span class="chart-badge">Projets</span>
+      </div>
+      <canvas id="statusChart"></canvas>
+    </div>
+  </div>
+  <div class="chart-grid">
+    <div class="card-surf chart-card">
+      <div class="chart-head">
+        <div><div class="chart-title">Top Utilisateurs</div><div class="chart-sub">Par volume d'heures</div></div>
+        <span class="chart-badge">Top 10</span>
+      </div>
+      <canvas id="userChart"></canvas>
+    </div>
+    <div class="card-surf chart-card">
+      <div class="chart-head">
+        <div><div class="chart-title">Activité Mensuelle</div><div class="chart-sub">Évolution des heures</div></div>
+        <span class="chart-badge">Tendance</span>
+      </div>
+      <canvas id="monthlyChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<footer class="page-footer">KPI Hub &nbsp;·&nbsp; Données CSV &nbsp;·&nbsp; Chart.js</footer>
+
+<!-- ═══ DETAIL MODAL ═══════════════════════════════════════════ -->
+<div class="overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" style="max-width:660px;max-height:80vh;display:flex;flex-direction:column;">
+    <div class="m-head">
+      <div>
+        <div class="m-head h3" id="modalTitle" style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:var(--text);">—</div>
+        <div class="m-count" id="modalCount"></div>
+      </div>
+      <button class="m-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="m-search-wrap">
+      <input class="m-search" id="modalSearch" type="text" placeholder="Rechercher…" oninput="filterModalTable()"/>
+    </div>
+    <div class="m-body" style="flex:1;overflow-y:auto;">
+      <table class="dt"><thead id="modalThead"></thead><tbody id="modalTbody"></tbody></table>
+      <div class="empty-state" id="modalEmpty" style="display:none;"><div class="es-icon">🔍</div>Aucun résultat</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SHARE MODAL ════════════════════════════════════════════ -->
+<div class="overlay" id="shareOverlay" onclick="closeShareOnBg(event)">
+  <div class="modal">
+    <div class="m-head"><h3>🔗 Partager</h3><button class="m-close" onclick="closeShare()">✕</button></div>
+    <div class="m-body-p">
+      <div class="perm sel" onclick="selPerm(this,'viewer')"><span class="perm-icon">👁</span><div class="perm-info"><div class="perm-name">Lecteur</div><div class="perm-desc">Consultation uniquement</div></div><div class="perm-chk">✓</div></div>
+      <div class="perm" onclick="selPerm(this,'editor')"><span class="perm-icon">✏️</span><div class="perm-info"><div class="perm-name">Éditeur</div><div class="perm-desc">Peut interagir avec les filtres</div></div><div class="perm-chk">✓</div></div>
+      <div class="perm" onclick="selPerm(this,'restricted')"><span class="perm-icon">🔒</span><div class="perm-info"><div class="perm-name">Accès restreint</div><div class="perm-desc">Personnes invitées uniquement</div></div><div class="perm-chk">✓</div></div>
+      <div class="link-row" id="linkRow" style="display:none;">
+        <input class="link-inp" id="shareLinkInp" readonly>
+        <button class="tb-btn" onclick="copyShareLink()" id="copyBtn"><span>📋</span></button>
+      </div>
+      <div class="share-note" id="shareNote"></div>
+      <div class="m-actions">
+        <button class="m-btn cancel" onclick="closeShare()">Annuler</button>
+        <button class="m-btn go" onclick="genShareLink()">Générer le lien</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+<script>
+/* ── Chart.js defaults ── */
+Chart.defaults.font.family="'DM Sans',sans-serif";Chart.defaults.font.size=11;Chart.defaults.color='#a89991';
+Chart.defaults.plugins.legend.labels.usePointStyle=true;Chart.defaults.plugins.legend.labels.padding=14;Chart.defaults.plugins.legend.labels.boxWidth=8;
+Chart.defaults.plugins.tooltip.backgroundColor='rgba(14,11,11,0.93)';
+Chart.defaults.plugins.tooltip.titleFont={family:"'Cormorant Garamond',serif",size:13,weight:'500'};
+Chart.defaults.plugins.tooltip.bodyFont={family:"'DM Sans',sans-serif",size:11};
+Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.cornerRadius=8;
+Chart.defaults.scale.grid.color='rgba(128,0,32,0.06)';Chart.defaults.scale.border.dash=[4,4];
+const C={b:'#800020',b2:'#a3254a',r:'#c96e80',t:'#d2b48c',m:'#e8dfd6'};
+
+function loadCSV(url){
+  return new Promise(res=>{Papa.parse(url,{download:true,header:true,skipEmptyLines:true,complete:r=>res(r.data)});});
+}
+
+let _userData=[],_projectData=[],_statusData=[],_monthlyData=[];
+let _modalType='',_allRows=[];
+
+/* ── Modal ── */
+function openModal(type){
+  _modalType=type;
+  document.getElementById('modalSearch').value='';
+  const titleEl=document.getElementById('modalTitle');
+  const thead=document.getElementById('modalThead');
+  if(type==='users'||type==='hours'){
+    titleEl.textContent=type==='users'?'👥 Utilisateurs':'⏱ Heures';
+    thead.innerHTML='<tr><th>#</th><th>Utilisateur</th><th>Heures</th><th>Progression</th></tr>';
+    const maxH=Math.max(..._userData.map(u=>Number(u.duration_hours||0)),1);
+    _allRows=_userData.map((u,i)=>({rank:i+1,name:u.User||'—',hours:Number(u.duration_hours||0),maxH}));
+    renderUsersTable(_allRows);
+  }else if(type==='projects'){
+    titleEl.textContent='📁 Projets';
+    thead.innerHTML='<tr><th>#</th><th>Projet</th><th>Statut</th><th>Heures</th></tr>';
+    _allRows=_projectData.map((p,i)=>({rank:i+1,name:p.Project||p.project||Object.values(p)[0]||'—',status:p.status||p.Status||'—',hours:Number(p.duration_hours||p.hours||0)}));
+    renderProjectsTable(_allRows);
+  }
+  updateModalCount(_allRows.length,_allRows.length);
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>document.getElementById('modalSearch').focus(),300);
+}
+function updateModalCount(shown,total){
+  document.getElementById('modalCount').textContent=shown<total?`${shown}/${total} résultats`:`${total} au total`;
+}
+function renderUsersTable(rows){
+  const tbody=document.getElementById('modalTbody'),empty=document.getElementById('modalEmpty');
+  if(!rows.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const maxH=Math.max(...rows.map(r=>r.hours),1);
+  tbody.innerHTML=rows.map(r=>{
+    const rc=r.rank===1?'gold':r.rank===2?'silver':r.rank===3?'bronze':'';
+    const pct=((r.hours/maxH)*100).toFixed(1);
+    return`<tr><td><span class="rank ${rc}">${r.rank}</span></td><td>${r.name}</td><td><strong>${r.hours.toFixed(1)}</strong> h</td><td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div><span style="font-size:10px;color:var(--text3);min-width:34px">${pct}%</span></div></td></tr>`;
+  }).join('');
+}
+function renderProjectsTable(rows){
+  const tbody=document.getElementById('modalTbody'),empty=document.getElementById('modalEmpty');
+  if(!rows.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=rows.map(r=>{
+    const rc=r.rank===1?'gold':r.rank===2?'silver':r.rank===3?'bronze':'';
+    const slug=(r.status||'').toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,'');
+    return`<tr><td><span class="rank ${rc}">${r.rank}</span></td><td>${r.name}</td><td><span class="pill pill-${slug||'pending'}">${r.status}</span></td><td>${r.hours>0?r.hours.toFixed(1)+' h':'—'}</td></tr>`;
+  }).join('');
+}
+function filterModalTable(){
+  const q=document.getElementById('modalSearch').value.toLowerCase().trim();
+  const filtered=q?_allRows.filter(r=>(r.name||'').toLowerCase().includes(q)||(r.status||'').toLowerCase().includes(q)):_allRows;
+  if(_modalType==='projects')renderProjectsTable(filtered);else renderUsersTable(filtered);
+  updateModalCount(filtered.length,_allRows.length);
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();}});
+
+/* ── PDF ── */
+async function exportPDF(){
+  const btn=document.getElementById('pdfBtn');
+  btn.disabled=true;btn.innerHTML='⏳ <span class="btn-txt">Export…</span>';
+  showToast('Génération PDF…','📄');
+  await new Promise(r=>setTimeout(r,600));
+  try{
+    const{jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const PW=210,margin=12,col=(PW-margin*3)/2;
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    function addChart(id,x,y,w,h){
+      const c=document.getElementById(id);if(!c)return;
+      const off=document.createElement('canvas');off.width=c.width;off.height=c.height;
+      const ctx=off.getContext('2d');ctx.fillStyle=isDark?'#1c1515':'#fff';ctx.fillRect(0,0,off.width,off.height);ctx.drawImage(c,0,0);
+      pdf.addImage(off.toDataURL('image/jpeg',.92),'JPEG',x,y,w,h);
+    }
+    pdf.setFillColor(128,0,32);pdf.rect(0,0,PW,16,'F');
+    pdf.setTextColor(255,255,255);pdf.setFontSize(12);pdf.setFont('helvetica','bold');pdf.text('KPI Hub — Overview',margin,10);
+    pdf.setFontSize(7);pdf.setFont('helvetica','normal');pdf.text(new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}),PW-margin,10,{align:'right'});
+    let y=20;
+    const kpiData=[['⏱ Total Heures',document.getElementById('totalHours').textContent],['👥 Utilisateurs',document.getElementById('totalUsers').textContent],['📁 Projets',document.getElementById('totalProjects').textContent]];
+    const kw=(PW-margin*2-8)/3;
+    kpiData.forEach(([lbl,val],i)=>{
+      const x=margin+i*(kw+4);
+      pdf.setFillColor(isDark?28:255,isDark?21:255,isDark?21:255);pdf.roundedRect(x,y,kw,18,2,2,'F');
+      pdf.setFillColor(128,0,32);pdf.rect(x,y,kw,1.2,'F');
+      pdf.setTextColor(168,153,145);pdf.setFontSize(5.5);pdf.setFont('helvetica','normal');pdf.text(lbl.toUpperCase(),x+3,y+7);
+      pdf.setTextColor(128,0,32);pdf.setFontSize(14);pdf.setFont('helvetica','bold');pdf.text(val,x+3,y+15);
+    });
+    y+=24;addChart('statusChart',margin,y,PW-margin*2,52);y+=56;
+    addChart('userChart',margin,y,col,48);addChart('monthlyChart',margin+col+margin,y,col,48);
+    pdf.save('kpi-overview-'+new Date().toISOString().slice(0,10)+'.pdf');
+    showToast('PDF exporté !');
+  }catch(e){showToast('Erreur PDF: '+e.message,'⚠');}
+  finally{btn.disabled=false;btn.innerHTML='⬇ <span class="btn-txt">Export PDF</span>';}
+}
+
+/* ── Load data ── */
+async function loadDashboard(){
+  try{
+    _userData   =await loadCSV('output/kpi_user.csv');
+    _projectData=await loadCSV('output/kpi_project.csv');
+    _statusData =await loadCSV('output/kpi_status_project_pivot.csv');
+    _monthlyData=await loadCSV('output/kpi_monthly.csv');
+    const totalHours=_userData.reduce((s,u)=>s+Number(u.duration_hours||0),0);
+    const hoursEl=document.getElementById('totalHours'),usersEl=document.getElementById('totalUsers'),projEl=document.getElementById('totalProjects');
+    hoursEl.innerHTML=usersEl.innerHTML=projEl.innerHTML='<span class="loading-dot"></span>';
+    setTimeout(()=>{hoursEl.innerHTML='';usersEl.innerHTML='';projEl.innerHTML='';animNum('totalHours',totalHours,1);animNum('totalUsers',_userData.length);animNum('totalProjects',_projectData.length);},200);
+    const projects=_statusData.map(r=>r.Project),done=_statusData.map(r=>Number(r.done||0)),progress=_statusData.map(r=>Number(r.in_progress||0)),pending=_statusData.map(r=>Number(r.pending||0));
+    new Chart(document.getElementById('statusChart'),{type:'bar',data:{labels:projects,datasets:[{label:'Done',data:done,backgroundColor:C.b},{label:'In Progress',data:progress,backgroundColor:C.r},{label:'Pending',data:pending,backgroundColor:C.t}]},options:{responsive:true,animation:{duration:800},plugins:{legend:{position:'top',align:'end'}},scales:{x:{ticks:{maxRotation:30}},y:{beginAtZero:true}},elements:{bar:{borderRadius:5,borderSkipped:'bottom'}}}});
+    const users=_userData.slice(0,10).map(u=>u.User),hours=_userData.slice(0,10).map(u=>Number(u.duration_hours));
+    new Chart(document.getElementById('userChart'),{type:'bar',data:{labels:users,datasets:[{data:hours,backgroundColor:hours.map((_,i)=>i===0?C.b:i===1?C.b2:i<4?C.r:C.t),borderRadius:5,borderSkipped:'bottom'}]},options:{responsive:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{ticks:{font:{size:10}}}}}});
+    const months=_monthlyData.map(m=>m.month_solid),mHours=_monthlyData.map(m=>Number(m.duration_hours));
+    new Chart(document.getElementById('monthlyChart'),{type:'line',data:{labels:months,datasets:[{data:mHours,borderColor:C.b,backgroundColor:'rgba(128,0,32,0.07)',borderWidth:2.5,pointBackgroundColor:C.b,pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4,fill:true,tension:.4}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:30}},y:{beginAtZero:true}}}});
+  }catch(e){console.error(e);}
+}
+loadDashboard();
+</script>
+</body>
+</html>
+>>>>>>> 55bb3c6c647ea5d653ac19d09b1573e10a5f1164

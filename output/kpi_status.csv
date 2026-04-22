@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Status,count
 déployé,508
 terminé,493
@@ -6,3 +7,13 @@ en attente de revue,17
 en cours,15
 en attente de validation,12
 en revue,4
+=======
+Status,count
+déployé,508
+terminé,493
+validation en cours,19
+en attente de revue,17
+en cours,15
+en attente de validation,12
+en revue,4
+>>>>>>> 55bb3c6c647ea5d653ac19d09b1573e10a5f1164

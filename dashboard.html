@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="fr" data-theme="light">
 <head>
@@ -514,3 +515,320 @@ loadCSV();
 </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — KPI Hub</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+(function(){
+  const p=new URLSearchParams(window.location.search);
+  if(!p.get('share')&&localStorage.getItem('kpi_auth')!=='true')window.location.href='login.html';
+})();
+</script>
+</head>
+<body>
+
+<!-- ═══ NAV BAR ════════════════════════════════════════════════ -->
+<nav class="nav-bar">
+  <a class="nav-logo" href="kpi.html">
+    <div class="nav-logo-mark"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
+    <span class="nav-logo-text">KPI <em>Hub</em></span>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="kpi.html"><span class="nav-icon">📊</span> KPI</a>
+    <a class="nav-link active" href="dashboard.html"><span class="nav-icon">📈</span> Dashboard</a>
+    <a class="nav-link" href="data-warehouse.html"><span class="nav-icon">🗄</span> Data Warehouse</a>
+  </div>
+  <div class="nav-user">
+    <div class="nav-avatar" id="navAvatar">A</div>
+    <span class="nav-name" id="navName">—</span>
+    <button class="nav-logout" onclick="logout()">⏻ Déconnexion</button>
+  </div>
+</nav>
+
+<!-- ═══ TOOLBAR ════════════════════════════════════════════════ -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <span class="toolbar-crumb">kpi-hub / <em>dashboard</em></span>
+  </div>
+  <div class="toolbar-right">
+    <div class="tb-toggle" onclick="toggleTheme()">
+      <span class="tb-icon">☀️</span>
+      <div class="tb-track"></div>
+      <span class="tb-icon">🌙</span>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="pdfBtn" onclick="exportPDF()">⬇ <span class="btn-txt">Export PDF</span></button>
+    <button class="tb-btn prim" onclick="openShare()">🔗 <span class="btn-txt">Partager</span></button>
+  </div>
+</div>
+
+<!-- ═══ APP SHELL (sidebar + main) ════════════════════════════ -->
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <span class="sb-label">Navigation</span>
+      <button class="col-btn" onclick="toggleSidebar()" id="colBtn">←</button>
+    </div>
+    <nav class="sb-nav">
+      <a class="snav-item" href="kpi.html"><span class="snav-icon">📊</span><span class="snav-lbl">Vue KPI</span></a>
+      <a class="snav-item active" href="dashboard.html"><span class="snav-icon">📈</span><span class="snav-lbl">Dashboard</span></a>
+      <a class="snav-item" href="data-warehouse.html"><span class="snav-icon">🗄</span><span class="snav-lbl">Data Warehouse</span></a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="sb-user-row">
+        <div class="sb-av" id="sbAvatar">A</div>
+        <div class="sb-info"><p id="sbName">—</p><span id="sbEmail">—</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="sb-main">
+    <div class="sb-page">
+
+      <!-- Share banner -->
+      <div class="share-banner" id="shareBanner">
+        <span>🔗</span><span id="shareBannerText">Dashboard partagé</span>
+        <span class="share-perm" id="sharePerm"></span>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="card-surf filter-bar">
+        <div class="fg"><label>Projet</label><select id="fProj" onchange="applyFilters()"><option value="">Tous</option></select></div>
+        <div class="fg"><label>Utilisateur</label><select id="fUser" onchange="applyFilters()"><option value="">Tous</option></select></div>
+        <div class="fg"><label>Statut</label>
+          <select id="fStatus" onchange="applyFilters()">
+            <option value="">Tous</option><option value="done">Done</option>
+            <option value="in_progress">In Progress</option><option value="pending">Pending</option>
+          </select>
+        </div>
+        <div class="fg"><label>De (mois)</label><input type="month" id="fFrom" onchange="applyFilters()"></div>
+        <div class="fg"><label>À (mois)</label><input type="month" id="fTo" onchange="applyFilters()"></div>
+        <div class="f-right">
+          <span class="rec-count"><strong id="recCount">—</strong> entrées</span>
+          <button class="rst-btn" onclick="resetFilters()">✕ Reset</button>
+        </div>
+      </div>
+
+      <!-- KPI CARDS -->
+      <div class="kpi-grid">
+        <div class="card-surf kpi-card c-burg"><div class="kpi-icon">⏱</div><div class="kpi-lbl">Total Heures</div><div class="kpi-val" id="kpiH">—</div></div>
+        <div class="card-surf kpi-card c-teal"><div class="kpi-icon">📁</div><div class="kpi-lbl">Projets</div><div class="kpi-val" id="kpiP">—</div></div>
+        <div class="card-surf kpi-card c-blue"><div class="kpi-icon">👥</div><div class="kpi-lbl">Utilisateurs</div><div class="kpi-val" id="kpiU">—</div></div>
+        <div class="card-surf kpi-card c-violet"><div class="kpi-icon">🎫</div><div class="kpi-lbl">Tickets</div><div class="kpi-val" id="kpiT">—</div></div>
+      </div>
+
+      <!-- WORKLOAD -->
+      <div class="sec-div"><div class="sec-dot"></div>Charge de travail</div>
+      <div class="chart-grid">
+        <div class="card-surf chart-card"><div class="chart-head"><div><div class="chart-title">Heures par Projet</div><div class="chart-sub">Volume total</div></div><span class="chart-badge">Projets</span></div><canvas id="cProj"></canvas></div>
+        <div class="card-surf chart-card"><div class="chart-head"><div><div class="chart-title">Top Utilisateurs</div><div class="chart-sub">Heures par membre</div></div><span class="chart-badge">Users</span></div><canvas id="cUser"></canvas></div>
+      </div>
+
+      <!-- STATUS -->
+      <div class="sec-div"><div class="sec-dot"></div>Analyse statuts</div>
+      <div class="chart-grid">
+        <div class="card-surf chart-card"><div class="chart-head"><div><div class="chart-title">Répartition</div><div class="chart-sub">Distribution globale</div></div><span class="chart-badge">Status</span></div><canvas id="cPie"></canvas></div>
+        <div class="card-surf chart-card"><div class="chart-head"><div><div class="chart-title">Statut par Projet</div><div class="chart-sub">Vue empilée</div></div><span class="chart-badge">Stacked</span></div><canvas id="cStack"></canvas></div>
+      </div>
+
+      <!-- MONTHLY -->
+      <div class="sec-div"><div class="sec-dot"></div>Activité temporelle</div>
+      <div class="chart-grid span-full">
+        <div class="card-surf chart-card"><div class="chart-head"><div><div class="chart-title">Activité Mensuelle</div><div class="chart-sub">Évolution des heures</div></div><span class="chart-badge">Tendance</span></div><canvas id="cMonth"></canvas></div>
+      </div>
+
+    </div><!-- /sb-page -->
+  </div><!-- /sb-main -->
+</div><!-- /app-shell -->
+
+<!-- ═══ SHARE MODAL ════════════════════════════════════════════ -->
+<div class="overlay" id="shareOverlay" onclick="closeShareOnBg(event)">
+  <div class="modal">
+    <div class="m-head"><h3>🔗 Partager le Dashboard</h3><button class="m-close" onclick="closeShare()">✕</button></div>
+    <div class="m-body-p">
+      <div class="perm sel" onclick="selPerm(this,'viewer')"><span class="perm-icon">👁</span><div class="perm-info"><div class="perm-name">Lecteur</div><div class="perm-desc">Consultation uniquement</div></div><div class="perm-chk">✓</div></div>
+      <div class="perm" onclick="selPerm(this,'editor')"><span class="perm-icon">✏️</span><div class="perm-info"><div class="perm-name">Éditeur</div><div class="perm-desc">Peut interagir avec les filtres</div></div><div class="perm-chk">✓</div></div>
+      <div class="perm" onclick="selPerm(this,'restricted')"><span class="perm-icon">🔒</span><div class="perm-info"><div class="perm-name">Accès restreint</div><div class="perm-desc">Personnes invitées uniquement</div></div><div class="perm-chk">✓</div></div>
+      <div class="link-row" id="linkRow" style="display:none;">
+        <input class="link-inp" id="shareLinkInp" readonly>
+        <button class="tb-btn" onclick="copyShareLink()" id="copyBtn"><span>📋</span></button>
+      </div>
+      <div class="share-note" id="shareNote"></div>
+      <div class="m-actions">
+        <button class="m-btn cancel" onclick="closeShare()">Annuler</button>
+        <button class="m-btn go" onclick="genShareLink()">Générer le lien</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+<script>
+const html=document.documentElement;
+
+/* Sidebar */
+function toggleSidebar(){
+  const s=document.getElementById('sidebar'),c=s.classList.toggle('col');
+  document.getElementById('colBtn').textContent=c?'→':'←';
+}
+
+/* Chart.js */
+Chart.defaults.font.family="'DM Sans',sans-serif";Chart.defaults.font.size=11;Chart.defaults.color='#a89991';
+Chart.defaults.plugins.legend.labels.usePointStyle=true;Chart.defaults.plugins.legend.labels.padding=13;Chart.defaults.plugins.legend.labels.boxWidth=8;
+Chart.defaults.plugins.tooltip.backgroundColor='rgba(14,11,11,0.93)';
+Chart.defaults.plugins.tooltip.titleFont={family:"'Cormorant Garamond',serif",size:12,weight:'500'};
+Chart.defaults.plugins.tooltip.bodyFont={family:"'DM Sans',sans-serif",size:11};
+Chart.defaults.plugins.tooltip.padding=9;Chart.defaults.plugins.tooltip.cornerRadius=8;
+Chart.defaults.scale.grid.color='rgba(128,0,32,0.06)';Chart.defaults.scale.border.dash=[4,4];
+const C={b:'#800020',b2:'#a3254a',r:'#c96e80',t:'#d2b48c',m:'#e8dfd6',c2:'#b8956b'};
+const PAL=[C.b,C.b2,C.r,C.t,C.m,C.c2,'#9a7a60'];
+
+/* Data */
+let raw=[],charts={};
+function destroyAll(){Object.values(charts).forEach(c=>c.destroy());charts={};}
+
+function loadCSV(){
+  Papa.parse('output/dashboard_dataset.csv',{download:true,header:true,skipEmptyLines:true,
+    complete(r){raw=r.data;initFilters();applyFilters();},
+    error(){showToast('CSV manquant — démo','⚠');loadDemo();}
+  });
+}
+function loadDemo(){
+  const P=['Alpha Platform','Beta Analytics','Client Portal','Data Pipeline','E-Commerce'];
+  const U=['Alice Martin','Bob Dupont','Claire Petit','David Simon','Eva Thomas','Frank Morel'];
+  const S=['done','in_progress','pending'];
+  const M=['2024-01','2024-02','2024-03','2024-04','2024-05','2024-06','2024-07','2024-08'];
+  raw=[];for(let i=0;i<240;i++)raw.push({Project:P[i%P.length],User:U[i%U.length],Status:S[i%3],duration_hours:String((Math.random()*10+0.5).toFixed(1)),month_solid:M[i%M.length]});
+  initFilters();applyFilters();
+}
+function initFilters(){
+  const P=[...new Set(raw.map(d=>d.Project).filter(Boolean))].sort();
+  const U=[...new Set(raw.map(d=>d.User).filter(Boolean))].sort();
+  const fP=document.getElementById('fProj'),fU=document.getElementById('fUser');
+  fP.innerHTML='<option value="">Tous</option>';fU.innerHTML='<option value="">Tous</option>';
+  P.forEach(p=>fP.innerHTML+=`<option value="${p}">${p}</option>`);
+  U.forEach(u=>fU.innerHTML+=`<option value="${u}">${u}</option>`);
+}
+function getFiltered(){
+  const p=document.getElementById('fProj').value,u=document.getElementById('fUser').value;
+  const s=document.getElementById('fStatus').value,df=document.getElementById('fFrom').value,dt=document.getElementById('fTo').value;
+  return raw.filter(d=>{
+    if(p&&d.Project!==p)return false;if(u&&d.User!==u)return false;
+    if(s&&(d.Status||'').toLowerCase().replace(' ','_')!==s)return false;
+    const m=(d.month_solid||'').slice(0,7);if(df&&m<df)return false;if(dt&&m>dt)return false;return true;
+  });
+}
+function resetFilters(){['fProj','fUser','fStatus','fFrom','fTo'].forEach(id=>document.getElementById(id).value='');applyFilters();}
+function applyFilters(){const data=getFiltered();document.getElementById('recCount').textContent=data.length;updateKPIs(data);renderCharts(data);}
+function updateKPIs(data){
+  const h=data.reduce((s,d)=>s+Number(d.duration_hours||0),0);
+  animNum('kpiH',h,1);animNum('kpiP',new Set(data.map(d=>d.Project)).size);
+  animNum('kpiU',new Set(data.map(d=>d.User)).size);animNum('kpiT',data.length);
+}
+function renderCharts(data){
+  destroyAll();
+  const byP={},byU={},sc={done:0,in_progress:0,pending:0},sp={},mo={};
+  data.forEach(d=>{
+    const h=Number(d.duration_hours||0);byP[d.Project]=(byP[d.Project]||0)+h;byU[d.User]=(byU[d.User]||0)+h;
+    const st=(d.Status||'').toLowerCase().replace(' ','_');if(sc[st]!==undefined)sc[st]++;
+    if(!sp[d.Project])sp[d.Project]={done:0,in_progress:0,pending:0};if(sp[d.Project][st]!==undefined)sp[d.Project][st]++;
+    const m=(d.month_solid||'').slice(0,7);if(m)mo[m]=(mo[m]||0)+h;
+  });
+  const pL=Object.keys(byP).sort((a,b)=>byP[b]-byP[a]),pV=pL.map(k=>+byP[k].toFixed(1));
+  const uL=Object.keys(byU).sort((a,b)=>byU[b]-byU[a]).slice(0,10),uV=uL.map(k=>+byU[k].toFixed(1));
+  const moK=Object.keys(mo).sort(),moV=moK.map(k=>+mo[k].toFixed(1));
+  const spL=Object.keys(sp);
+  charts.proj=new Chart(document.getElementById('cProj'),{type:'bar',data:{labels:pL,datasets:[{data:pV,backgroundColor:pL.map((_,i)=>PAL[i%PAL.length]),maxBarThickness:34,borderRadius:5,borderSkipped:'bottom'}]},options:{responsive:true,animation:{duration:650},plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:30}},y:{beginAtZero:true,ticks:{callback:v=>`${v}h`}}}}});
+  charts.user=new Chart(document.getElementById('cUser'),{type:'bar',data:{labels:uL,datasets:[{data:uV,backgroundColor:uL.map((_,i)=>PAL[i%PAL.length]),maxBarThickness:26,borderRadius:5,borderSkipped:'bottom'}]},options:{responsive:true,indexAxis:'y',animation:{duration:700},plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{callback:v=>`${v}h`}},y:{ticks:{font:{size:10}}}}}});
+  charts.pie=new Chart(document.getElementById('cPie'),{type:'doughnut',data:{labels:['Done','In Progress','Pending'],datasets:[{data:[sc.done,sc.in_progress,sc.pending],backgroundColor:[C.b,C.r,C.t],borderWidth:0,hoverOffset:5}]},options:{responsive:true,cutout:'60%',plugins:{legend:{position:'bottom'}}}});
+  charts.stack=new Chart(document.getElementById('cStack'),{type:'bar',data:{labels:spL,datasets:[{label:'Done',data:spL.map(p=>sp[p].done),backgroundColor:C.b,maxBarThickness:30,borderRadius:2},{label:'In Progress',data:spL.map(p=>sp[p].in_progress),backgroundColor:C.r,maxBarThickness:30},{label:'Pending',data:spL.map(p=>sp[p].pending),backgroundColor:C.t,maxBarThickness:30,borderRadius:[2,2,0,0]}]},options:{responsive:true,plugins:{legend:{position:'top',align:'end'}},scales:{x:{stacked:true,ticks:{maxRotation:30}},y:{stacked:true,beginAtZero:true}}}});
+  charts.month=new Chart(document.getElementById('cMonth'),{type:'line',data:{labels:moK,datasets:[{data:moV,borderColor:C.b,borderWidth:2.5,backgroundColor:'rgba(128,0,32,0.07)',pointBackgroundColor:C.b,pointBorderColor:'#fff',pointBorderWidth:2,pointRadius:4,fill:true,tension:.42}]},options:{responsive:true,animation:{duration:900},plugins:{legend:{display:false}},scales:{x:{ticks:{maxRotation:30}},y:{beginAtZero:true,ticks:{callback:v=>`${v}h`}}}}});
+}
+
+/* PDF */
+async function exportPDF(){
+  const btn=document.getElementById('pdfBtn');
+  btn.setAttribute('disabled','');btn.innerHTML='⏳ <span class="btn-txt">Export…</span>';
+  showToast('Génération PDF…','📄');await new Promise(r=>setTimeout(r,600));
+  try{
+    const{jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const PW=210,PH=297,margin=12,col=(PW-margin*3)/2;
+    const isDark=html.getAttribute('data-theme')==='dark';
+    function addChart(id,x,y,w,h){
+      const src=document.getElementById(id);if(!src)return;
+      const off=document.createElement('canvas');off.width=src.width;off.height=src.height;
+      const ctx=off.getContext('2d');ctx.fillStyle=isDark?'#1c1515':'#fff';ctx.fillRect(0,0,off.width,off.height);ctx.drawImage(src,0,0);
+      pdf.addImage(off.toDataURL('image/jpeg',.93),'JPEG',x,y,w,h);
+    }
+    pdf.setFillColor(128,0,32);pdf.rect(0,0,PW,16,'F');
+    pdf.setTextColor(255,255,255);pdf.setFontSize(12);pdf.setFont('helvetica','bold');pdf.text('KPI Hub — Dashboard',margin,10);
+    pdf.setFontSize(7);pdf.setFont('helvetica','normal');
+    const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+    pdf.text(now,PW-margin,10,{align:'right'});
+    const fp=document.getElementById('fProj').value||'Tous',fu=document.getElementById('fUser').value||'Tous',fs=document.getElementById('fStatus').value||'Tous';
+    pdf.setTextColor(255,200,210);pdf.setFontSize(6);
+    pdf.text(`Projet: ${fp}  ·  Utilisateur: ${fu}  ·  Statut: ${fs}  ·  ${document.getElementById('recCount').textContent} entrées`,PW-margin,14,{align:'right'});
+    let y=20;
+    const kpiIds=['kpiH','kpiP','kpiU','kpiT'],kpiLabels=['Total Heures','Projets','Utilisateurs','Tickets'];
+    const kw=(PW-margin*2-4.5)/4;
+    kpiIds.forEach((id,i)=>{
+      const x=margin+i*(kw+1.5);
+      pdf.setFillColor(isDark?28:255,isDark?21:255,isDark?21:255);pdf.roundedRect(x,y,kw,16,1.5,1.5,'F');
+      pdf.setFillColor(128,0,32);pdf.rect(x,y,kw,1,'F');
+      pdf.setTextColor(168,153,145);pdf.setFontSize(5);pdf.setFont('helvetica','normal');pdf.text(kpiLabels[i].toUpperCase(),x+2,y+6);
+      pdf.setTextColor(128,0,32);pdf.setFontSize(13);pdf.setFont('helvetica','bold');pdf.text(document.getElementById(id).textContent,x+2,y+13);
+    });y+=20;
+    ['CHARGE DE TRAVAIL','ANALYSE DES STATUTS'].forEach((label,li)=>{
+      pdf.setTextColor(168,153,145);pdf.setFontSize(7);pdf.setFont('helvetica','bold');pdf.text(label,margin,y);
+      pdf.setDrawColor(168,153,145);pdf.setLineWidth(.2);pdf.line(margin+pdf.getTextWidth(label)+2,y-.5,PW-margin,y-.5);y+=4;
+      pdf.setFillColor(isDark?28:255,isDark?21:255,isDark?21:255);
+      pdf.roundedRect(margin,y,col,48,1.5,1.5,'F');pdf.roundedRect(margin+col+margin,y,col,48,1.5,1.5,'F');
+      const c1=li===0?'cProj':'cPie',c2=li===0?'cUser':'cStack';
+      addChart(c1,margin+2,y+9,col-4,37);addChart(c2,margin+col+margin+2,y+9,col-4,37);y+=52;
+    });
+    pdf.addPage();
+    pdf.setFillColor(128,0,32);pdf.rect(0,0,PW,10,'F');
+    pdf.setTextColor(255,255,255);pdf.setFontSize(8);pdf.setFont('helvetica','bold');pdf.text('KPI Hub — Activité Temporelle',margin,7);
+    y=16;
+    pdf.setTextColor(168,153,145);pdf.setFontSize(7);pdf.setFont('helvetica','bold');pdf.text('ACTIVITÉ MENSUELLE',margin,y);
+    pdf.setDrawColor(168,153,145);pdf.line(margin+pdf.getTextWidth('ACTIVITÉ MENSUELLE')+2,y-.5,PW-margin,y-.5);y+=4;
+    pdf.setFillColor(isDark?28:255,isDark?21:255,isDark?21:255);pdf.roundedRect(margin,y,PW-margin*2,72,1.5,1.5,'F');
+    addChart('cMonth',margin+3,y+10,PW-margin*2-6,58);y+=76;
+    const rows=[['Total Heures',document.getElementById('kpiH').textContent+' h','—'],['Projets',document.getElementById('kpiP').textContent,fp],['Utilisateurs',document.getElementById('kpiU').textContent,fu],['Tickets',document.getElementById('kpiT').textContent,'Statut: '+fs]];
+    pdf.setFillColor(128,0,32);pdf.rect(margin,y,PW-margin*2,6,'F');
+    pdf.setTextColor(255,255,255);pdf.setFontSize(6);pdf.setFont('helvetica','bold');
+    pdf.text('Métrique',margin+3,y+4);pdf.text('Valeur',margin+65,y+4);pdf.text('Filtre',margin+105,y+4);y+=6;
+    rows.forEach((r,i)=>{
+      pdf.setFillColor(i%2===0?(isDark?28:255):(isDark?34:248),i%2===0?(isDark?21:255):(isDark?26:248),i%2===0?(isDark?21:255):(isDark?26:248));
+      pdf.rect(margin,y,PW-margin*2,5.5,'F');
+      pdf.setTextColor(isDark?240:26,isDark?235:18,isDark?230:16);pdf.setFontSize(6);pdf.setFont('helvetica','normal');pdf.text(r[0],margin+3,y+3.8);
+      pdf.setTextColor(128,0,32);pdf.setFont('helvetica','bold');pdf.text(r[1],margin+65,y+3.8);
+      pdf.setTextColor(168,153,145);pdf.setFont('helvetica','normal');pdf.text(r[2],margin+105,y+3.8);y+=5.5;
+    });
+    pdf.setTextColor(168,153,145);pdf.setFontSize(6);pdf.text('Généré par KPI Hub · '+new Date().toLocaleString('fr-FR'),PW/2,PH-8,{align:'center'});
+    pdf.setDrawColor(168,153,145);pdf.setLineWidth(.2);pdf.line(margin,PH-11,PW-margin,PH-11);
+    pdf.save('dashboard-'+new Date().toISOString().slice(0,10)+'.pdf');
+    showToast('PDF exporté !');
+  }catch(e){console.error(e);showToast('Erreur PDF: '+e.message,'⚠');}
+  finally{btn.removeAttribute('disabled');btn.innerHTML='⬇ <span class="btn-txt">Export PDF</span>';}
+}
+
+loadCSV();
+</script>
+</body>
+</html>
+>>>>>>> 55bb3c6c647ea5d653ac19d09b1573e10a5f1164

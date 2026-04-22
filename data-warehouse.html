@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="fr" data-theme="dark">
 <head>
@@ -1118,3 +1119,578 @@ async function exportSchemaPDF(){
 </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Warehouse — KPI Hub</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+/* Auth guard — allow share token access without login */
+(function(){
+  const p=new URLSearchParams(window.location.search);
+  if(!p.get('share') && localStorage.getItem('kpi_auth')!=='true')
+    window.location.href='login.html';
+})();
+</script>
+</head>
+<body>
+
+<!-- ═══ NAV BAR ════════════════════════════════════════════════ -->
+<nav class="nav-bar">
+  <a class="nav-logo" href="kpi.html">
+    <div class="nav-logo-mark"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
+    <span class="nav-logo-text">KPI <em>Hub</em></span>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="kpi.html"><span class="nav-icon">📊</span> KPI</a>
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">📈</span> Dashboard</a>
+    <a class="nav-link active" href="data-warehouse.html"><span class="nav-icon">🗄</span> Data Warehouse</a>
+  </div>
+  <div class="nav-user">
+    <div class="nav-avatar" id="navAvatar">A</div>
+    <span class="nav-name" id="navName">—</span>
+    <button class="nav-logout" onclick="logout()">⏻ Déconnexion</button>
+  </div>
+</nav>
+
+<!-- ═══ TOOLBAR ════════════════════════════════════════════════ -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <span class="toolbar-crumb">kpi-hub / <em>data-warehouse</em></span>
+  </div>
+  <div class="toolbar-right">
+    <div class="tb-toggle" onclick="toggleTheme()">
+      <span class="tb-icon">☀️</span>
+      <div class="tb-track"></div>
+      <span class="tb-icon">🌙</span>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="pdfBtn" onclick="exportPDF()">⬇ <span class="btn-txt">Export PDF</span></button>
+    <button class="tb-btn prim" onclick="openShare()">🔗 <span class="btn-txt">Partager</span></button>
+  </div>
+</div>
+
+<!-- ═══ CONTENT ════════════════════════════════════════════════ -->
+<div class="page-wrap">
+
+  <!-- Share banner — shown when page is opened via a share link -->
+  <div class="share-banner" id="shareBanner">
+    <span>🔗</span>
+    <span id="shareBannerText">Vous consultez un dashboard partagé</span>
+    <span class="share-perm" id="sharePerm"></span>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="pg-header">
+    <div class="pg-eyebrow">Architecture données</div>
+    <h1 class="pg-title">Data Warehouse<br><em>Modèle en Étoile</em></h1>
+    <p class="pg-desc">
+      Schéma en étoile alimenté par <strong style="color:var(--teal)">Jira</strong>
+      et <strong style="color:var(--blue)">SolidTime</strong>.
+      La table <code style="color:var(--rose);font-family:'DM Mono',monospace;font-size:12px">fact_time_tracking</code>
+      est reliée à 4 dimensions.
+    </p>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="sec-div"><div class="sec-dot"></div>Indicateurs clés</div>
+  <div class="kpi-grid">
+    <div class="card-surf kpi-card c-burg">
+      <div class="kpi-icon" style="background:rgba(128,0,32,.15);">⏱</div>
+      <div class="kpi-lbl">Total Heures</div>
+      <div class="kpi-val" id="kpiTotalH">—</div>
+      <div class="kpi-sub" id="kpiTotalHSub">chargement…</div>
+    </div>
+    <div class="card-surf kpi-card c-teal">
+      <div class="kpi-icon" style="background:rgba(42,157,143,.15);">👑</div>
+      <div class="kpi-lbl">Top Utilisateur</div>
+      <div class="kpi-val" id="kpiTopUser" style="font-size:20px;padding-top:3px;">—</div>
+      <div class="kpi-sub" id="kpiTopUserSub">chargement…</div>
+    </div>
+    <div class="card-surf kpi-card c-blue">
+      <div class="kpi-icon" style="background:rgba(58,134,184,.15);">🏆</div>
+      <div class="kpi-lbl">Top Projet</div>
+      <div class="kpi-val" id="kpiTopProj" style="font-size:20px;padding-top:3px;">—</div>
+      <div class="kpi-sub" id="kpiTopProjSub">chargement…</div>
+    </div>
+    <div class="card-surf kpi-card c-violet">
+      <div class="kpi-icon" style="background:rgba(123,94,167,.15);">🎫</div>
+      <div class="kpi-lbl">Total Tickets</div>
+      <div class="kpi-val" id="kpiTotalT">—</div>
+      <div class="kpi-sub" id="kpiTotalTSub">chargement…</div>
+    </div>
+  </div>
+
+  <!-- STAR SCHEMA -->
+  <div class="sec-div"><div class="sec-dot"></div>Schéma en étoile</div>
+  <div class="card-surf" style="margin-bottom:28px;overflow:hidden;">
+    <div class="schema-bg">
+      <div class="schema-grid">
+
+        <!-- dim_user (top-left) -->
+        <div class="dim-card dim-user">
+          <div class="tbl-type">🔵 Dimension</div>
+          <div class="tbl-name">dim_user</div>
+          <ul class="field-list">
+            <li><span>🔑</span> <span class="fname-pk">user_id</span> <span class="ftype">INT</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>username</span> <span class="ftype">VARCHAR</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>email</span> <span class="ftype">VARCHAR</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>role</span> <span class="ftype">VARCHAR</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>team</span> <span class="ftype">VARCHAR</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>created_at</span> <span class="ftype">DATE</span></li>
+          </ul>
+        </div>
+
+        <!-- vertical connector top -->
+        <div style="grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:center;">
+          <div class="conn-v"></div>
+        </div>
+
+        <!-- dim_project (top-right) -->
+        <div class="dim-card dim-project">
+          <div class="tbl-type">🔷 Dimension</div>
+          <div class="tbl-name">dim_project</div>
+          <ul class="field-list">
+            <li><span>🔑</span> <span class="fname-pk">project_id</span> <span class="ftype">INT</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>project_name</span> <span class="ftype">VARCHAR</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>client</span> <span class="ftype">VARCHAR</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>status</span> <span class="ftype">VARCHAR</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>start_date</span> <span class="ftype">DATE</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>end_date</span> <span class="ftype">DATE</span></li>
+          </ul>
+        </div>
+
+        <!-- connector left of fact -->
+        <div class="conn-left">
+          <div class="conn-line"></div>
+        </div>
+
+        <!-- FACT TABLE (center) -->
+        <div class="fact-card" id="factCard">
+          <div class="tbl-type">⭐ Table de Faits</div>
+          <div class="tbl-name">fact_time_tracking</div>
+          <div class="fact-fields">
+            <span class="ff fk">user_id 🔗</span>
+            <span class="ff fk">project_id 🔗</span>
+            <span class="ff fk">task_id 🔗</span>
+            <span class="ff fk">date_id 🔗</span>
+            <span class="ff m">duration_hours</span>
+            <span class="ff m">story_points</span>
+            <span class="ff">status</span>
+            <span class="ff">resolution_h</span>
+            <span class="ff">issue_type</span>
+          </div>
+        </div>
+
+        <!-- connector right of fact -->
+        <div class="conn-right">
+          <div class="conn-line"></div>
+        </div>
+
+        <!-- dim_task (bottom-left) -->
+        <div class="dim-card dim-task">
+          <div class="tbl-type">🟣 Dimension</div>
+          <div class="tbl-name">dim_task</div>
+          <ul class="field-list">
+            <li><span>🔑</span> <span class="fname-pk">task_id</span> <span class="ftype">INT</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>task_name</span> <span class="ftype">VARCHAR</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>issue_type</span> <span class="ftype">VARCHAR</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>assignee</span> <span class="ftype">VARCHAR</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>story_points</span> <span class="ftype">INT</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>priority</span> <span class="ftype">VARCHAR</span></li>
+          </ul>
+        </div>
+
+        <!-- vertical connector bottom -->
+        <div style="grid-column:2;grid-row:3;display:flex;align-items:center;justify-content:center;">
+          <div class="conn-v" style="background:linear-gradient(to bottom,rgba(128,0,32,0.38),transparent,rgba(128,0,32,0.38));"></div>
+        </div>
+
+        <!-- dim_date (bottom-right) -->
+        <div class="dim-card dim-date">
+          <div class="tbl-type">🟡 Dimension</div>
+          <div class="tbl-name">dim_date</div>
+          <ul class="field-list">
+            <li><span>🔑</span> <span class="fname-pk">date_id</span> <span class="ftype">INT</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>full_date</span> <span class="ftype">DATE</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>day</span> <span class="ftype">INT</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>month</span> <span class="ftype">INT</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>quarter</span> <span class="ftype">INT</span></li>
+            <li><span class="fname-pk" style="opacity:.4">·</span> <span>year</span> <span class="ftype">INT</span></li>
+          </ul>
+        </div>
+
+      </div><!-- /schema-grid -->
+
+      <!-- Legend -->
+      <div class="schema-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Clé primaire (PK)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--rose)"></div>Clé étrangère (FK)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>dim_user</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>dim_project</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--violet)"></div>dim_task</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>dim_date</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--burg)"></div>⭐ fact_time_tracking</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="sec-div"><div class="sec-dot"></div>Données filtrées</div>
+  <div class="card-surf filter-bar">
+    <div class="fg"><label>Utilisateur</label><select id="fUser" onchange="applyFilters()"><option value="">Tous</option></select></div>
+    <div class="fg"><label>Projet</label><select id="fProject" onchange="applyFilters()"><option value="">Tous</option></select></div>
+    <div class="fg"><label>Statut</label>
+      <select id="fStatus" onchange="applyFilters()">
+        <option value="">Tous</option><option value="done">Done</option>
+        <option value="in_progress">In Progress</option><option value="pending">Pending</option>
+      </select>
+    </div>
+    <div class="fg"><label>Date début</label><input type="date" id="fDateFrom" onchange="applyFilters()"></div>
+    <div class="fg"><label>Date fin</label><input type="date" id="fDateTo" onchange="applyFilters()"></div>
+    <div class="f-right">
+      <span class="rec-count"><strong id="recCount">—</strong> entrées</span>
+      <button class="rst-btn" onclick="resetFilters()">✕ Reset</button>
+    </div>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="card-surf dt-wrap">
+    <div class="dt-head">
+      <div><h3>fact_time_tracking</h3><p>Enregistrements de suivi du temps</p></div>
+      <span class="dt-badge" id="tableBadge">— lignes</span>
+    </div>
+    <div class="dt-scroll">
+      <table class="dt">
+        <thead><tr>
+          <th>#</th><th>Utilisateur</th><th>Projet</th><th>Tâche / Type</th>
+          <th>Durée</th><th>Statut</th><th>Date</th><th>Points</th>
+        </tr></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <div class="es-icon">🔍</div>Aucun enregistrement trouvé.
+      </div>
+    </div>
+    <div class="dt-footer">
+      <span class="pg-info" id="pageInfo">—</span>
+      <div class="pg-ctrl" id="pageControls"></div>
+    </div>
+  </div>
+
+</div><!-- /page-wrap -->
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+<script>
+/* ── Sample data (replace with Papa.parse() for real CSV) ── */
+const USERS    = ['Alice Martin','Bob Dupont','Claire Petit','David Simon','Eva Thomas','Frank Morel','Grace Nguyen','Hugo Bernard'];
+const PROJECTS = ['Alpha Platform','Beta Analytics','Client Portal','Data Pipeline','E-Commerce Suite','Finance Tracker'];
+const TASKS    = ['Bug Fix','Feature Dev','Code Review','Testing','Documentation','Deployment','Design','Meeting'];
+const ISSUE    = ['Bug','Feature','Task','Improvement','Epic'];
+const STATUSES = ['done','in_progress','pending'];
+function rnd(a,b){return Math.random()*(b-a)+a;}
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function randDate(){const d=new Date(2024,0,1);d.setDate(d.getDate()+Math.floor(rnd(0,365)));return d.toISOString().slice(0,10);}
+const DATASET=Array.from({length:200},(_,i)=>({
+  id:i+1,user:pick(USERS),project:pick(PROJECTS),task:pick(TASKS),issue_type:pick(ISSUE),
+  duration:parseFloat(rnd(0.5,10).toFixed(1)),status:pick(STATUSES),date:randDate(),story_points:Math.round(rnd(1,13)),
+}));
+
+/* Filters */
+function initFilters(){
+  const fU=document.getElementById('fUser'),fP=document.getElementById('fProject');
+  const users=[...new Set(DATASET.map(d=>d.user))].sort();
+  const projects=[...new Set(DATASET.map(d=>d.project))].sort();
+  fU.innerHTML='<option value="">Tous</option>';fP.innerHTML='<option value="">Tous</option>';
+  users.forEach(u=>fU.innerHTML+=`<option value="${u}">${u}</option>`);
+  projects.forEach(p=>fP.innerHTML+=`<option value="${p}">${p}</option>`);
+}
+function getFiltered(){
+  const u=document.getElementById('fUser').value,p=document.getElementById('fProject').value;
+  const s=document.getElementById('fStatus').value,df=document.getElementById('fDateFrom').value,dt=document.getElementById('fDateTo').value;
+  return DATASET.filter(r=>{
+    if(u&&r.user!==u)return false;if(p&&r.project!==p)return false;if(s&&r.status!==s)return false;
+    if(df&&r.date<df)return false;if(dt&&r.date>dt)return false;return true;
+  });
+}
+function resetFilters(){['fUser','fProject','fStatus','fDateFrom','fDateTo'].forEach(id=>document.getElementById(id).value='');currentPage=1;render();}
+function applyFilters(){currentPage=1;render();}
+
+/* Pagination */
+let currentPage=1;const PAGE_SIZE=15;
+function render(){
+  const data=getFiltered();const total=data.length;
+  const totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  currentPage=Math.min(currentPage,totalPages);
+  const start=(currentPage-1)*PAGE_SIZE;const pageData=data.slice(start,start+PAGE_SIZE);
+  document.getElementById('recCount').textContent=total;
+  document.getElementById('tableBadge').textContent=`${total} lignes`;
+  const tbody=document.getElementById('tableBody'),empty=document.getElementById('emptyState');
+  if(!pageData.length){tbody.innerHTML='';empty.style.display='block';document.getElementById('pageControls').innerHTML='';return;}
+  empty.style.display='none';
+  const sMap={done:'<span class="pill pill-done">✓ Done</span>',in_progress:'<span class="pill pill-progress">⟳ In Progress</span>',pending:'<span class="pill pill-pending">⏳ Pending</span>'};
+  tbody.innerHTML=pageData.map(r=>`<tr>
+    <td class="c-id">${r.id}</td>
+    <td class="c-user">${r.user}</td>
+    <td class="c-project">${r.project}</td>
+    <td class="c-task">${r.task} <span style="color:var(--text3);font-size:10px;">[${r.issue_type}]</span></td>
+    <td class="c-hours">${r.duration}h</td>
+    <td>${sMap[r.status]||r.status}</td>
+    <td class="c-date">${r.date}</td>
+    <td style="font-family:'DM Mono',monospace;color:var(--text3);font-size:10px;">${r.story_points} sp</td>
+  </tr>`).join('');
+  document.getElementById('pageInfo').textContent=`Page ${currentPage}/${totalPages} — ${start+1}–${Math.min(start+PAGE_SIZE,total)} sur ${total}`;
+  renderPagination(totalPages);
+}
+function renderPagination(totalPages){
+  const ctrl=document.getElementById('pageControls');
+  if(totalPages<=1){ctrl.innerHTML='';return;}
+  let html=`<button class="pg-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  for(let p=1;p<=totalPages;p++){
+    if(totalPages>7&&Math.abs(p-currentPage)>2&&p!==1&&p!==totalPages){if(p===currentPage-3||p===currentPage+3)html+='<button class="pg-btn" disabled style="border:none;opacity:.3">…</button>';continue;}
+    html+=`<button class="pg-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  html+=`<button class="pg-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+  ctrl.innerHTML=html;
+}
+function goPage(p){currentPage=p;render();}
+
+/* KPI summary */
+function updateKPIs(){
+  const totalH=DATASET.reduce((s,r)=>s+r.duration,0);
+  const byUser={};DATASET.forEach(r=>byUser[r.user]=(byUser[r.user]||0)+r.duration);
+  const topUser=Object.entries(byUser).sort((a,b)=>b[1]-a[1])[0];
+  const byProj={};DATASET.forEach(r=>byProj[r.project]=(byProj[r.project]||0)+r.duration);
+  const topProj=Object.entries(byProj).sort((a,b)=>b[1]-a[1])[0];
+  animNum('kpiTotalH',totalH,1);animNum('kpiTotalT',DATASET.length);
+  document.getElementById('kpiTotalHSub').textContent=`${DATASET.filter(r=>r.status==='done').length} tâches terminées`;
+  document.getElementById('kpiTotalTSub').textContent=`${new Set(DATASET.map(r=>r.user)).size} utilisateurs actifs`;
+  document.getElementById('kpiTopUser').textContent=topUser[0].split(' ')[0];
+  document.getElementById('kpiTopUserSub').textContent=`${topUser[1].toFixed(1)}h · ${topUser[0]}`;
+  document.getElementById('kpiTopProj').textContent=topProj[0].split(' ')[0];
+  document.getElementById('kpiTopProjSub').textContent=`${topProj[1].toFixed(1)}h · ${topProj[0]}`;
+}
+
+/* Schema hover interactions */
+function setupSchema(){
+  const fact=document.getElementById('factCard');
+  document.querySelectorAll('.dim-card').forEach(card=>{
+    card.addEventListener('mouseenter',()=>{fact.style.borderColor='rgba(201,110,128,0.65)';fact.style.boxShadow='0 0 64px rgba(128,0,32,0.45)';});
+    card.addEventListener('mouseleave',()=>{fact.style.borderColor='';fact.style.boxShadow='';});
+  });
+}
+
+/* ── PDF EXPORT ─────────────────────────────────────────────── */
+async function exportPDF(){
+  const btn=document.getElementById('pdfBtn');
+  btn.setAttribute('disabled','');
+  btn.innerHTML='⏳ <span class="btn-txt">Export…</span>';
+  showToast('Génération PDF…','📄');
+  await new Promise(r=>setTimeout(r,600));
+  try{
+    // jsPDF must be loaded — add it in head if not present
+    if(!window.jspdf){ showToast('jsPDF non chargé — ajoutez le script dans <head>','⚠'); return; }
+    const{jsPDF}=window.jspdf;
+    const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const PW=210,PH=297,margin=12;
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+
+    /* ── PAGE 1: Header + KPIs + Schema screenshot ── */
+    pdf.setFillColor(128,0,32);pdf.rect(0,0,PW,16,'F');
+    pdf.setTextColor(255,255,255);pdf.setFontSize(12);pdf.setFont('helvetica','bold');
+    pdf.text('KPI Hub — Data Warehouse',margin,10);
+    pdf.setFontSize(7);pdf.setFont('helvetica','normal');
+    pdf.text(new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}),PW-margin,10,{align:'right'});
+
+    /* KPI cards */
+    let y=20;
+    const kpis=[
+      ['Total Heures',document.getElementById('kpiTotalH').textContent+' h'],
+      ['Top Utilisateur',document.getElementById('kpiTopUserSub').textContent],
+      ['Top Projet',document.getElementById('kpiTopProjSub').textContent],
+      ['Total Tickets',document.getElementById('kpiTotalT').textContent],
+    ];
+    const kw=(PW-margin*2-4.5)/4;
+    kpis.forEach(([lbl,val],i)=>{
+      const x=margin+i*(kw+1.5);
+      pdf.setFillColor(isDark?28:255,isDark?21:255,isDark?21:255);pdf.roundedRect(x,y,kw,20,1.5,1.5,'F');
+      pdf.setFillColor(128,0,32);pdf.rect(x,y,kw,1,'F');
+      pdf.setTextColor(168,153,145);pdf.setFontSize(5);pdf.setFont('helvetica','normal');
+      pdf.text(lbl.toUpperCase(),x+2,y+7);
+      pdf.setTextColor(128,0,32);pdf.setFontSize(10);pdf.setFont('helvetica','bold');
+      // truncate long values
+      const display=val.length>18?val.slice(0,18)+'…':val;
+      pdf.text(display,x+2,y+16);
+    });
+    y+=26;
+
+    /* Star schema — text representation */
+    pdf.setTextColor(168,153,145);pdf.setFontSize(7);pdf.setFont('helvetica','bold');
+    pdf.text('SCHÉMA EN ÉTOILE — MODÈLE DATA WAREHOUSE',margin,y);
+    pdf.setDrawColor(168,153,145);pdf.setLineWidth(.2);
+    pdf.line(margin+pdf.getTextWidth('SCHÉMA EN ÉTOILE — MODÈLE DATA WAREHOUSE')+2,y-.5,PW-margin,y-.5);
+    y+=6;
+
+    // Draw star schema as a styled text diagram
+    const schemaItems=[
+      {label:'dim_user',color:[42,157,143],x:margin,desc:'user_id PK · username · email · role · team'},
+      {label:'dim_project',color:[58,134,184],x:margin+col(PW,margin)+4,desc:'project_id PK · project_name · client · status'},
+      {label:'dim_task',color:[123,94,167],x:margin,desc:'task_id PK · task_name · issue_type · priority'},
+      {label:'dim_date',color:[201,168,76],x:margin+col(PW,margin)+4,desc:'date_id PK · full_date · day · month · year'},
+    ];
+    function col(pw,m){return (pw-m*3)/2;}
+    const cw=col(PW,margin);
+
+    // Top row: dim_user + dim_project
+    [[schemaItems[0],schemaItems[1]],[schemaItems[2],schemaItems[3]]].forEach((pair,rowIdx)=>{
+      pair.forEach((item,colIdx)=>{
+        const bx=margin+colIdx*(cw+margin);
+        const by=y+rowIdx*34;
+        pdf.setFillColor(isDark?22:248,isDark?16:246,isDark?22:244);
+        pdf.roundedRect(bx,by,cw,28,2,2,'F');
+        pdf.setFillColor(...item.color);pdf.rect(bx,by,cw,1.5,'F');
+        pdf.setTextColor(...item.color);pdf.setFontSize(8);pdf.setFont('helvetica','bold');
+        pdf.text(item.label,bx+4,by+8);
+        pdf.setTextColor(168,153,145);pdf.setFontSize(6);pdf.setFont('helvetica','normal');
+        // word-wrap description
+        const words=item.desc.split(' · ');
+        words.forEach((w,wi)=>pdf.text('· '+w,bx+4,by+14+wi*5));
+      });
+    });
+
+    // Center fact table
+    const factX=PW/2-30,factY=y+10;
+    pdf.setFillColor(80,0,16);pdf.roundedRect(factX,factY,60,48,3,3,'F');
+    pdf.setFillColor(128,0,32);pdf.roundedRect(factX,factY,60,2,1,1,'F');
+    pdf.setTextColor(232,160,176);pdf.setFontSize(7);pdf.setFont('helvetica','bold');
+    pdf.text('⭐ TABLE DE FAITS',factX+30,factY+8,{align:'center'});
+    pdf.setFontSize(9);pdf.text('fact_time_tracking',factX+30,factY+16,{align:'center'});
+    pdf.setTextColor(201,168,76);pdf.setFontSize(6);pdf.setFont('helvetica','normal');
+    ['user_id 🔗','project_id 🔗','task_id 🔗','date_id 🔗'].forEach((f,i)=>pdf.text(f,factX+6,factY+24+i*5));
+    pdf.setTextColor(201,168,76);
+    pdf.text('duration_hours  story_points',factX+6,factY+44);
+    y+=74;
+
+    /* ── PAGE 2: Filtered data table ── */
+    pdf.addPage();
+    pdf.setFillColor(128,0,32);pdf.rect(0,0,PW,10,'F');
+    pdf.setTextColor(255,255,255);pdf.setFontSize(8);pdf.setFont('helvetica','bold');
+    pdf.text('KPI Hub — Données fact_time_tracking',margin,7);
+
+    y=16;
+    pdf.setTextColor(168,153,145);pdf.setFontSize(7);pdf.setFont('helvetica','bold');
+    pdf.text('DONNÉES FILTRÉES',margin,y);
+    pdf.setDrawColor(168,153,145);pdf.setLineWidth(.2);
+    pdf.line(margin+pdf.getTextWidth('DONNÉES FILTRÉES')+2,y-.5,PW-margin,y-.5);
+    y+=5;
+
+    // filters summary
+    const fu=document.getElementById('fUser').value||'Tous';
+    const fp=document.getElementById('fProject').value||'Tous';
+    const fs=document.getElementById('fStatus').value||'Tous';
+    pdf.setTextColor(168,153,145);pdf.setFontSize(6);pdf.setFont('helvetica','normal');
+    pdf.text(`Utilisateur: ${fu}  ·  Projet: ${fp}  ·  Statut: ${fs}  ·  ${document.getElementById('recCount').textContent} entrées`,margin,y);
+    y+=5;
+
+    // table header
+    const cols=[['#',8],['Utilisateur',36],['Projet',36],['Tâche',34],['Durée',16],['Statut',22],['Date',22],['Pts',12]];
+    pdf.setFillColor(128,0,32);pdf.rect(margin,y,PW-margin*2,6,'F');
+    pdf.setTextColor(255,255,255);pdf.setFontSize(6);pdf.setFont('helvetica','bold');
+    let cx=margin+2;
+    cols.forEach(([h])=>{pdf.text(h,cx,y+4);cx+=cols.find(c=>c[0]===h)[1]+2;});
+
+    // Wait — recalculate cx properly
+    y+=6;
+    const filtData=getFiltered().slice(0,50); // max 50 rows in PDF
+    filtData.forEach((r,i)=>{
+      pdf.setFillColor(i%2===0?(isDark?28:255):(isDark?34:248),i%2===0?(isDark?21:255):(isDark?26:248),i%2===0?(isDark?21:255):(isDark?26:248));
+      pdf.rect(margin,y,PW-margin*2,5,'F');
+      pdf.setTextColor(isDark?200:80,isDark?180:60,isDark?180:60);pdf.setFontSize(5.5);pdf.setFont('helvetica','normal');
+      let cx2=margin+2;
+      const row=[r.id,r.user.split(' ')[0],r.project.split(' ')[0],r.task,r.duration+'h',r.status,r.date,r.story_points+'sp'];
+      const widths=[8,36,36,34,16,22,22,12];
+      row.forEach((val,vi)=>{
+        const txt=String(val);
+        const maxW=widths[vi]-2;
+        const display=txt.length>maxW/2?txt.slice(0,Math.floor(maxW/2))+'…':txt;
+        pdf.setTextColor(isDark?210:30,isDark?195:20,isDark?195:20);
+        if(vi===0)pdf.setTextColor(120,90,80);
+        if(vi===1)pdf.setTextColor(42,157,143);
+        if(vi===2)pdf.setTextColor(58,134,184);
+        if(vi===4)pdf.setTextColor(201,168,76);
+        pdf.text(display,cx2,y+3.5);
+        cx2+=widths[vi]+2;
+      });
+      y+=5;
+      if(y>PH-20){pdf.addPage();y=16;}
+    });
+
+    // footer
+    pdf.setTextColor(168,153,145);pdf.setFontSize(6);
+    pdf.text('Généré par KPI Hub · '+new Date().toLocaleString('fr-FR'),PW/2,PH-8,{align:'center'});
+    pdf.setDrawColor(168,153,145);pdf.setLineWidth(.2);pdf.line(margin,PH-11,PW-margin,PH-11);
+
+    pdf.save('data-warehouse-'+new Date().toISOString().slice(0,10)+'.pdf');
+    showToast('PDF exporté !');
+  }catch(e){
+    console.error('PDF error:',e);
+    showToast('Erreur PDF: '+e.message,'⚠');
+  }finally{
+    btn.removeAttribute('disabled');
+    btn.innerHTML='⬇ <span class="btn-txt">Export PDF</span>';
+  }
+}
+
+/* Init */
+(function(){
+  initFilters();updateKPIs();render();setupSchema();
+  showToast('Data Warehouse chargé · 200 enregistrements','🗄');
+})();
+</script>
+
+<!-- ═══ SHARE MODAL (identical to kpi.html & dashboard.html) ═══ -->
+<div class="overlay" id="shareOverlay" onclick="closeShareOnBg(event)">
+  <div class="modal">
+    <div class="m-head">
+      <h3>🔗 Partager le Data Warehouse</h3>
+      <button class="m-close" onclick="closeShare()">✕</button>
+    </div>
+    <div class="m-body-p">
+      <div class="perm sel" onclick="selPerm(this,'viewer')">
+        <span class="perm-icon">👁</span>
+        <div class="perm-info"><div class="perm-name">Lecteur</div><div class="perm-desc">Consultation uniquement</div></div>
+        <div class="perm-chk">✓</div>
+      </div>
+      <div class="perm" onclick="selPerm(this,'editor')">
+        <span class="perm-icon">✏️</span>
+        <div class="perm-info"><div class="perm-name">Éditeur</div><div class="perm-desc">Peut interagir avec les filtres</div></div>
+        <div class="perm-chk">✓</div>
+      </div>
+      <div class="perm" onclick="selPerm(this,'restricted')">
+        <span class="perm-icon">🔒</span>
+        <div class="perm-info"><div class="perm-name">Accès restreint</div><div class="perm-desc">Personnes invitées uniquement</div></div>
+        <div class="perm-chk">✓</div>
+      </div>
+      <div class="link-row" id="linkRow" style="display:none;">
+        <input class="link-inp" id="shareLinkInp" readonly>
+        <button class="tb-btn" onclick="copyShareLink()" id="copyBtn"><span>📋</span></button>
+      </div>
+      <div class="share-note" id="shareNote"></div>
+      <div class="m-actions">
+        <button class="m-btn cancel" onclick="closeShare()">Annuler</button>
+        <button class="m-btn go" onclick="genShareLink()">Générer le lien</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+</body>
+</html>
+>>>>>>> 55bb3c6c647ea5d653ac19d09b1573e10a5f1164
