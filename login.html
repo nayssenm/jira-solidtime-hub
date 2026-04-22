@@ -59,7 +59,6 @@
   <p class="sub">Connectez-vous à votre espace</p>
 
   <div class="hint">
-    <strong>Code d'accès</strong> : reçu par email lors de l'inscription.<br>
     Pas de compte ? <a href="signup.html">Créer un compte →</a>
   </div>
 
@@ -81,12 +80,6 @@
       <span class="eye" id="eyeBtn" onclick="toggleEye()">👁</span>
     </div>
     <div class="field-msg" id="passMsg"></div>
-  </div>
-
-  <div class="field">
-    <label>Code d'accès (reçu par email)</label>
-    <input type="text" id="code" placeholder="123456" maxlength="10" autocomplete="off">
-    <div class="field-msg" id="codeMsg"></div>
   </div>
 
   <button class="btn" id="loginBtn" onclick="login()">Se connecter →</button>
@@ -155,15 +148,13 @@ function hideGlobal() { document.getElementById('globalErr').classList.remove('s
 function login() {
   const email = document.getElementById('email').value.trim();
   const pass  = document.getElementById('password').value;
-  const code  = document.getElementById('code').value.trim();
   let valid   = true;
 
-  ['emailMsg', 'passMsg', 'codeMsg'].forEach(clearErr);
+  ['emailMsg', 'passMsg'].forEach(clearErr);
   hideGlobal();
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('emailMsg', 'Email invalide'); valid = false; }
   if (!pass)  { showErr('passMsg', 'Mot de passe requis'); valid = false; }
-  if (!code)  { showErr('codeMsg', "Code d'accès requis"); valid = false; }
   if (!valid) return;
 
   const btn = document.getElementById('loginBtn');
@@ -181,18 +172,6 @@ function login() {
       return;
     }
 
-    // Code validation:
-    // - If user has an accessCode stored (set during signup), check it
-    // - If user is verified (email verified flow), allow any valid session
-    const storedCode = user.accessCode || null;
-    if (storedCode && code !== storedCode) {
-      showGlobal("Code d'accès invalide");
-      btn.disabled = false;
-      btn.innerHTML = 'Se connecter →';
-      return;
-    }
-
-    // Success
     localStorage.setItem('kpi_auth', 'true');
     localStorage.setItem('kpi_current_user', JSON.stringify({ email: user.email, method: 'email' }));
     window.location.href = 'dashboard.html';
