@@ -224,6 +224,7 @@ table.dt tr:last-child td{border-bottom:none;}
 @media(max-width:860px){header{padding:0 20px;}.container{padding:20px 20px 60px;}}
 @media(max-width:640px){.kpi-row{grid-template-columns:1fr 1fr;}.hdr-crumb{display:none;}}
 </style>
+<script src="rbac.js"></script>
 </head>
 <body>
 
@@ -237,7 +238,7 @@ table.dt tr:last-child td{border-bottom:none;}
     <a class="hdr-btn" href="kpi.html">📊 KPI</a>
     <a class="hdr-btn" href="dashboard.html">📈 Dashboard</a>
     <a class="hdr-btn" href="collaborative-dss.html">🧠 DSS</a>
-    <button class="hdr-btn" onclick="exportSchemaPDF()">⬇ Export PDF</button>
+    <button class="hdr-btn" data-rbac="export" onclick="exportSchemaPDF()">⬇ Export PDF</button>
     <button class="hdr-btn primary" onclick="logout()">⏻ Déconnexion</button>
   </div>
 </header>
@@ -988,6 +989,12 @@ function animNum(id,target,dec){
    PDF EXPORT — haute qualité via Canvas
 ══════════════════════════════════════════════════════ */
 async function exportSchemaPDF(){
+  /* RBAC guard — restricted role cannot export */
+  if(typeof RBAC!=="undefined" && !RBAC.canExport()){
+    if(typeof toast==="function") toast("Export PDF désactivé — accès restreint","⚠");
+    return;
+  }
+
   toast('Génération PDF haute qualité…','📄');
   await new Promise(r=>setTimeout(r,400));
 

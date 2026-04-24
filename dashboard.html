@@ -48,7 +48,7 @@
       <span class="tb-icon">🌙</span>
     </div>
     <div class="tb-sep"></div>
-    <button class="tb-btn" id="pdfBtn" onclick="exportPDF()">⬇ <span class="btn-txt">Export PDF</span></button>
+    <button class="tb-btn" id="pdfBtn" data-rbac="export" onclick="exportPDF()">⬇ <span class="btn-txt">Export PDF</span></button>
     <button class="tb-btn prim" onclick="openShare()">🔗 <span class="btn-txt">Partager</span></button>
   </div>
 </div>
@@ -173,9 +173,9 @@
   <div class="modal">
     <div class="m-head"><h3>🔗 Partager le Dashboard</h3><button class="m-close" onclick="closeShare()">✕</button></div>
     <div class="m-body-p">
-      <div class="perm sel" onclick="selPerm(this,'viewer')"><span class="perm-icon">👁</span><div class="perm-info"><div class="perm-name">Lecteur</div><div class="perm-desc">Consultation uniquement</div></div><div class="perm-chk">✓</div></div>
-      <div class="perm" onclick="selPerm(this,'commenter')"><span class="perm-icon">💬</span><div class="perm-info"><div class="perm-name">Commentateur</div><div class="perm-desc">Peut annoter et commenter les KPI</div></div><div class="perm-chk">✓</div></div>
-      <div class="perm" onclick="selPerm(this,'restricted')"><span class="perm-icon">🔒</span><div class="perm-info"><div class="perm-name">Accès restreint</div><div class="perm-desc">Personnes invitées uniquement</div></div><div class="perm-chk">✓</div></div>
+      <div class="perm sel" onclick="selPerm(this,'viewer')"><span class="perm-icon">👁</span><div class="perm-info"><div class="perm-name">Lecteur</div><div class="perm-desc">Lecture + export PDF · sans commentaires</div></div><div class="perm-chk">✓</div></div>
+      <div class="perm" onclick="selPerm(this,'commenter')"><span class="perm-icon">💬</span><div class="perm-info"><div class="perm-name">Commentateur</div><div class="perm-desc">Lecture + export PDF + annotations + accès DSS</div></div><div class="perm-chk">✓</div></div>
+      <div class="perm" onclick="selPerm(this,'restricted')"><span class="perm-icon">🔒</span><div class="perm-info"><div class="perm-name">Accès restreint</div><div class="perm-desc">Lecture uniquement · aucun export ni commentaire</div></div><div class="perm-chk">✓</div></div>
       <div class="link-row" id="linkRow" style="display:none;">
         <input class="link-inp" id="shareLinkInp" readonly>
         <button class="tb-btn" onclick="copyShareLink()" id="copyBtn"><span>📋</span></button>
@@ -191,6 +191,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="rbac.js"></script>
 <script src="app.js"></script>
 <script>
 const html=document.documentElement;

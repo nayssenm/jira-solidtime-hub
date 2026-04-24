@@ -13,7 +13,6 @@
     window.location.href='login.html';
 })();
 </script>
-
 </head>
 <body>
 
@@ -48,8 +47,8 @@
       <span class="tb-icon">☀️</span><div class="tb-track"></div><span class="tb-icon">🌙</span>
     </div>
     <div class="tb-sep"></div>
-    <button class="tb-btn" onclick="exportDecisionReport()">⬇ <span class="btn-txt">Rapport PDF</span></button>
-    <button class="tb-btn prim" onclick="openNewComment()">＋ Annotation</button>
+    <button class="tb-btn" data-rbac="export" onclick="exportDecisionReport()">⬇ <span class="btn-txt">Rapport PDF</span></button>
+    <button class="tb-btn prim" data-rbac="comment" onclick="openNewComment()">＋ Annotation</button>
   </div>
 </div>
 
@@ -269,6 +268,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<script src="rbac.js"></script>
 <script src="app.js"></script>
 
 <style>
@@ -359,7 +359,7 @@
 }
 .af-group{display:flex;align-items:center;gap:8px;}
 .af-label{font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;color:var(--text3);white-space:nowrap;}
-.af-group select{padding:6px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:var(--font-b);font-size:12px;outline:none;cursor:pointer;appearance:none;}
+.af-group select{padding:6px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:var(--font-b);font-size:12px;outline:none;cursor:pointer;-webkit-appearance:none;}
 .af-group select:focus{border-color:var(--sa);}
 
 .annot-card{
@@ -609,7 +609,7 @@ function renderAnnotations(){
 
   const container = document.getElementById('annotationsContainer');
   if(!filtered.length){
-    container.innerHTML = `<div class="empty-state"><div class="es-icon">🔍</div>Aucune annotation pour ces filtres.<br><br>${can('annotate') ? '<button class="tb-btn prim" onclick="openNewComment()">＋ Créer une annotation</button>' : ''}</div>`;
+    container.innerHTML = `<div class="empty-state"><div class="es-icon">🔍</div>Aucune annotation pour ces filtres.<br><br>${can('annotate') ? '<button class="tb-btn prim" data-rbac="comment" onclick="openNewComment()">＋ Créer une annotation</button>' : ''}</div>`;
     return;
   }
 
@@ -635,8 +635,8 @@ function buildAnnotCard(c){
     </div>` : '';
 
   const footerBtns = [];
-  if(can('reply'))   footerBtns.push(`<button class="annot-footer-btn" onclick="openReply('${c.id}')">↩ Répondre</button>`);
-  if(can('resolve') && !c.resolved) footerBtns.push(`<button class="annot-footer-btn resolve" onclick="resolveComment('${c.id}')">✓ Marquer résolu</button>`);
+  if(can('reply'))   if(window.__rbacCanComment !== false) footerBtns.push(`<button class="annot-footer-btn" onclick="openReply('${c.id}')">↩ Répondre</button>`);
+  if(window.__rbacCanComment !== false && can('resolve') && !c.resolved) footerBtns.push(`<button class="annot-footer-btn resolve" onclick="resolveComment('${c.id}')">✓ Marquer résolu</button>`);
 
   return `<div class="annot-card ${c.resolved ? 'resolved' : ''}" id="annot_${c.id}">
     <div class="annot-header">
