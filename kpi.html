@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KPI Overview — dashwise</title>
+<title>KPI Overview — KPI Hub</title>
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -36,28 +36,6 @@
     <span class="nav-name" id="navName">—</span>
     <button class="nav-logout" onclick="logout()">⏻ Déconnexion</button>
   </div>
-  <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Menu" aria-expanded="false">
-    <span></span><span></span><span></span>
-  </button>
-<!-- ═══ MOBILE NAV DRAWER ══════════════════════════════════════ -->
-<div class="nav-mobile-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
-<nav class="nav-mobile-drawer" id="mobileNavDrawer" aria-label="Navigation mobile">
-  <div class="nav-mobile-header">
-    <span class="nav-mobile-title">KPI <em style="color:var(--sa);font-style:italic;">Hub</em></span>
-    <button class="nav-mobile-close" onclick="closeMobileNav()" aria-label="Fermer">✕</button>
-  </div>
-  <div class="nav-mobile-links" id="mobileNavLinks">
-    <!-- populated by JS -->
-  </div>
-  <div class="nav-mobile-footer">
-    <div class="nav-avatar" id="mobNavAvatar" style="flex-shrink:0;width:34px;height:34px;font-size:13px;">A</div>
-    <div class="nav-mobile-user">
-      <p id="mobNavName">—</p>
-      <span id="mobNavEmail">—</span>
-    </div>
-    <button class="nav-mobile-logout" onclick="logout()">⏻ Déco</button>
-  </div>
-</nav>
 
 <!-- ═══ TOOLBAR ════════════════════════════════════════════════ -->
 <div class="toolbar">
