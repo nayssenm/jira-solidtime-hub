@@ -225,6 +225,7 @@ table.dt tr:last-child td{border-bottom:none;}
 @media(max-width:640px){.kpi-row{grid-template-columns:1fr 1fr;}.hdr-crumb{display:none;}}
 </style>
 <script src="rbac.js"></script>
+<link rel="stylesheet" href="responsive.css">
 </head>
 <body>
 
@@ -238,11 +239,30 @@ table.dt tr:last-child td{border-bottom:none;}
     <a class="hdr-btn" href="kpi.html">📊 KPI</a>
     <a class="hdr-btn" href="dashboard.html">📈 Dashboard</a>
     <a class="hdr-btn" href="collaborative-dss.html">🧠 DSS</a>
-    <button class="hdr-btn" data-rbac="export" onclick="exportSchemaPDF()">⬇ Export PDF</button>
-    <button class="hdr-btn primary" onclick="logout()">⏻ Déconnexion</button>
+    <button class="hdr-btn" data-rbac="export" onclick="exportSchemaPDF()"><span class="btn-label">⬇ Export PDF</span></button>
+    <button class="hdr-btn primary" onclick="logout()"><span class="btn-label">⏻ Déconnexion</span></button>
   </div>
+  <button class="nav-hamburger" id="navHamburger" onclick="toggleMobileNav()" aria-label="Menu"><span></span><span></span><span></span></button>
 </header>
 
+<div class="nav-mobile-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
+<nav class="nav-mobile-drawer" id="mobileNavDrawer">
+  <div class="nav-mobile-header">
+    <span class="nav-mobile-title">KPI <em style="color:var(--sa);font-style:italic;">Hub</em></span>
+    <button class="nav-mobile-close" onclick="closeMobileNav()">✕</button>
+  </div>
+  <div class="nav-mobile-links">
+    <a href="kpi.html"><span class="mob-nav-icon">📊</span> KPI Overview</a>
+    <a href="dashboard.html"><span class="mob-nav-icon">📈</span> Dashboard</a>
+    <a href="data-warehouse.html" class="active"><span class="mob-nav-icon">🗄</span> Data Warehouse</a>
+    <a href="collaborative-dss.html"><span class="mob-nav-icon">🧠</span> Collaborative DSS</a>
+  </div>
+  <div class="nav-mobile-footer">
+    <div class="nav-avatar" style="flex-shrink:0;width:34px;height:34px;font-size:13px;">A</div>
+    <div class="nav-mobile-user"><p>KPI Hub</p><span>data-warehouse</span></div>
+    <button class="nav-mobile-logout" onclick="logout()">⏻ Déco</button>
+  </div>
+</nav>
 <div class="container">
 
   <div class="pg-header">
