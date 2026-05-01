@@ -1,19 +1,4 @@
-/* ════════════════════════════════════════════════════════════════
-   health-widget.js  —  KPI Hub Project Health Diagnostic Widget
-   ─────────────────────────────────────────────────────────────
-   Drop-in JS module: loads after app.js, reads current dashboard
-   filters, calls Flask API, and renders results inside dashboard.html
-   without touching any existing code.
 
-   HOW IT WORKS:
-     1. Injects a "Health Diagnostic" section after the monthly chart
-     2. Reads the active Project filter from dashboard.html
-     3. Calls GET /api/health?project=<name>  (or /api/health for all)
-     4. Renders score ring, breakdown bars, anomalies list, insights list
-     5. Auto-refreshes when the user changes the Project filter
-
-   REQUIRES:  Flask API running on http://localhost:5050
-   ════════════════════════════════════════════════════════════════ */
 
 (function () {
   'use strict';

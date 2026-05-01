@@ -1,21 +1,4 @@
-"""
-health_api.py  —  KPI Hub Project & Group Health Diagnostic System
-===================================================================
-Flask API that analyses dashboard_dataset.csv and returns structured
-JSON diagnostics for every project (or a specific one).
 
-Run:
-    pip install flask pandas flask-cors
-    python health_api.py
-
-Endpoints:
-    GET  /api/health                      → diagnose ALL projects
-    GET  /api/health?project=WEB          → diagnose ONE project
-    GET  /api/health?project=WEB&user=alice  → scoped to user
-    GET  /api/projects                    → list available projects
-    GET  /api/users                       → list available users
-    GET  /api/health/summary              → global platform overview
-"""
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
