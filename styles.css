@@ -578,3 +578,81 @@ table.dt tr:last-child td{border-bottom:none;}
 }
 @media(max-width:640px){.kpi-grid{grid-template-columns:1fr 1fr;}.nav-name,.tb-btn .btn-txt{display:none;}}
 @media(max-width:480px){.kpi-grid{grid-template-columns:1fr;}.toolbar-crumb{display:none;}}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEGACY STATIC PAGES
+   Dashboard/data-warehouse generated pages still use compact
+   class names. These aliases keep them visually aligned with the
+   shared Midnight Sapphire UI without changing their data payloads.
+═══════════════════════════════════════════════════════════════ */
+body > nav:not(.nav-bar){
+  position:sticky;top:0;z-index:200;height:var(--nav-h);
+  background:var(--nav-bg);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 40px;
+  transition:background .4s,border-color .4s;
+}
+body > nav:not(.nav-bar)::after{
+  content:'';position:absolute;bottom:-1px;left:0;width:70%;height:2px;
+  background:linear-gradient(90deg,var(--sa) 0%,var(--or) 55%,transparent 100%);
+}
+.nl{display:flex;align-items:center;gap:12px;text-decoration:none;margin-right:32px;flex-shrink:0;}
+.nm{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--sa),var(--sa2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 14px rgba(30,111,217,.40);flex-shrink:0;
+}
+.nm svg{width:16px;height:16px;fill:#D6E8FF;}
+.nt{font-family:var(--font-d);font-size:19px;font-weight:600;color:var(--text);}
+.nt em{color:var(--sa);font-style:italic;}
+.nlinks{display:flex;align-items:center;gap:2px;flex:1;}
+.nlink{
+  display:inline-flex;align-items:center;gap:7px;padding:7px 15px;
+  border-radius:var(--radius);font-size:13px;font-weight:500;color:var(--text3);
+  text-decoration:none;transition:background .2s,color .2s;position:relative;
+}
+.nlink:hover{color:var(--text);background:var(--surf2);}
+.nlink.active{background:linear-gradient(135deg,var(--sa),var(--sa2));color:#D6E8FF;}
+.nr{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.tog{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none;padding:4px;}
+.togtr{position:relative;width:34px;height:19px;background:var(--tog-track);border-radius:10px;border:1px solid var(--border);}
+.togtr::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:var(--tog-thumb);transition:transform .3s var(--ease);}
+[data-theme="dark"] .togtr::after{transform:translateX(15px);}
+.togic{font-size:12px;line-height:1;}
+.wrap{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:36px 40px 90px;}
+.sdiv{display:flex;align-items:center;gap:12px;margin:28px 0 18px;font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:var(--trl);text-transform:uppercase;color:var(--text3);}
+.sdiv::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--sa),var(--or));box-shadow:0 0 10px rgba(30,111,217,.55);}
+.card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);transition:background .4s,border-color .4s,box-shadow .25s;}
+.card:hover{box-shadow:var(--shadow-h);}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:30px;}
+.kcard{padding:22px 18px;position:relative;overflow:hidden;}
+.kcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--sa),var(--or));opacity:.85;}
+.kicon{width:38px;height:38px;border-radius:11px;background:var(--badge-bg);display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px;}
+.klbl{font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:var(--trl);text-transform:uppercase;color:var(--text3);margin-bottom:5px;}
+.kval{font-family:var(--font-d);font-size:36px;font-weight:600;line-height:1;color:var(--text);letter-spacing:-.02em;}
+.ksub,.ktip{font-size:10.5px;color:var(--text3);margin-top:7px;line-height:1.5;}
+.ktip{color:var(--or2);}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+.cgrid.full{grid-template-columns:1fr;}
+.ccard{padding:22px 20px;}
+.chead{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:16px;flex-wrap:wrap;}
+.ctitle{font-family:var(--font-d);font-size:17px;font-weight:600;color:var(--text);line-height:1.2;}
+.csub{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.5;}
+.cbadge{font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;padding:3px 10px;border-radius:20px;background:var(--badge-bg);color:var(--badge-c);border:1px solid var(--border);white-space:nowrap;}
+.fbar{padding:16px 20px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:22px;}
+.fright{margin-left:auto;display:flex;align-items:flex-end;gap:8px;}
+.rc{font-size:11px;color:var(--text3);white-space:nowrap;padding-bottom:3px;}
+.rc strong{color:var(--text);font-weight:700;}
+.rbtn,.ebtn{
+  padding:7px 12px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--surf);color:var(--text2);font-family:var(--font-b);font-size:11px;font-weight:500;cursor:pointer;transition:all .22s;
+}
+.rbtn:hover,.ebtn:hover{border-color:var(--sa);color:var(--sa);}
+.ebtn{background:linear-gradient(135deg,var(--sa),var(--sa2));color:#D6E8FF;border-color:transparent;}
+.mom-controls{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-left:auto;}
+.mom-note{font-family:var(--font-m);font-size:10px;color:var(--text3);}
+.mom-empty{padding:22px;text-align:center;color:var(--text3);font-size:12px;}
+@media(max-width:1024px){.cgrid{grid-template-columns:1fr;}}
+@media(max-width:760px){body > nav:not(.nav-bar){padding:0 20px;}.wrap{padding:20px 20px 70px;}.nlinks .nlink:not(.active){display:none;}.mom-controls{width:100%;margin-left:0;}}
