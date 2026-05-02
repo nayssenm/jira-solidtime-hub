@@ -1,0 +1,10 @@
+{
+  "name": "Jira Solidtime KPI Hub",
+  "short_name": "KPI Hub",
+  "start_url": "dashboard.html",
+  "display": "standalone",
+  "background_color": "#0c0a10",
+  "theme_color": "#1e6fd9",
+  "description": "Professional BI dashboard for Jira and Solidtime metrics.",
+  "icons": []
+}

@@ -1,0 +1,42 @@
+@media print {
+  html,
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  nav,
+  .nlinks,
+  .nr,
+  .fbar,
+  .eh-topbar,
+  .eh-modal-backdrop,
+  .eh-panel-float,
+  .toast,
+  button {
+    display: none !important;
+  }
+
+  .wrap {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .card,
+  .ccard,
+  .kcard,
+  .eh-panel {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  canvas,
+  svg {
+    max-width: 100% !important;
+  }
+}
