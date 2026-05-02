@@ -1,6 +1,10 @@
 (function () {
   'use strict';
 
+  try {
+    if (window._healthWidgetLoaded) return;
+    window._healthWidgetLoaded = true;
+
   /* ── Palette matching styles.css Midnight Sapphire ── */
   const COLOR = {
     good:     '#0CB87A',
@@ -523,16 +527,35 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
-     DATA ACCESS — reads `raw` from dashboard.html
+     DATA ACCESS — reads static data embedded by dashboard.html
   ══════════════════════════════════════════════════════════════ */
 
+  function normalizeRow(row) {
+    return {
+      ...row,
+      User: row.User || 'Unknown',
+      Project: row.Project || 'Unknown',
+      Status: row.Status || 'other',
+      Tags: row.Tags || '',
+      Description: row.Description || '',
+      duration_hours: Number(row.duration_hours ?? row.h ?? row.heures ?? 0) || 0,
+      month_solid: row.month_solid || row.m || '',
+      Task_key: row.Task_key || row.k || '',
+    };
+  }
+
   function getData() {
-    /* `raw` is the global array defined and populated by dashboard.html */
-    return window.raw || [];
+    /* Static dashboard data is embedded as RAW; older builds may expose raw. */
+    const source = Array.isArray(window.RAW)
+      ? window.RAW
+      : Array.isArray(window.raw)
+        ? window.raw
+        : [];
+    return source.map(normalizeRow).filter(r => r.duration_hours > 0);
   }
 
   function getCurrentProject() {
-    const el = document.getElementById('fProj');
+    const el = document.getElementById('fProj') || document.getElementById('fP');
     return el ? el.value.trim() : '';
   }
 
@@ -565,45 +588,68 @@
     }
   }
 
+  function safeRunAnalysis(project) {
+    try {
+      runAnalysis(project);
+    } catch (err) {
+      console.warn('[health-widget] Diagnostic skipped:', err);
+      const body = document.getElementById('hw2Body');
+      if (body) {
+        body.innerHTML = `
+          <div class="hw2-notice">
+            Diagnostic santé indisponible pour le moment. Le reste du dashboard reste utilisable.
+            <br><br>
+            <button class="hw2-btn prim" onclick="window._hw2Refresh()" style="margin-top:6px;">🔄 Réessayer</button>
+          </div>`;
+      }
+    }
+  }
+
   /* ══════════════════════════════════════════════════════════════
      PUBLIC API
   ══════════════════════════════════════════════════════════════ */
 
-  window._hw2Project = project => runAnalysis(project);
-  window._hw2All     = ()      => runAnalysis('');
-  window._hw2Refresh = ()      => runAnalysis(getCurrentProject());
+  window._hw2Project = project => safeRunAnalysis(project);
+  window._hw2All     = ()      => safeRunAnalysis('');
+  window._hw2Refresh = ()      => safeRunAnalysis(getCurrentProject());
 
   /* ══════════════════════════════════════════════════════════════
      HOOK INTO EXISTING FILTER CHANGES
   ══════════════════════════════════════════════════════════════ */
 
   function hookFilters() {
-    const fProj = document.getElementById('fProj');
-    if (!fProj) return;
+    const filters = ['fProj', 'fP', 'fU', 'fS', 'fMf', 'fMt']
+      .map(id => document.getElementById(id))
+      .filter(Boolean);
+    if (!filters.length) return;
     let timer = null;
-    fProj.addEventListener('change', () => {
+    filters.forEach(filter => filter.addEventListener('change', () => {
       clearTimeout(timer);
-      timer = setTimeout(() => runAnalysis(getCurrentProject()), 500);
-    });
+      timer = setTimeout(() => safeRunAnalysis(getCurrentProject()), 500);
+    }));
   }
 
   /* ══════════════════════════════════════════════════════════════
      PATCH applyFilters — re-run diagnostic after every filter
   ══════════════════════════════════════════════════════════════ */
 
-  function patchApplyFilters() {
-    /* Wait until dashboard.html defines applyFilters, then wrap it */
-    if (typeof window.applyFilters !== 'function') {
-      setTimeout(patchApplyFilters, 100);
+  function patchDashboardRefresh(attempts = 50) {
+    const refreshName =
+      typeof window.applyFilters === 'function' ? 'applyFilters' :
+      typeof window.upd === 'function' ? 'upd' :
+      '';
+
+    if (!refreshName) {
+      if (attempts > 0) setTimeout(() => patchDashboardRefresh(attempts - 1), 100);
       return;
     }
     if (window._hw2Patched) return;
     window._hw2Patched = true;
-    const orig = window.applyFilters;
-    window.applyFilters = function (...args) {
-      orig.apply(this, args);
-      /* After the dashboard updates, refresh our diagnostic */
-      setTimeout(() => runAnalysis(getCurrentProject()), 200);
+    const orig = window[refreshName];
+    window[refreshName] = function (...args) {
+      const result = orig.apply(this, args);
+      setTimeout(() => safeRunAnalysis(getCurrentProject()), 200);
+      return result;
     };
   }
 
@@ -614,7 +660,7 @@
   function waitForData(attempts) {
     const data = getData();
     if (data && data.length > 0) {
-      runAnalysis(getCurrentProject());
+      safeRunAnalysis(getCurrentProject());
     } else if (attempts > 0) {
       setTimeout(() => waitForData(attempts - 1), 600);
     } else {
@@ -632,7 +678,7 @@
     injectCSS();
     injectContainer();
     hookFilters();
-    patchApplyFilters();
+    patchDashboardRefresh();
     /* Give dashboard.html up to 15 seconds to load its CSV */
     waitForData(25);
   }
@@ -643,4 +689,7 @@
     init();
   }
 
+  } catch (err) {
+    console.warn('[health-widget] Widget disabled safely:', err);
+  }
 })();
