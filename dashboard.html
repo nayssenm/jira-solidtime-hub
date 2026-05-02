@@ -1,6 +1,9 @@
 <!DOCTYPE html><html lang="fr" data-theme="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Dashboard — KPI Hub</title><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="enhancements/dashboard-enhancements.css">
+<link rel="stylesheet" href="enhancements/print.css">
 </head><body><nav>
   <a class="nl" href="dashboard.html">
     <div class="nm"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
@@ -365,4 +368,4 @@ function upd(){
   var el=document.getElementById(id);if(el)el.addEventListener("change",upd);
 });
 upd();
-</script><script src="health-widget.js" defer></script></body></html>
+</script><script src="enhancements/shortcut-manager.js" defer></script><script src="enhancements/dashboard-enhancements.js" defer></script><script src="health-widget.js" defer></script></body></html>
