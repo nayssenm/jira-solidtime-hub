@@ -3,6 +3,22 @@
     {
       "source": "/",
       "destination": "/login.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/kpi",
+      "destination": "/kpi.html"
+    },
+    {
+      "source": "/collaborative-dss",
+      "destination": "/collaborative-dss.html"
+    },
+    {
+      "source": "/data-warehouse",
+      "destination": "/data-warehouse.html"
     }
   ]
 }
