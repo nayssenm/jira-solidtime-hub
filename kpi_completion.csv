@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 Project,Status_clean,count,percentage
 ARTFIN,other,21,100.0
 AUTOMATION,other,12,100.0
@@ -11,17 +10,3 @@ POINTINY,other,1208,100.0
 REPLICATION,other,3,100.0
 SYSTEM MONITORING,other,50,100.0
 WEB,other,7430,100.0
-=======
-Project,Status_clean,count,percentage
-ARTFIN,other,21,100.0
-AUTOMATION,other,12,100.0
-DATA,other,2400,100.0
-E-COMMERCE,other,2250,100.0
-HELPDESK,other,76,100.0
-MOBILE,other,383,100.0
-ORGANISATION,other,2936,100.0
-POINTINY,other,1208,100.0
-REPLICATION,other,3,100.0
-SYSTEM MONITORING,other,50,100.0
-WEB,other,7430,100.0
->>>>>>> 55bb3c6c647ea5d653ac19d09b1573e10a5f1164

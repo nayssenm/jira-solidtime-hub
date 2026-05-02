@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 Project,Status_clean,count
 ARTFIN,other,21
 AUTOMATION,other,12
@@ -16,17 +15,3 @@ WEB,done,508
 WEB,in_progress,43
 WEB,other,6857
 WEB,pending,22
-=======
-Project,Status_clean,count
-ARTFIN,other,21
-AUTOMATION,other,12
-DATA,other,2400
-E-COMMERCE,other,2250
-HELPDESK,other,76
-MOBILE,other,383
-ORGANISATION,other,2936
-POINTINY,other,1208
-REPLICATION,other,3
-SYSTEM MONITORING,other,50
-WEB,other,7430
->>>>>>> 55bb3c6c647ea5d653ac19d09b1573e10a5f1164
