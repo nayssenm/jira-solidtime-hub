@@ -13,13 +13,31 @@
 <a class="nlink active" href="dashboard.html">&#128200; Dashboard</a>
 <a class="nlink" href="data-warehouse.html">&#128452; Data Warehouse</a>
 <a class="nlink" href="collaborative-dss.html">&#129504; Collaborative DSS</a>
-
-</div>
-  <div class="nr">
-    <div class="tog" onclick="toggleTheme()">
-      <span class="togic">&#9728;&#65039;</span><div class="togtr"></div><span class="togic">&#127769;</span>
-    </div>
+<div class="nav-user">
+    <div class="nav-avatar" id="navAvatar">A</div>
+    <span class="nav-name" id="navName">—</span>
+    <button class="nav-logout" onclick="logout()">⏻ Déconnexion</button>
   </div>
+</nav>
+
+<!-- ═══ TOOLBAR ════════════════════════════════════════════════ -->
+<div class="toolbar">
+  <div class="toolbar-left">
+    <span class="toolbar-crumb">kpi-hub / <em>kpi-overview</em></span>
+  </div>
+  <div class="toolbar-right">
+    <div class="tb-toggle" onclick="toggleTheme()" title="Changer le thème">
+      <span class="tb-icon">☀️</span>
+      <div class="tb-track"></div>
+      <span class="tb-icon">🌙</span>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="pdfBtn" onclick="exportPDF()">⬇ <span class="btn-txt">Export PDF</span></button>
+    <button class="tb-btn prim" onclick="openShare()">🔗 <span class="btn-txt">Partager</span></button>
+  </div>
+</div>
+</div>
+  
 </nav><div class="toast" id="toast"></div><div class="wrap">
 <div class="sdiv"><div class="sdot"></div>Vue d'ensemble</div>
 <div class="kgrid">
