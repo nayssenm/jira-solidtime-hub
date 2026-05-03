@@ -598,7 +598,10 @@ function aaInsightBlock(text, severity){
   </div>`;
 }
 
-/* Render project task detail panels using KpiTaskMap */
+/* Render project task detail panels.
+   Reads directly from aaRawRows (the original parsed CSV) so
+   real column names — Description, User, Duration (decimal),
+   Tags, Client — are always available.                           */
 function renderProjectTaskPanels(report){
   const container = document.getElementById('aaProjectTasks');
   if(!container) return;
@@ -607,18 +610,37 @@ function renderProjectTaskPanels(report){
     return;
   }
 
+  /* Group raw CSV rows by Project — the real column name is "Project" */
+  const rawByProject = {};
+  (aaRawRows || []).forEach(row => {
+    const proj = row['Project'] || row['project'] || '';
+    if(!proj) return;
+    if(!rawByProject[proj]) rawByProject[proj] = [];
+    rawByProject[proj].push(row);
+  });
+
   container.innerHTML = report.projects.slice(0,10).map(p => {
-    const tasks = (p.tasks || p.entries || []).slice(0,8);
+    /* Use raw CSV rows so Description/User/Duration (decimal) are intact */
+    const rawTasks = rawByProject[p.project] || [];
+    const tasks    = rawTasks.length
+      ? rawTasks.slice(0,8)
+      : (p.tasks || p.entries || p.rows || []).slice(0,8);
     const healthColor = p.health_score >= 70 ? 'green' : p.health_score >= 45 ? 'orange' : 'red';
 
     const taskRows = tasks.length ? tasks.map(t => {
+      /* formatRow reads real CSV columns: Description, User, Duration (decimal), Tags */
       const formatted = window.KpiTaskMap ? window.KpiTaskMap.formatRow(t) : t;
-      const taskName  = formatted.task_name  || aaEsc(t.task || t.description || 'Tâche sans titre');
-      const userName  = formatted.assigned_user || aaEsc(t.user || t.member || 'Non assigné');
-      const hours     = formatted.hours_label || (t.hours ? t.hours+'h' : '—');
-      const status    = formatted.status_label || '';
-      const initials  = userName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-      const statusClass = status.includes('Terminé')?'done':status.includes('cours')?'progress':status.includes('attente')?'pending':'unknown';
+      /* task_name comes from the cleaned Description column — never the raw code */
+      const taskName  = formatted.task_name || 'Tâche sans titre';
+      const userName  = formatted.assigned_user || 'Utilisateur non assigné';
+      const hours     = formatted.hours_label || '—';
+      /* Tags column doubles as status indicator in Solidtime */
+      const status    = formatted.status_label || formatted.tags_label || '';
+      const client    = formatted.client_label ? ` · ${aaEsc(formatted.client_label)}` : '';
+      const initials  = userName.split(' ').filter(Boolean).map(w=>w[0]).join('').slice(0,2).toUpperCase() || '?';
+      const statusClass = status.toLowerCase().includes('terminé')||status.toLowerCase().includes('done')||status.toLowerCase().includes('closed')?'done':
+                          status.toLowerCase().includes('cours')||status.toLowerCase().includes('progress')||status.toLowerCase().includes('open')?'progress':
+                          status.toLowerCase().includes('attente')||status.toLowerCase().includes('pending')?'pending':'unknown';
       return `<div class="task-item">
         <div class="task-item-head">
           <span class="task-name">${aaEsc(taskName)}</span>
@@ -627,7 +649,7 @@ function renderProjectTaskPanels(report){
         <div class="task-meta">
           <span class="task-user">
             <span class="task-user-avatar">${initials}</span>
-            ${aaEsc(userName)}
+            ${aaEsc(userName)}${client}
           </span>
           ${hours!=='—'?`<span class="task-hours">⏱ ${aaEsc(hours)}</span>`:''}
         </div>

@@ -274,16 +274,67 @@ window.KpiTaskMap = (function(){
     return _humanize(raw);
   }
 
-  /* Format a data row (from CSV) into human-readable object */
+  /* Format a data row (from CSV) into human-readable object.
+     Real CSV columns: Description, Task, Project, Client, User,
+     Start, End, Duration, Duration (decimal), Billable, Tags      */
   function formatRow(row){
+    /* ── Task name: use Description first (free-text label),
+       fall back to Task column, then any legacy key              */
+    const rawDesc = row['Description'] || row['description'] ||
+                    row['Task']        || row['task']        ||
+                    row['task_id']     || '';
+
+    /* ── Clean up Jira-style prefixes so non-technical readers
+       see a meaningful label instead of "AWA-13737 [...]"        */
+    const taskName = _cleanDescription(rawDesc);
+
+    /* ── User: Solidtime exports the display name directly        */
+    const rawUser = row['User'] || row['user'] || row['member'] ||
+                    row['user_id'] || '';
+
+    /* ── Duration: "Duration (decimal)" column holds decimal hrs  */
+    const decHours = parseFloat(
+      row['Duration (decimal)'] || row['duration_decimal'] ||
+      row['hours']              || row['duration']         || 0
+    );
+
+    /* ── Tags / status                                            */
+    const rawTags   = row['Tags']   || row['tags']   || '';
+    const rawStatus = row['status'] || row['state']  || rawTags || '';
+
     return {
       ...row,
-      task_name:      resolveTask(row.task || row.task_id || row.description || ''),
-      assigned_user:  resolveUser(row.user || row.user_id || row.member || ''),
-      project_label:  TASK_NAMES[row.project] || row.project || 'Projet inconnu',
-      hours_label:    row.hours ? `${parseFloat(row.hours).toFixed(1)}h` : '—',
-      status_label:   _statusLabel(row.status || row.state || ''),
+      task_name:      taskName || 'Tâche sans titre',
+      assigned_user:  resolveUser(rawUser),
+      project_label:  TASK_NAMES[row['Project'] || row['project']] ||
+                      row['Project'] || row['project'] || 'Projet inconnu',
+      hours_label:    decHours > 0 ? `${decHours.toFixed(1)}h` : '—',
+      hours_decimal:  decHours,
+      status_label:   _statusLabel(rawStatus),
+      tags_label:     rawTags,
+      client_label:   row['Client'] || row['client'] || '',
+      billable:       (row['Billable'] || row['billable'] || 'No').toLowerCase() === 'yes',
     };
+  }
+
+  /* Strip Jira ticket prefixes and brackets to get a readable label.
+     "AWA-13737 [Microservice planning][Order] Decoupling order module"
+     → "Decoupling order module"
+     "AMA-2460 | Test Migration Laravel version 12"
+     → "Test Migration Laravel version 12"                          */
+  function _cleanDescription(raw){
+    if(!raw) return '';
+    let s = String(raw).trim();
+    /* Remove leading Jira key: PROJ-1234 or PROJ-1234 | or PROJ-1234 : */
+    s = s.replace(/^[A-Z]+-\d+\s*[\|\-:\[\]]*\s*/i, '');
+    /* Remove bracketed sections like [Microservice planning][Order] */
+    s = s.replace(/\[[^\]]*\]/g, '');
+    /* Remove extra whitespace */
+    s = s.replace(/\s+/g, ' ').trim();
+    /* If after cleanup it's empty, return the original (truncated) */
+    if(!s) return String(raw).slice(0,60);
+    /* Capitalise first letter */
+    return s.charAt(0).toUpperCase() + s.slice(1);
   }
 
   function _statusLabel(raw){
