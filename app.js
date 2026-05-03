@@ -1,12 +1,12 @@
 /* ════════════════════════════════════════════════════════════════
-   KPI HUB — SHARED APP.JS
-   Handles: dark mode · nav · toolbar · share modal · toast · auth
+   KPI HUB — SHARED APP.JS  v6.0
+   Global: dark mode · auth · nav · toast · share · PDF · task map
 ════════════════════════════════════════════════════════════════ */
 
 /* ── THEME ──────────────────────────────────────────────────── */
 (function(){
-  const saved = localStorage.getItem('kpi-theme');
-  if(saved) document.documentElement.setAttribute('data-theme', saved);
+  const saved = localStorage.getItem('kpi-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
 })();
 
 function toggleTheme(){
@@ -28,7 +28,6 @@ function getUser(){
   catch { return null; }
 }
 
-/* Populate nav user info wherever #navAvatar, #navName exist */
 (function(){
   const u = getUser();
   if(!u) return;
@@ -84,14 +83,10 @@ function selPerm(el, perm){
 function genShareLink(){
   const payload = { perm: _sharePerm, ts: Date.now(), id: Math.random().toString(36).slice(2, 9) };
   const token   = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-
-  // ── Detect file:// protocol (opened directly as a file, not via server) ──
   const isFileProtocol = window.location.protocol === 'file:';
-
   let url;
   if(isFileProtocol){
-    // Can't share file:// URLs — show warning and build an instructional URL
-    const fileName = window.location.pathname.split('/').pop(); // e.g. "data-warehouse.html"
+    const fileName = window.location.pathname.split('/').pop();
     url = `http://localhost:5500/${fileName}?share=${token}`;
     const inp = document.getElementById('shareLinkInp');
     if(inp) inp.value = url;
@@ -99,52 +94,63 @@ function genShareLink(){
     const sn = document.getElementById('shareNote');
     if(sn){
       sn.innerHTML = `⚠️ <strong>Vous êtes en mode fichier local</strong>.<br>
-        Le lien ci-dessus fonctionne uniquement si vous lancez un serveur local.<br>
-        <strong>Solution :</strong> ouvrez ce dossier avec <em>VS Code Live Server</em> (port 5500)
-        ou exécutez <code>python -m http.server 8080</code> dans le terminal,
-        puis remplacez <code>localhost:5500</code> par votre URL réelle.`;
+        Ce lien fonctionne uniquement via un serveur local (VS Code Live Server ou <code>python -m http.server</code>).`;
       sn.style.display = 'block';
-      sn.style.color   = '#fbbf24';
-      sn.style.background = 'rgba(251,191,36,0.08)';
-      sn.style.border  = '1px solid rgba(251,191,36,0.25)';
-      sn.style.borderRadius = '8px';
-      sn.style.padding = '10px 12px';
-      sn.style.fontSize = '11px';
-      sn.style.lineHeight = '1.7';
     }
     return;
   }
-
-  // Normal HTTP(S) mode — use the actual current URL
   const base = window.location.href.split('?')[0].split('#')[0];
   url = `${base}?share=${token}`;
-
   const inp = document.getElementById('shareLinkInp');
   if(inp) inp.value = url;
   document.getElementById('linkRow').style.display = 'flex';
-
   const labels = { viewer: 'Lecteur', commenter: 'Commentateur', editor: 'Commentateur', restricted: 'Accès restreint' };
   const sn = document.getElementById('shareNote');
   if(sn){
     sn.textContent = `Lien valide 7 jours · Permission : ${labels[_sharePerm]}`;
     sn.style.display = 'block';
-    sn.style.color   = '';
-    sn.style.background = '';
-    sn.style.border  = '';
-    sn.style.padding = '';
+    sn.style.color = '';
   }
 }
 async function copyShareLink(){
   const val = document.getElementById('shareLinkInp')?.value;
   if(!val) return;
   try{ await navigator.clipboard.writeText(val); }
-  catch{ const ta=document.createElement('textarea');ta.value=val;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta); }
+  catch{
+    const ta = document.createElement('textarea');
+    ta.value = val;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
   const btn = document.getElementById('copyBtn');
-  if(btn){ btn.innerHTML='<span>✓</span>';setTimeout(()=>btn.innerHTML='<span>📋</span>',2500); }
-  showToast('Lien copié !');
+  if(btn){ btn.innerHTML = '<span>✓</span>'; setTimeout(() => btn.innerHTML = '<span>📋</span>', 2500); }
+  showToast('Lien copié dans le presse-papier !');
 }
 
-/* Handle incoming share token — runs on ALL pages */
+/* ── QUICK SHARE (Web Share API) ────────────────────────────── */
+async function quickShare(){
+  const url = window.location.href.split('?')[0];
+  const title = document.title || 'KPI Hub Report';
+  if(navigator.share){
+    try{
+      await navigator.share({ title, url });
+      showToast('Rapport partagé avec succès !');
+    } catch(e){
+      if(e.name !== 'AbortError') showToast('Partage annulé', '⚠');
+    }
+  } else {
+    try{
+      await navigator.clipboard.writeText(url);
+      showToast('Lien copié dans le presse-papier !');
+    } catch(e){
+      showToast('Impossible de copier le lien', '⚠');
+    }
+  }
+}
+
+/* ── INCOMING SHARE TOKEN ───────────────────────────────────── */
 (function(){
   const params = new URLSearchParams(window.location.search);
   const token  = params.get('share');
@@ -156,25 +162,17 @@ async function copyShareLink(){
     const permEl = document.getElementById('sharePerm');
     const txtEl  = document.getElementById('shareBannerText');
     const labels = { viewer:'Lecteur', commenter:'Commentateur', editor:'Commentateur', restricted:'Accès restreint' };
-
     if(age > 7*24*60*60*1000){
-      if(banner){
-        banner.style.background='rgba(248,113,113,0.1)';
-        banner.style.borderColor='rgba(248,113,113,0.3)';
-      }
-      if(txtEl)  txtEl.textContent = '⚠ Ce lien a expiré (7 jours max)';
+      if(banner){ banner.style.background='rgba(248,113,113,0.1)'; banner.style.borderColor='rgba(248,113,113,0.3)'; }
+      if(txtEl) txtEl.textContent = '⚠ Ce lien a expiré (7 jours max)';
       if(permEl){ permEl.textContent='Expiré'; permEl.style.color='#f87171'; }
-    }else{
-      if(txtEl) txtEl.textContent = 'Vous consultez ce dashboard via un lien partagé';
+    } else {
+      if(txtEl) txtEl.textContent = 'Vous consultez ce rapport via un lien partagé';
       if(permEl) permEl.textContent = labels[data.perm] || data.perm;
-      // Viewer = read only, disable filters if restricted
-      if(data.perm === 'restricted'){
-        // Mark page as restricted so pages can optionally hide editing controls
-        document.documentElement.setAttribute('data-share-perm','restricted');
-      }
+      if(data.perm === 'restricted') document.documentElement.setAttribute('data-share-perm','restricted');
     }
     if(banner) banner.classList.add('show');
-  }catch(err){
+  } catch(err){
     console.warn('Share token parse error:', err);
     showToast('Lien de partage invalide ou corrompu','⚠');
   }
@@ -182,17 +180,8 @@ async function copyShareLink(){
 
 /* ── KEYBOARD ───────────────────────────────────────────────── */
 document.addEventListener('keydown', e => {
-  if(e.key === 'Escape') closeShare();
+  if(e.key === 'Escape'){ closeShare(); }
 });
-
-/* ── PDF EXPORT (shared) ────────────────────────────────────── */
-/* Each page calls exportPDF() which is defined per-page.
-   This stub prevents errors on pages that don't load jsPDF yet. */
-if(typeof exportPDF === 'undefined'){
-  window.exportPDF = function(){
-    showToast('PDF non disponible sur cette page','⚠');
-  };
-}
 
 /* ── COUNTER ANIMATION ──────────────────────────────────────── */
 function animNum(id, target, dec=0){
@@ -200,9 +189,236 @@ function animNum(id, target, dec=0){
   if(!el) return;
   const dur = 1000, start = performance.now();
   function f(now){
-    const p = Math.min((now-start)/dur,1), e = 1-Math.pow(1-p,3);
+    const p = Math.min((now-start)/dur, 1), e = 1-Math.pow(1-p, 3);
     el.textContent = dec ? (target*e).toFixed(dec) : Math.round(target*e);
     if(p<1) requestAnimationFrame(f);
   }
   requestAnimationFrame(f);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TASK NAME & USER MAPPING ENGINE
+   Maps raw IDs to human-readable labels across all pages.
+════════════════════════════════════════════════════════════════ */
+window.KpiTaskMap = (function(){
+
+  /* Known task name mappings — extend as needed */
+  const TASK_NAMES = {
+    /* Generic patterns */
+    'design':            'Conception de l\'interface',
+    'dev':               'Développement du module',
+    'test':              'Tests et validation qualité',
+    'fix':               'Correction de bugs',
+    'review':            'Revue de code',
+    'deploy':            'Déploiement en production',
+    'meeting':           'Réunion d\'équipe',
+    'doc':               'Rédaction de documentation',
+    'analysis':          'Analyse des besoins',
+    'integration':       'Intégration des composants',
+    'refactor':          'Refactorisation du code',
+    'setup':             'Configuration de l\'environnement',
+    'research':          'Recherche et veille technologique',
+    'maintenance':       'Maintenance préventive',
+    'report':            'Rapport d\'avancement',
+    /* Jira-style keys */
+    'WEB':               'Projet Web Frontend',
+    'DATA':              'Pipeline de données',
+    'MOB':               'Application mobile',
+    'ECOM':              'Plateforme e-commerce',
+    'API':               'Développement API REST',
+    'INFRA':             'Infrastructure & DevOps',
+    /* Common task IDs */
+    'T-101':             'Mise en place de l\'authentification',
+    'T-102':             'Conception du tableau de bord',
+    'T-103':             'Intégration des API tierces',
+    'T-104':             'Tests de performance',
+    'T-105':             'Migration de la base de données',
+    'T-106':             'Optimisation des requêtes SQL',
+    'T-107':             'Déploiement cloud AWS',
+    'T-108':             'Revue de sécurité',
+    'T-109':             'Documentation technique',
+    'T-110':             'Formation de l\'équipe',
+  };
+
+  /* Fallback: derive a readable name from any raw string */
+  function _humanize(raw){
+    if(!raw) return 'Tâche sans titre';
+    const str = String(raw).trim();
+    if(TASK_NAMES[str]) return TASK_NAMES[str];
+    /* Try to match partial keys */
+    for(const [key, val] of Object.entries(TASK_NAMES)){
+      if(str.toUpperCase().includes(key.toUpperCase())) return val;
+    }
+    /* Last resort: clean up the raw string */
+    return str
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, c => c.toUpperCase())
+      .replace(/\b(T|WEB|MOB|DATA|ECOM|API|INFRA)\b/g, '')
+      .trim() || 'Tâche non identifiée';
+  }
+
+  /* Resolve a user ID or raw name to a display name */
+  function resolveUser(raw){
+    if(!raw) return 'Utilisateur non assigné';
+    const str = String(raw).trim();
+    if(/^user_?\d+$/i.test(str)){
+      const num = str.replace(/\D/g,'');
+      const names = ['Ahmed Ben Ali','Wala Dghaies','Oliver Hansen','Andreas Meyer','Nielsen Erik','Elena Vasquez','Marc Dupont','Sara Kowalski','Yuki Tanaka','Rania Mrad'];
+      return names[(parseInt(num)-1) % names.length] || `Utilisateur ${num}`;
+    }
+    return str;
+  }
+
+  /* Resolve a task ID/code to a readable name */
+  function resolveTask(raw){
+    return _humanize(raw);
+  }
+
+  /* Format a data row (from CSV) into human-readable object */
+  function formatRow(row){
+    return {
+      ...row,
+      task_name:      resolveTask(row.task || row.task_id || row.description || ''),
+      assigned_user:  resolveUser(row.user || row.user_id || row.member || ''),
+      project_label:  TASK_NAMES[row.project] || row.project || 'Projet inconnu',
+      hours_label:    row.hours ? `${parseFloat(row.hours).toFixed(1)}h` : '—',
+      status_label:   _statusLabel(row.status || row.state || ''),
+    };
+  }
+
+  function _statusLabel(raw){
+    const map = {
+      'done':'Terminé','completed':'Terminé','closed':'Terminé',
+      'in_progress':'En cours','in-progress':'En cours','progress':'En cours','open':'En cours',
+      'pending':'En attente','todo':'À faire','backlog':'Backlog',
+      'review':'En révision','testing':'En test',
+    };
+    const key = String(raw).toLowerCase().trim();
+    return map[key] || (raw ? raw : 'Statut inconnu');
+  }
+
+  /* Format all rows from a dataset */
+  function formatAll(rows){
+    return (rows || []).map(formatRow);
+  }
+
+  return { resolveTask, resolveUser, formatRow, formatAll };
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL PDF EXPORT ENGINE
+   Each page can override exportPDF() or call this global builder.
+════════════════════════════════════════════════════════════════ */
+window.KpiPdfExport = (function(){
+
+  function _esc(v){ return String(v == null ? '' : v); }
+
+  /* Build a professional PDF report from any structured data */
+  async function buildReport(opts = {}){
+    const {
+      title        = 'Rapport KPI Hub',
+      subtitle     = '',
+      sections     = [],   /* [{ heading, rows: [{label, value}] }] */
+      author       = null,
+      pageTitle    = document.title || 'KPI Hub',
+    } = opts;
+
+    const now  = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+    const user = author || (function(){ const u=getUser(); return u?u.name||u.email:''; })();
+
+    if(!window.jspdf){
+      showToast('jsPDF non disponible sur cette page', '⚠');
+      return false;
+    }
+    const { jsPDF } = window.jspdf;
+    const pdf  = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+    const PW=210, PH=297, M=14, W=PW-M*2;
+    let y = 0;
+
+    /* ── Cover ── */
+    pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,PH,'F');
+    pdf.setFillColor(30,111,217); pdf.rect(0,0,PW,4,'F');
+    pdf.setFillColor(232,160,32); pdf.rect(0,4,PW,1.5,'F');
+
+    pdf.setTextColor(91,163,245); pdf.setFontSize(11); pdf.setFont('helvetica','bold');
+    pdf.text('KPI HUB · RAPPORT OFFICIEL', M, 24);
+    pdf.setTextColor(214,232,255); pdf.setFontSize(30); pdf.setFont('helvetica','bold');
+    pdf.text(title, M, 52);
+    if(subtitle){
+      pdf.setFontSize(14); pdf.setFont('helvetica','normal'); pdf.setTextColor(91,163,245);
+      pdf.text(subtitle, M, 66);
+    }
+    pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(74,106,154);
+    pdf.text(`Généré le ${now}${user?' · '+user:''}`, M, 82);
+    pdf.setDrawColor(30,111,217); pdf.setLineWidth(0.3); pdf.line(M,90,PW-M,90);
+
+    pdf.addPage();
+
+    /* ── Content pages ── */
+    function _header(pageLabel){
+      pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,18,'F');
+      pdf.setFillColor(30,111,217); pdf.rect(0,0,PW,2,'F');
+      pdf.setTextColor(91,163,245); pdf.setFontSize(8); pdf.setFont('helvetica','bold');
+      pdf.text('KPI HUB · '+pageTitle.toUpperCase(), M, 8);
+      pdf.setTextColor(74,106,154); pdf.setFont('helvetica','normal');
+      pdf.text(pageLabel||now, PW-M, 8, {align:'right'});
+      pdf.setDrawColor(74,106,154); pdf.setLineWidth(0.15); pdf.line(M,13,PW-M,13);
+      y = 22;
+    }
+    function _footer(){
+      pdf.setFontSize(7); pdf.setTextColor(74,106,154); pdf.setFont('helvetica','normal');
+      pdf.text('KPI Hub · Confidentiel · Usage interne', M, PH-8);
+      pdf.text('Page '+ pdf.getCurrentPageInfo().pageNumber, PW-M, PH-8, {align:'right'});
+    }
+    function _section(heading, color=[18,58,128]){
+      if(y > PH-30){ _footer(); pdf.addPage(); _header('(suite)'); }
+      pdf.setFillColor(...color); pdf.roundedRect(M, y, W, 7, 1.5,1.5,'F');
+      pdf.setTextColor(214,232,255); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+      pdf.text(heading, M+4, y+5); y += 12;
+    }
+    function _row(label, value, indent=0){
+      if(y > PH-22){ _footer(); pdf.addPage(); _header('(suite)'); }
+      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(168,203,250);
+      pdf.text(_esc(label)+':', M+3+indent, y);
+      pdf.setFont('helvetica','normal'); pdf.setTextColor(214,232,255);
+      const lines = pdf.splitTextToSize(_esc(value), W-70);
+      pdf.text(lines, M+65+indent, y);
+      y += Math.max(6, lines.length*5) + 2;
+    }
+    function _prose(text){
+      if(!text) return;
+      if(y > PH-22){ _footer(); pdf.addPage(); _header('(suite)'); }
+      pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(168,203,250);
+      const lines = pdf.splitTextToSize(_esc(text), W-6);
+      pdf.text(lines, M+3, y); y += lines.length*5+4;
+    }
+
+    pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,PH,'F');
+    _header('');
+
+    sections.forEach((sec, si) => {
+      const colors = [[18,58,128],[10,100,60],[120,40,20],[50,20,120]];
+      _section(sec.heading, colors[si % colors.length]);
+      if(sec.prose) _prose(sec.prose);
+      (sec.rows||[]).forEach(r => {
+        if(typeof r === 'string') _prose(r);
+        else _row(r.label, r.value, r.indent||0);
+      });
+      y += 4;
+    });
+
+    _footer();
+    const slug = title.replace(/\s+/g,'-').toLowerCase();
+    pdf.save(`kpihub-${slug}-${new Date().toISOString().slice(0,10)}.pdf`);
+    return true;
+  }
+
+  return { buildReport };
+})();
+
+/* Default stub so pages without jsPDF don't crash */
+if(typeof exportPDF === 'undefined'){
+  window.exportPDF = function(){
+    showToast('Export PDF non disponible sur cette page','⚠');
+  };
 }

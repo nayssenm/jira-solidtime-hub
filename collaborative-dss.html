@@ -9,9 +9,9 @@
 <script src="static-analytics/advanced-analytics-engine.js" defer></script>
 <script>
 (function(){
-  const p=new URLSearchParams(window.location.search);
-  if(!p.get('share')&&localStorage.getItem('kpi_auth')!=='true')
-    window.location.href='login.html';
+  const p = new URLSearchParams(window.location.search);
+  if(!p.get('share') && localStorage.getItem('kpi_auth') !== 'true')
+    window.location.href = 'login.html';
 })();
 </script>
 </head>
@@ -25,25 +25,15 @@
   </a>
   <div class="nav-links">
     <a class="nav-link" href="kpi.html"><span class="nav-icon">📊</span> KPI</a>
-<<<<<<< HEAD
     <a class="nav-link" href="dashboard.html"><span class="nav-icon">📈</span> Dashboard</a>
     <a class="nav-link" href="data-warehouse.html"><span class="nav-icon">🗄</span> Data Warehouse</a>
     <a class="nav-link active" href="collaborative-dss.html"><span class="nav-icon">🧠</span> Collaborative DSS</a>
-    <a class="nav-link" href="#advancedAnalytics"><span class="nav-icon">📡</span> Analytics statiques</a>
   </div>
-=======
-    <a class="nav-link" href="dashboard.html"><span class="nav-icon">📈</span> Dashboard</a>
-    <a class="nav-link" href="data-warehouse.html"><span class="nav-icon">🗄</span> Data Warehouse</a>
-    <a class="nav-link active" href="collaborative-dss.html"><span class="nav-icon">🧠</span> Collaborative DSS</a>
-    <a class="nav-link active" href="advanced-analytics-static.html"><span class="nav-icon">Analytics statics </a>
-  </div>
->>>>>>> 5a551c1dbdd87aeda57e40fb86e7dca830118a24
   <div class="nav-user">
     <div class="nav-avatar" id="navAvatar">A</div>
     <span class="nav-name" id="navName">—</span>
     <button class="nav-logout" onclick="logout()">⏻ Déconnexion</button>
   </div>
-
 </nav>
 
 <!-- ═══ TOOLBAR ════════════════════════════════════════════════ -->
@@ -54,10 +44,11 @@
     <span id="roleTag" class="role-tag"></span>
   </div>
   <div class="toolbar-right">
-    <div class="tb-toggle" onclick="toggleTheme()">
+    <div class="tb-toggle" onclick="toggleTheme()" title="Basculer thème clair/sombre">
       <span class="tb-icon">☀️</span><div class="tb-track"></div><span class="tb-icon">🌙</span>
     </div>
     <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="quickShare()" title="Partager ce rapport">🔗 <span class="btn-txt">Partager</span></button>
     <button class="tb-btn" data-rbac="export" onclick="exportDecisionReport()">⬇ <span class="btn-txt">Rapport PDF</span></button>
     <button class="tb-btn prim" data-rbac="comment" onclick="openNewComment()">＋ Annotation</button>
   </div>
@@ -66,15 +57,22 @@
 <!-- ═══ PAGE ════════════════════════════════════════════════════ -->
 <div class="page-wrap narrow">
 
+  <!-- Share banner -->
+  <div class="share-banner" id="shareBanner">
+    <span>🔗</span>
+    <span id="shareBannerText">Vous consultez ce rapport via un lien partagé</span>
+    <span class="share-perm" id="sharePerm">Lecteur</span>
+  </div>
+
   <!-- Header -->
   <div class="pg-header">
     <div class="pg-eyebrow">Decision Support System · Collaborative Layer</div>
     <h1 class="pg-title">Collaborative <em>DSS</em></h1>
-    <p class="pg-desc">Espace collaboratif d'aide à la décision. Les analystes annotent les KPI, signalent des anomalies, et le moteur DSS synthétise observations, analyses et recommandations actionnables.</p>
+    <p class="pg-desc">Espace collaboratif d'aide à la décision. Analysez les KPI, annotez les observations, et laissez le moteur DSS synthétiser vos données en recommandations claires et actionnables.</p>
     <div class="pg-meta">
-      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#0CB87A;"></span>Annotations contextuelles liées aux KPI</span>
-      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#E8A020;"></span>Threads de discussion avec historique</span>
-      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#1E6FD9;"></span>Moteur DSS 3 niveaux : Observation → Analyse → Recommandation</span>
+      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#0CB87A;"></span>Annotations liées aux KPI</span>
+      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#E8A020;"></span>Discussions collaboratives</span>
+      <span class="pg-meta-item"><span class="pg-meta-dot" style="background:#1E6FD9;"></span>DSS 3 niveaux : Observation → Analyse → Recommandation</span>
     </div>
   </div>
 
@@ -107,13 +105,16 @@
     </div>
   </div>
 
-  <!-- ═══ ADVANCED ANALYTICS STATIC BI ENGINE ═════════════════ -->
-  <div class="sec-div" id="advancedAnalytics"><div class="sec-dot"></div>Advanced Analytics — moteur BI statique</div>
+  <!-- ═══ ADVANCED ANALYTICS (centralisé ici) ══════════════════ -->
+  <div class="sec-div" id="advancedAnalytics"><div class="sec-dot"></div>Analytics — Moteur BI & Insights</div>
   <section class="aa-panel card-surf">
     <div class="aa-head">
       <div>
-        <div class="aa-eyebrow">dashboard_dataset.csv</div>
+        <div class="aa-eyebrow">dashboard_dataset.csv · Analyse automatique</div>
         <h2 class="aa-title">AI Insight Engine</h2>
+        <p style="font-size:12px;color:var(--text3);margin-top:4px;line-height:1.6;">
+          Vue d'ensemble de la santé des projets, des anomalies détectées et des axes d'amélioration prioritaires.
+        </p>
       </div>
       <div class="aa-actions">
         <select id="aaProject" aria-label="Filtrer par projet">
@@ -123,26 +124,58 @@
         <button class="tb-btn" type="button" id="aaDownloadJson">⬇ JSON</button>
       </div>
     </div>
-    <div class="aa-kpis" id="aaKpis"></div>
+
+    <!-- KPI cards -->
+    <div class="aa-kpis" id="aaKpis">
+      <div class="aa-kpi skeleton" style="height:82px;"></div>
+      <div class="aa-kpi skeleton" style="height:82px;"></div>
+      <div class="aa-kpi skeleton" style="height:82px;"></div>
+      <div class="aa-kpi skeleton" style="height:82px;"></div>
+    </div>
+
+    <!-- Anomalies + Insights -->
     <div class="aa-layout">
       <div class="aa-box">
-        <div class="aa-box-title">Alertes d'anomalies</div>
+        <div class="aa-box-title">⚡ Alertes d'anomalies détectées</div>
+        <p style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.6;">
+          Signaux inhabituels identifiés automatiquement dans les données de time-tracking.
+        </p>
         <div id="aaAnomalies"></div>
       </div>
       <div class="aa-box">
-        <div class="aa-box-title">Insights</div>
+        <div class="aa-box-title">💡 Insights clés</div>
+        <p style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.6;">
+          Observations importantes sur les tendances et comportements de l'équipe.
+        </p>
         <div id="aaInsights"></div>
       </div>
     </div>
+
+    <!-- Recommendations + Rankings -->
     <div class="aa-layout">
       <div class="aa-box">
-        <div class="aa-box-title">Recommandations automatiques</div>
+        <div class="aa-box-title">🎯 Recommandations automatiques</div>
+        <p style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.6;">
+          Actions prioritaires générées par le moteur pour améliorer les performances.
+        </p>
         <div id="aaRecommendations"></div>
       </div>
       <div class="aa-box">
-        <div class="aa-box-title">Classement risque projet</div>
+        <div class="aa-box-title">📊 Santé des projets par rang</div>
+        <p style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.6;">
+          Classement des projets selon leur indice de santé global calculé automatiquement.
+        </p>
         <div id="aaRankings"></div>
       </div>
+    </div>
+
+    <!-- Project Task Detail Panel -->
+    <div style="margin-top:14px;">
+      <div class="aa-box-title" style="margin-bottom:10px;">👥 Détail par projet — Tâches &amp; responsables</div>
+      <p style="font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+        Pour chaque projet, retrouvez le détail des tâches réalisées, les membres responsables, les heures investies et l'avancement constaté.
+      </p>
+      <div id="aaProjectTasks"></div>
     </div>
   </section>
 
@@ -164,8 +197,6 @@
   <div class="sec-div"><div class="sec-dot"></div>Moteur DSS — 3 niveaux d'analyse</div>
 
   <div class="dss-levels">
-
-    <!-- LEVEL 1: OBSERVATIONS -->
     <div class="dss-level" data-level="1">
       <div class="dss-level-header">
         <div class="dss-level-badge l1">Niveau 1</div>
@@ -178,7 +209,6 @@
       <div class="dss-level-body" id="l1body"></div>
     </div>
 
-    <!-- LEVEL 2: ANALYSIS -->
     <div class="dss-level" data-level="2">
       <div class="dss-level-header">
         <div class="dss-level-badge l2">Niveau 2</div>
@@ -191,7 +221,6 @@
       <div class="dss-level-body" id="l2body"></div>
     </div>
 
-    <!-- LEVEL 3: RECOMMENDATIONS -->
     <div class="dss-level" data-level="3">
       <div class="dss-level-header">
         <div class="dss-level-badge l3">Niveau 3</div>
@@ -203,13 +232,11 @@
       </div>
       <div class="dss-level-body" id="l3body"></div>
     </div>
-
   </div>
 
   <!-- ═══ ANNOTATION LAYER ═══════════════════════════════════ -->
-  <div class="sec-div" style="margin-top:32px;"><div class="sec-dot"></div>Collaborative Annotation Layer — fil de discussion</div>
+  <div class="sec-div" style="margin-top:32px;"><div class="sec-dot"></div>Fil de discussion collaboratif</div>
 
-  <!-- Filter bar -->
   <div class="annotation-filters card-surf">
     <div class="af-group">
       <span class="af-label">Élément :</span>
@@ -256,13 +283,13 @@
     <div class="m-head">
       <div>
         <h3>＋ Nouvelle Annotation</h3>
-        <div class="m-head-sub">Lier cette annotation à un élément KPI précis</div>
+        <div class="m-head-sub">Liez cette annotation à un élément KPI précis</div>
       </div>
       <button class="m-close" onclick="closeNewComment()">✕</button>
     </div>
     <div class="m-body-p" style="padding:20px 26px;">
       <div class="field" style="margin-bottom:14px;">
-        <label>Élément analysé</label>
+        <label style="display:block;font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Élément analysé</label>
         <select id="ncElement" style="width:100%;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:var(--font-b);font-size:13px;outline:none;">
           <option value="kpi_hours">📊 Total Heures (22 993h)</option>
           <option value="monthly_oct">📈 Activité Mensuelle — creux oct 2025</option>
@@ -274,7 +301,7 @@
         </select>
       </div>
       <div class="field" style="margin-bottom:14px;">
-        <label>Type d'annotation</label>
+        <label style="display:block;font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Type d'annotation</label>
         <div class="type-selector" id="typeSelector">
           <div class="type-btn active" data-type="observation" onclick="selectType(this)">👁 Observation</div>
           <div class="type-btn" data-type="anomaly" onclick="selectType(this)">⚡ Anomalie</div>
@@ -282,11 +309,11 @@
         </div>
       </div>
       <div class="field" style="margin-bottom:14px;">
-        <label>Contenu de l'annotation</label>
-        <textarea id="ncText" placeholder="Décrivez votre observation, anomalie ou risque détecté. Soyez précis : valeur observée, contexte, impact potentiel…" style="width:100%;padding:11px 14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:var(--font-b);font-size:13px;line-height:1.7;outline:none;resize:vertical;min-height:100px;transition:border-color .2s;"></textarea>
+        <label style="display:block;font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Contenu de l'annotation</label>
+        <textarea id="ncText" placeholder="Décrivez votre observation, anomalie ou risque. Soyez précis : valeur observée, contexte, impact potentiel…" style="width:100%;padding:11px 14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:var(--font-b);font-size:13px;line-height:1.7;outline:none;resize:vertical;min-height:100px;transition:border-color .2s;"></textarea>
       </div>
       <div class="field" style="margin-bottom:0;">
-        <label>Tags (séparés par virgule)</label>
+        <label style="display:block;font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Tags (séparés par virgule)</label>
         <input type="text" id="ncTags" placeholder="ex: anomalie, saisie, jira" style="width:100%;padding:9px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:var(--font-b);font-size:13px;outline:none;transition:border-color .2s;">
       </div>
       <div class="m-actions" style="margin-top:18px;">
@@ -306,7 +333,7 @@
     </div>
     <div class="m-body-p" style="padding:20px 26px;">
       <div class="field" style="margin-bottom:0;">
-        <label>Votre réponse</label>
+        <label style="display:block;font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px;">Votre réponse</label>
         <textarea id="replyText" placeholder="Apportez une précision, confirmez ou nuancez l'observation…" style="width:100%;padding:11px 14px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:var(--font-b);font-size:13px;line-height:1.7;outline:none;resize:vertical;min-height:80px;transition:border-color .2s;"></textarea>
       </div>
       <div class="m-actions" style="margin-top:16px;">
@@ -318,97 +345,53 @@
 </div>
 
 <div class="toast" id="toast"></div>
-<script src="rbac.js"></script>
-<script src="app.js"></script>
 
 <style>
-/* ── DSS-specific styles ────────────────────────────────────── */
-.aa-panel{
-  padding:18px;margin-bottom:24px;
-  border-radius:var(--radius-lg);
-}
-.aa-head{
-  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
-  margin-bottom:14px;flex-wrap:wrap;
-}
-.aa-eyebrow{
-  font-family:var(--font-m);font-size:9px;font-weight:600;letter-spacing:.12em;
-  color:var(--text3);text-transform:uppercase;margin-bottom:4px;
-}
-.aa-title{
-  margin:0;font-family:var(--font-d);font-size:18px;color:var(--text);
-}
+/* ── DSS page-specific styles ──────────────────────────────── */
+.aa-panel{padding:18px;margin-bottom:24px;border-radius:var(--radius-lg);}
+.aa-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px;flex-wrap:wrap;}
+.aa-eyebrow{font-family:var(--font-m);font-size:9px;font-weight:600;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;margin-bottom:4px;}
+.aa-title{margin:0;font-family:var(--font-d);font-size:18px;color:var(--text);}
 .aa-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.aa-actions select{
-  min-width:180px;padding:8px 12px;border-radius:var(--radius);
-  border:1px solid var(--border);background:var(--input-bg);color:var(--text);
-  font-family:var(--font-b);font-size:12px;outline:none;
-}
-.aa-kpis{
-  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px;
-}
-.aa-kpi{
-  padding:14px;border-radius:var(--radius);border:1px solid var(--border2);
-  background:var(--surf2);
-}
-.aa-kpi-label{
-  font-family:var(--font-m);font-size:9px;font-weight:600;letter-spacing:.10em;
-  color:var(--text3);text-transform:uppercase;
-}
-.aa-kpi-value{
-  margin-top:7px;font-family:var(--font-d);font-size:25px;font-weight:700;color:var(--text);
-}
-.aa-layout{
-  display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:14px;
-}
-.aa-box{
-  padding:14px;border-radius:var(--radius);border:1px solid var(--border2);
-  background:var(--surf2);min-height:110px;
-}
-.aa-box-title{
-  font-family:var(--font-d);font-size:14px;font-weight:600;color:var(--text);
-  margin-bottom:10px;
-}
-.aa-row{
-  display:grid;grid-template-columns:82px 1fr auto;gap:10px;
-  padding:9px 0;border-bottom:1px solid var(--border2);align-items:start;
-}
+.aa-actions select{min-width:180px;padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:var(--font-b);font-size:12px;outline:none;}
+.aa-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px;}
+.aa-kpi{padding:14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surf2);}
+.aa-kpi-label{font-family:var(--font-m);font-size:9px;font-weight:600;letter-spacing:.10em;color:var(--text3);text-transform:uppercase;}
+.aa-kpi-value{margin-top:7px;font-family:var(--font-d);font-size:25px;font-weight:700;color:var(--text);}
+.aa-kpi-sub{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4;}
+.aa-layout{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:14px;}
+.aa-box{padding:14px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surf2);min-height:110px;}
+.aa-box-title{font-family:var(--font-d);font-size:14px;font-weight:600;color:var(--text);margin-bottom:10px;}
+.aa-row{display:grid;grid-template-columns:82px 1fr auto;gap:10px;padding:9px 0;border-bottom:1px solid var(--border2);align-items:start;}
 .aa-row:last-child,.aa-item:last-child{border-bottom:0;}
 .aa-row strong,.aa-item strong{font-size:12px;color:var(--text);}
 .aa-row-score{font-family:var(--font-m);font-size:11px;color:var(--text3);}
 .aa-row-reason{grid-column:2/4;font-size:11px;color:var(--text3);line-height:1.5;}
-.aa-item{
-  padding:9px 0;border-bottom:1px solid var(--border2);
-  font-size:12px;color:var(--text2);line-height:1.55;
-}
-.aa-badge{
-  display:inline-flex;align-items:center;width:max-content;
-  padding:2px 8px;border-radius:16px;font-family:var(--font-m);font-size:9px;
-  font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-}
-.aa-badge.green{background:rgba(12,184,122,.14);color:var(--em2);}
+.aa-item{padding:9px 0;border-bottom:1px solid var(--border2);font-size:12px;color:var(--text2);line-height:1.55;}
+.aa-badge{display:inline-flex;align-items:center;width:max-content;padding:2px 8px;border-radius:16px;font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
+.aa-badge.green{background:rgba(12,184,122,.14);color:var(--em);}
 .aa-badge.orange{background:rgba(232,160,32,.14);color:var(--or2);}
 .aa-badge.red{background:rgba(232,82,42,.14);color:var(--co2);}
-.aa-bar{
-  height:7px;border-radius:999px;background:var(--badge-bg);overflow:hidden;margin-top:7px;
-}
+.aa-bar{height:7px;border-radius:999px;background:var(--badge-bg);overflow:hidden;margin-top:7px;}
 .aa-bar span{display:block;height:100%;background:var(--sa);}
 .aa-muted{font-size:11px;color:var(--text3);line-height:1.5;}
 
-.role-tag{
-  display:inline-flex;align-items:center;gap:5px;
-  padding:3px 10px;border-radius:20px;
-  font-family:var(--font-m);font-size:10px;font-weight:500;letter-spacing:.08em;
-  background:var(--badge-bg);color:var(--badge-c);border:1px solid var(--border);
-}
-
-.rbac-banner{
-  display:flex;align-items:center;gap:16px;
-  padding:14px 20px;border-radius:var(--radius-lg);
-  background:var(--surf);border:1px solid var(--border);
+/* Readable insight block */
+.aa-insight-block{
+  padding:12px 14px;border-radius:var(--radius);background:var(--surf);
+  border:1px solid var(--border);margin-bottom:8px;
   border-left:3px solid var(--sa);
-  margin-bottom:24px;flex-wrap:wrap;
 }
+.aa-insight-block.orange{border-left-color:var(--or);}
+.aa-insight-block.red{border-left-color:var(--co);}
+.aa-insight-block.green{border-left-color:var(--em);}
+.aa-insight-text{font-size:12px;color:var(--text2);line-height:1.7;margin-top:4px;}
+
+/* Role tag */
+.role-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-family:var(--font-m);font-size:10px;font-weight:500;letter-spacing:.08em;background:var(--badge-bg);color:var(--badge-c);border:1px solid var(--border);}
+
+/* RBAC banner */
+.rbac-banner{display:flex;align-items:center;gap:16px;padding:14px 20px;border-radius:var(--radius-lg);background:var(--surf);border:1px solid var(--border);border-left:3px solid var(--sa);margin-bottom:24px;flex-wrap:wrap;}
 .rbac-icon{font-size:22px;flex-shrink:0;}
 .rbac-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;}
 .rbac-desc{font-size:11px;color:var(--text3);}
@@ -416,40 +399,20 @@
 
 /* DSS Levels */
 .dss-levels{display:flex;flex-direction:column;gap:14px;margin-bottom:8px;}
-.dss-level{
-  background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);
-  overflow:hidden;
-}
-.dss-level-header{
-  display:flex;align-items:center;gap:14px;padding:16px 20px;
-  border-bottom:1px solid var(--border2);cursor:pointer;
-  transition:background .2s;user-select:none;
-}
+.dss-level{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+.dss-level-header{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .2s;user-select:none;}
 .dss-level-header:hover{background:var(--surf2);}
-.dss-level-badge{
-  font-family:var(--font-m);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  padding:4px 12px;border-radius:20px;flex-shrink:0;
-}
+.dss-level-badge{font-family:var(--font-m);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:20px;flex-shrink:0;}
 .l1{background:rgba(232,82,42,.15);color:var(--co2);border:1px solid rgba(232,82,42,.25);}
 .l2{background:rgba(232,160,32,.15);color:var(--or2);border:1px solid rgba(232,160,32,.25);}
-.l3{background:rgba(12,184,122,.15);color:var(--em2);border:1px solid rgba(12,184,122,.25);}
+.l3{background:rgba(12,184,122,.15);color:var(--em);border:1px solid rgba(12,184,122,.25);}
 .dss-level-title{font-family:var(--font-d);font-size:16px;font-weight:600;color:var(--text);}
 .dss-level-sub{font-size:11px;color:var(--text3);margin-top:2px;}
-.dss-level-count{
-  margin-left:auto;width:28px;height:28px;border-radius:50%;
-  background:var(--badge-bg);color:var(--badge-c);
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-m);font-size:12px;font-weight:700;flex-shrink:0;
-}
+.dss-level-count{margin-left:auto;width:28px;height:28px;border-radius:50%;background:var(--badge-bg);color:var(--badge-c);display:flex;align-items:center;justify-content:center;font-family:var(--font-m);font-size:12px;font-weight:700;flex-shrink:0;}
 .dss-level-body{padding:16px 20px;display:flex;flex-direction:column;gap:12px;}
 
 /* DSS Rec cards */
-.dss-rec{
-  padding:16px 18px;border-radius:var(--radius);
-  border:1px solid var(--border2);background:var(--surf2);
-  position:relative;overflow:hidden;
-  transition:border-color .2s,box-shadow .2s;
-}
+.dss-rec{padding:16px 18px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surf2);position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s;}
 .dss-rec:hover{border-color:var(--border);box-shadow:var(--shadow);}
 .dss-rec::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;}
 .dss-rec.priority-high::before{background:var(--co);}
@@ -457,52 +420,32 @@
 .dss-rec.priority-low::before{background:var(--em);}
 .dss-rec-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px;}
 .dss-rec-title{font-size:13.5px;font-weight:600;color:var(--text);line-height:1.4;}
+.dss-rec-body{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px;}
+.dss-rec-summary{font-size:11px;color:var(--text3);line-height:1.6;margin-top:6px;padding:8px 10px;background:var(--surf);border-radius:6px;border-left:2px solid var(--sa);}
 .dss-rec-badges{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;}
 .dss-badge{font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:12px;}
 .dss-badge.high  {background:rgba(232,82,42,.14);color:var(--co2);}
 .dss-badge.medium{background:rgba(232,160,32,.14);color:var(--or2);}
-.dss-badge.low   {background:rgba(12,184,122,.14);color:var(--em2);}
-.dss-badge.confirmed{background:rgba(12,184,122,.14);color:var(--em2);}
+.dss-badge.low   {background:rgba(12,184,122,.14);color:var(--em);}
+.dss-badge.confirmed{background:rgba(12,184,122,.14);color:var(--em);}
 .dss-badge.proposed {background:rgba(30,111,217,.14);color:var(--sa3);}
 .dss-badge.active   {background:rgba(232,82,42,.14);color:var(--co2);}
-.dss-rec-body{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:10px;}
-.dss-rec-sources{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.dss-source-chip{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:2px 8px;border-radius:12px;font-size:10px;
-  background:var(--badge-bg);color:var(--badge-c);border:1px solid var(--border);
-  cursor:pointer;transition:border-color .2s;font-family:var(--font-m);
-}
+.dss-rec-sources{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.dss-source-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:10px;background:var(--badge-bg);color:var(--badge-c);border:1px solid var(--border);cursor:pointer;transition:border-color .2s;font-family:var(--font-m);}
 .dss-source-chip:hover{border-color:var(--sa);}
 
 /* Annotation cards */
-.annotation-filters{
-  padding:12px 16px;display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap;
-}
+.annotation-filters{padding:12px 16px;display:flex;align-items:center;gap:14px;margin-bottom:18px;flex-wrap:wrap;}
 .af-group{display:flex;align-items:center;gap:8px;}
 .af-label{font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.10em;text-transform:uppercase;color:var(--text3);white-space:nowrap;}
 .af-group select{padding:6px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:var(--font-b);font-size:12px;outline:none;cursor:pointer;-webkit-appearance:none;}
 .af-group select:focus{border-color:var(--sa);}
 
-.annot-card{
-  background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);
-  margin-bottom:14px;overflow:hidden;
-  transition:border-color .25s,box-shadow .25s;
-}
+.annot-card{background:var(--surf);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:14px;overflow:hidden;transition:border-color .25s,box-shadow .25s;}
 .annot-card:hover{border-color:var(--border);box-shadow:var(--shadow);}
 .annot-card.resolved{opacity:.68;}
-
-.annot-header{
-  padding:16px 20px;display:flex;align-items:flex-start;gap:14px;
-  border-bottom:1px solid var(--border2);
-}
-.annot-avatar{
-  width:34px;height:34px;border-radius:50%;flex-shrink:0;
-  background:linear-gradient(135deg,var(--sa),var(--li));
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:700;color:#D6E8FF;
-  font-family:var(--font-m);
-}
+.annot-header{padding:16px 20px;display:flex;align-items:flex-start;gap:14px;border-bottom:1px solid var(--border2);}
+.annot-avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--sa),var(--li));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#D6E8FF;font-family:var(--font-m);}
 .annot-meta{flex:1;}
 .annot-author{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .annot-role{font-family:var(--font-m);font-size:9px;font-weight:500;letter-spacing:.08em;padding:1px 7px;border-radius:12px;}
@@ -510,96 +453,58 @@
 .role-commenter{background:rgba(232,160,32,.15);color:var(--or2);}
 .role-viewer   {background:rgba(91,163,245,.12);color:var(--sa3);}
 .annot-time{font-family:var(--font-m);font-size:10px;color:var(--text3);margin-top:2px;}
-.annot-element-tag{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:2px 9px;border-radius:12px;font-family:var(--font-m);font-size:9px;
-  background:var(--surf2);color:var(--text3);border:1px solid var(--border2);
-  margin-top:4px;
-}
+.annot-element-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:12px;font-family:var(--font-m);font-size:9px;background:var(--surf2);color:var(--text3);border:1px solid var(--border2);margin-top:4px;}
 .annot-type{flex-shrink:0;}
-.annot-type-badge{
-  padding:3px 10px;border-radius:20px;font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
-}
+.annot-type-badge{padding:3px 10px;border-radius:20px;font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;}
 .type-observation{background:rgba(91,163,245,.14);color:var(--sa3);}
 .type-anomaly    {background:rgba(232,82,42,.14);color:var(--co2);}
 .type-risk       {background:rgba(232,160,32,.14);color:var(--or2);}
-
 .annot-body{padding:14px 20px 10px;}
 .annot-text{font-size:13px;color:var(--text2);line-height:1.75;}
 .annot-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
 .annot-tag{padding:2px 8px;border-radius:12px;background:var(--badge-bg);color:var(--badge-c);font-family:var(--font-m);font-size:10px;border:1px solid var(--border);}
-
-.annot-footer{
-  padding:10px 20px;display:flex;align-items:center;gap:10px;
-  border-top:1px solid var(--border2);flex-wrap:wrap;
-}
-.annot-footer-btn{
-  display:inline-flex;align-items:center;gap:5px;padding:5px 11px;
-  border-radius:var(--radius);border:1px solid var(--border2);background:transparent;
-  color:var(--text3);font-family:var(--font-b);font-size:11px;font-weight:500;
-  cursor:pointer;transition:all .2s;
-}
+.annot-footer{padding:10px 20px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border2);flex-wrap:wrap;}
+.annot-footer-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:var(--radius);border:1px solid var(--border2);background:transparent;color:var(--text3);font-family:var(--font-b);font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;}
 .annot-footer-btn:hover{border-color:var(--sa);color:var(--sa);}
-.annot-footer-btn.resolve{color:var(--em2);}
+.annot-footer-btn.resolve{color:var(--em);}
 .annot-footer-btn.resolve:hover{border-color:var(--em);color:var(--em);}
-.resolved-badge{
-  margin-left:auto;display:inline-flex;align-items:center;gap:4px;
-  padding:3px 10px;border-radius:20px;
-  background:rgba(12,184,122,.14);color:var(--em2);
-  font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.08em;
-}
-
-/* Replies */
+.resolved-badge{margin-left:auto;display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;background:rgba(12,184,122,.14);color:var(--em);font-family:var(--font-m);font-size:9px;font-weight:700;letter-spacing:.08em;}
 .annot-replies{padding:0 20px 14px;display:flex;flex-direction:column;gap:8px;}
-.reply-card{
-  padding:12px 14px;border-radius:var(--radius);
-  background:var(--surf2);border:1px solid var(--border2);
-  display:flex;gap:10px;
-}
-.reply-avatar{
-  width:26px;height:26px;border-radius:50%;flex-shrink:0;
-  background:linear-gradient(135deg,var(--or),var(--co));
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:700;color:#D6E8FF;font-family:var(--font-m);
-}
+.reply-card{padding:12px 14px;border-radius:var(--radius);background:var(--surf2);border:1px solid var(--border2);display:flex;gap:10px;}
+.reply-avatar{width:26px;height:26px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,var(--or),var(--co));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#D6E8FF;font-family:var(--font-m);}
 .reply-meta{font-size:12px;color:var(--text3);}
 .reply-meta strong{color:var(--text2);font-weight:600;}
 .reply-text{font-size:12px;color:var(--text2);line-height:1.65;margin-top:4px;}
 
-/* New comment form */
 .type-selector{display:flex;gap:8px;flex-wrap:wrap;}
-.type-btn{
-  padding:6px 14px;border-radius:20px;border:1px solid var(--border);
-  background:var(--surf2);color:var(--text3);font-family:var(--font-b);font-size:12px;
-  cursor:pointer;transition:all .2s;
-}
+.type-btn{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surf2);color:var(--text3);font-family:var(--font-b);font-size:12px;cursor:pointer;transition:all .2s;}
 .type-btn.active{background:linear-gradient(135deg,var(--sa),var(--sa2));color:#D6E8FF;border-color:transparent;}
 .type-btn:hover:not(.active){border-color:var(--sa);color:var(--sa);}
 
 textarea:focus,input:focus{border-color:var(--sa)!important;box-shadow:0 0 0 3px rgba(30,111,217,.12)!important;}
 
-@media (max-width:900px){
+@media(max-width:900px){
   .aa-kpis,.aa-layout{grid-template-columns:1fr;}
   .aa-row{grid-template-columns:76px 1fr;}
-  .aa-row-score{grid-column:2;}
-  .aa-row-reason{grid-column:2;}
 }
 </style>
 
+<script src="rbac.js"></script>
+<script src="app.js"></script>
+
 <script>
 /* ══════════════════════════════════════════════════════════════
-   COLLABORATIVE DSS — CORE ENGINE
-   Storage: localStorage (production = IndexedDB / server)
+   COLLABORATIVE DSS — CORE ENGINE  v2.0
+   All analytics centralised here. static-analytics.html removed.
 ══════════════════════════════════════════════════════════════ */
 
-/* ── RBAC MODEL ─────────────────────────────────────────────── */
+/* ── RBAC ────────────────────────────────────────────────────── */
 const ROLES = {
-  analyst:   { label:'Analyste',      can:['read','annotate','reply','resolve','recommend','export'] },
-  commenter: { label:'Commentateur',  can:['read','annotate','reply'] },
-  viewer:    { label:'Lecteur',        can:['read'] }
+  analyst:   { label:'Analyste',     can:['read','annotate','reply','resolve','recommend','export'] },
+  commenter: { label:'Commentateur', can:['read','annotate','reply'] },
+  viewer:    { label:'Lecteur',       can:['read'] }
 };
 let _currentRole = 'analyst';
-
 function can(action){ return ROLES[_currentRole].can.includes(action); }
 
 function switchRole(role){
@@ -608,15 +513,14 @@ function switchRole(role){
   document.getElementById('rbacRoleLabel').textContent = r.label;
   const descs = {
     analyst:   'Vous pouvez annoter les KPI, signaler anomalies et risques, créer des recommandations et exporter le rapport décisionnel.',
-    commenter: 'Vous pouvez annoter les KPI et répondre aux discussions. Vous ne pouvez pas créer de recommandations ni exporter.',
-    viewer:    'Accès en lecture seule. Vous pouvez consulter toutes les annotations et recommandations sans modifier.'
+    commenter: 'Vous pouvez annoter les KPI et répondre aux discussions. Vous ne pouvez pas exporter.',
+    viewer:    'Accès en lecture seule. Vous consultez toutes les annotations et recommandations sans pouvoir modifier.'
   };
   document.getElementById('rbacDesc').textContent = descs[role];
   ['btnRoleAnalyst','btnRoleCommenter','btnRoleViewer'].forEach(id => {
     document.getElementById(id).className = 'tb-btn';
   });
-  const map = {analyst:'btnRoleAnalyst',commenter:'btnRoleCommenter',viewer:'btnRoleViewer'};
-  document.getElementById(map[role]).className = 'tb-btn prim';
+  document.getElementById({analyst:'btnRoleAnalyst',commenter:'btnRoleCommenter',viewer:'btnRoleViewer'}[role]).className = 'tb-btn prim';
   const rt = document.getElementById('roleTag');
   if(rt) rt.textContent = r.label;
   showToast(`Rôle changé → ${r.label}`);
@@ -638,127 +542,193 @@ const ELEMENT_LABELS = {
   custom:      'Élément personnalisé'
 };
 
-/* Seed data */
 const SEED_COMMENTS = [
-  {id:'c001',element:'kpi_hours',element_label:'Total Heures',author:'Wala Dghaies',role:'analyst',text:'Le volume de 22 993h sur 13 mois représente environ 1 769h/mois. C\'est cohérent avec une équipe de 20 membres à ~88h/membre/mois. Pas d\'anomalie détectée sur ce KPI.',type:'observation',timestamp:'2026-04-10T09:14:00',replies:[],resolved:false,tags:['volume','charge']},
-  {id:'c002',element:'monthly_oct',element_label:'Activité Mensuelle — Oct 2025',author:'Oliver Hansen',role:'analyst',text:'Chute brutale en octobre 2025 : 409h seulement contre ~2 100h en moyenne. C\'est −80% en un mois. Cela ne correspond pas à des congés collectifs car novembre remonte à peine à 501h. Signal d\'alarme à investiguer.',type:'anomaly',timestamp:'2026-04-11T14:32:00',replies:[{id:'r001',author:'Nielsen Erik',role:'commenter',text:'Confirmé. Notre migration de stack s\'est déroulée sur ces deux mois — les entrées Solidtime n\'ont pas été saisies pendant cette période. Problème de discipline de saisie, pas une baisse d\'activité réelle.',timestamp:'2026-04-11T16:45:00'}],resolved:true,tags:['anomalie','saisie','migration']},
-  {id:'c003',element:'jira_rate',element_label:'Taux Liaison Jira (3.4%)',author:'Andreas Meyer',role:'analyst',text:'3.4% de liaison Jira est un signal critique. Seul WEB est lié à Jira. Les projets DATA, E-COMMERCE, MOBILE n\'ont aucun ticket traçable. Impossible de piloter ces projets ni de mesurer la vélocité. Ce taux doit dépasser 60% pour que le système soit utile.',type:'risk',timestamp:'2026-04-12T10:08:00',replies:[{id:'r002',author:'Marc Dupont',role:'commenter',text:'Proposition : imposer la saisie de la clé Jira dans Solidtime pour chaque entrée liée à un ticket existant. Un champ obligatoire côté Solidtime suffirait pour la discipline de saisie.',timestamp:'2026-04-12T11:20:00'},{id:'r003',author:'Wala Dghaies',role:'analyst',text:'Accord total. On peut aussi créer des projets Jira pour DATA et E-COMMERCE avec des tickets de suivi. L\'ETL est déjà configuré pour les lire automatiquement.',timestamp:'2026-04-13T09:15:00'}],resolved:false,tags:['jira','traçabilité','risque']},
-  {id:'c004',element:'overrun_rate',element_label:'Taux Dépassement Estimation (46.1%)',author:'Elena',role:'commenter',text:'46.1% des 256 tickets dépassent leur estimation initiale. Le seuil toléré dans notre organisation est de 30%. Je signale ce point comme risque planification affectant les sprints Q2 2026.',type:'risk',timestamp:'2026-04-13T15:22:00',replies:[],resolved:false,tags:['estimation','planification','dépassement']}
+  {id:'c001',element:'kpi_hours',element_label:'Total Heures',author:'Wala Dghaies',role:'analyst',text:'Le volume de 22 993 heures sur 13 mois représente environ 1 769 heures par mois. C\'est cohérent avec une équipe de 20 membres travaillant environ 88 heures chacun par mois. Aucune anomalie détectée sur ce KPI globalement.',type:'observation',timestamp:'2026-04-10T09:14:00',replies:[],resolved:false,tags:['volume','charge']},
+  {id:'c002',element:'monthly_oct',element_label:'Activité Mensuelle — Oct 2025',author:'Oliver Hansen',role:'analyst',text:'Chute brutale en octobre 2025 : seulement 409 heures enregistrées contre une moyenne habituelle de 2 100 heures par mois. Cela représente une baisse de 80% en un mois, ce qui est anormal. Cette situation ne correspond pas à des congés collectifs car novembre ne remonte qu\'à 501 heures. Signal d\'alarme à investiguer en priorité.',type:'anomaly',timestamp:'2026-04-11T14:32:00',replies:[{id:'r001',author:'Nielsen Erik',role:'commenter',text:'Confirmé. Notre migration de stack technique s\'est déroulée sur ces deux mois — les heures ont bien été travaillées, mais elles n\'ont pas été saisies dans Solidtime pendant cette période. Il s\'agit d\'un problème de discipline de saisie, pas d\'une baisse d\'activité réelle.',timestamp:'2026-04-11T16:45:00'}],resolved:true,tags:['anomalie','saisie','migration']},
+  {id:'c003',element:'jira_rate',element_label:'Taux Liaison Jira (3.4%)',author:'Andreas Meyer',role:'analyst',text:'Un taux de liaison Jira de seulement 3,4% est un signal critique. Seul le projet WEB rattache ses entrées à des tickets Jira. Les projets DATA, E-COMMERCE et MOBILE ne disposent d\'aucun ticket traçable. Sans cette liaison, il est impossible de mesurer la vélocité réelle des équipes ou d\'établir un taux de dépassement fiable par projet. Ce taux doit dépasser 60% pour que le système de suivi soit vraiment utile.',type:'risk',timestamp:'2026-04-12T10:08:00',replies:[{id:'r002',author:'Marc Dupont',role:'commenter',text:'Proposition concrète : rendre le champ Jira obligatoire dans Solidtime pour chaque entrée de temps liée à un ticket existant. Un champ requis côté interface suffirait pour améliorer la discipline de saisie sans changer les processus existants.',timestamp:'2026-04-12T11:20:00'},{id:'r003',author:'Wala Dghaies',role:'analyst',text:'Accord total. Nous pouvons également créer des projets Jira dédiés pour DATA et E-COMMERCE avec des tickets de suivi structurés. L\'ETL est déjà configuré pour les lire automatiquement — il n\'y a donc pas de développement supplémentaire nécessaire.',timestamp:'2026-04-13T09:15:00'}],resolved:false,tags:['jira','traçabilité','risque']},
+  {id:'c004',element:'overrun_rate',element_label:'Taux Dépassement Estimation (46.1%)',author:'Elena Vasquez',role:'commenter',text:'46,1% des 256 tickets analysés dépassent leur estimation initiale. Le seuil toléré dans notre organisation est de 30%. Ce niveau de dépassement est significatif et impacte directement la planification des sprints du deuxième trimestre 2026. Je signale ce point comme risque planification à traiter de façon prioritaire.',type:'risk',timestamp:'2026-04-13T15:22:00',replies:[],resolved:false,tags:['estimation','planification','dépassement']}
 ];
 
 const SEED_RECS = [
-  {id:'rec001',level:1,level_label:'Observation',title:'Creux d\'activité oct–nov 2025 non justifié dans Solidtime',description:'Chute de 80% en octobre 2025 (409h vs ~2 100h/mois normal). Confirmé via le thread : migration technique non tracée. Les heures ont été travaillées mais non saisies.',source_comments:['c002'],status:'confirmed',priority:'medium'},
-  {id:'rec002',level:2,level_label:'Analyse',title:'Taux Jira 3.4% — insuffisance structurelle de traçabilité multi-projets',description:'Seul le projet WEB utilise les clés Jira dans Solidtime. 96.6% des heures (16 388 entrées) ne sont pas rattachées à un ticket. Impact : impossible de mesurer la vélocité réelle par projet, ni d\'établir un taux de dépassement multi-projets fiable.',source_comments:['c003'],status:'active',priority:'high'},
-  {id:'rec003',level:3,level_label:'Recommandation',title:'[Action #1] Implémenter un champ Jira obligatoire dans Solidtime',description:'Modifier le workflow de saisie Solidtime pour rendre le champ Description (avec clé Jira) obligatoire pour tous les projets actifs dans Jira. Objectif cible : passer de 3.4% à >60% de liaison en 3 mois. Priorité : DATA, E-COMMERCE, MOBILE.',source_comments:['c003','c004'],status:'proposed',priority:'high'},
-  {id:'rec004',level:3,level_label:'Recommandation',title:'[Action #2] Réviser le processus d\'estimation Jira — Planning Poker',description:'Avec 46.1% de dépassement sur 256 tickets, le processus d\'estimation est défaillant. Adopter le Planning Poker pour les tickets >2h et introduire un buffer systématique de 20% sur les estimations initiales. Révision trimestrielle obligatoire.',source_comments:['c004'],status:'proposed',priority:'medium'}
+  {id:'rec001',level:1,level_label:'Observation',title:'Baisse d\'activité non justifiée en octobre et novembre 2025',description:'En octobre 2025, seulement 409 heures ont été enregistrées dans Solidtime, contre une moyenne habituelle de 2 100 heures par mois — soit une baisse de 80%. Après investigation via le fil de discussion collaboratif, il a été confirmé que cette anomalie est liée à une migration technique : les heures ont bien été travaillées mais n\'ont pas été saisies pendant cette période. Il ne s\'agit pas d\'une baisse d\'activité réelle, mais d\'un déficit de discipline de saisie.',source_comments:['c002'],status:'confirmed',priority:'medium'},
+  {id:'rec002',level:2,level_label:'Analyse',title:'Taux de liaison Jira à 3,4% : une lacune structurelle de traçabilité',description:'Seulement 3,4% des heures enregistrées dans Solidtime sont rattachées à un ticket Jira. Concrètement, cela signifie que 96,6% des heures travaillées — soit environ 16 388 entrées — ne peuvent pas être associées à une tâche précise. Cette situation empêche tout pilotage fin de la vélocité par projet, rend impossible le calcul d\'un taux de dépassement d\'estimation fiable, et réduit considérablement la valeur du système de suivi actuel.',source_comments:['c003'],status:'active',priority:'high'},
+  {id:'rec003',level:3,level_label:'Recommandation',title:'Action prioritaire : imposer le champ Jira dans le formulaire Solidtime',description:'Pour résoudre le problème de traçabilité identifié, il est recommandé de modifier le formulaire de saisie de Solidtime afin de rendre le champ "clé Jira" obligatoire pour tous les projets actifs. Cette modification est technique, ciblée et ne perturbe pas les flux de travail existants. L\'objectif est de passer de 3,4% à plus de 60% de liaisons Jira en moins de 3 mois, en commençant par les projets DATA, E-COMMERCE et MOBILE.',source_comments:['c003','c004'],status:'proposed',priority:'high'},
+  {id:'rec004',level:3,level_label:'Recommandation',title:'Action secondaire : revoir le processus d\'estimation via Planning Poker',description:'Avec 46,1% des tickets dépassant leur estimation initiale — bien au-delà du seuil acceptable de 30% — le processus d\'estimation actuel est défaillant. Il est recommandé d\'adopter la méthode Planning Poker pour tous les tickets estimés à plus de 2 heures, et d\'introduire systématiquement un buffer de 20% dans les estimations initiales. Une révision trimestrielle obligatoire du taux de dépassement permettra de suivre les progrès.',source_comments:['c004'],status:'proposed',priority:'medium'}
 ];
 
 function loadComments(){
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) return JSON.parse(raw);
-  } catch(e){}
+  try{ const raw=localStorage.getItem(STORAGE_KEY); if(raw) return JSON.parse(raw); } catch(e){}
   localStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_COMMENTS));
   return [...SEED_COMMENTS];
 }
-function saveComments(comments){ localStorage.setItem(STORAGE_KEY, JSON.stringify(comments)); }
-
+function saveComments(c){ localStorage.setItem(STORAGE_KEY, JSON.stringify(c)); }
 function loadRecs(){
-  try {
-    const raw = localStorage.getItem(RECS_KEY);
-    if(raw) return JSON.parse(raw);
-  } catch(e){}
+  try{ const raw=localStorage.getItem(RECS_KEY); if(raw) return JSON.parse(raw); } catch(e){}
   localStorage.setItem(RECS_KEY, JSON.stringify(SEED_RECS));
   return [...SEED_RECS];
 }
 
-/* ── ADVANCED ANALYTICS STATIC ENGINE ───────────────────────── */
+/* ── ANALYTICS ENGINE (centralisé ici — static-analytics.html supprimé) ── */
 let aaRawRows = [];
 let aaLatestReport = null;
 
-function aaEscape(value){
-  return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
-    '&':'&amp;',
-    '<':'&lt;',
-    '>':'&gt;',
-    '"':'&quot;',
-    "'":'&#39;'
-  })[ch]);
+function aaEsc(v){ return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+function aaBadgeColor(v){ const c=String(v||'green').toLowerCase(); return ['red','orange','green'].includes(c)?c:'green'; }
+
+/* Render one KPI card in the analytics section */
+function aaCard(label, value, sub, color, hint=''){
+  return `<div class="aa-kpi">
+    <div class="aa-kpi-label">${aaEsc(label)}</div>
+    <div class="aa-kpi-value">${aaEsc(value)}</div>
+    <div style="margin-top:4px;"><span class="aa-badge ${aaBadgeColor(color)}">${aaEsc(sub)}</span></div>
+    ${hint?`<div class="aa-kpi-sub">${aaEsc(hint)}</div>`:''}
+  </div>`;
 }
 
-function aaBadgeColor(value){
-  const c = String(value || 'green').toLowerCase();
-  return c === 'red' || c === 'orange' || c === 'green' ? c : 'green';
+/* Render a human-readable insight block */
+function aaInsightBlock(text, severity){
+  const color = severity==='High'?'red':severity==='Medium'?'orange':'green';
+  const icon  = severity==='High'?'🔴':severity==='Medium'?'🟡':'🟢';
+  return `<div class="aa-insight-block ${color}">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:11px;">${icon}</span>
+      <span class="aa-badge ${color}">${aaEsc(severity)}</span>
+    </div>
+    <div class="aa-insight-text">${aaEsc(text)}</div>
+  </div>`;
 }
 
-function aaCard(label, value, sub, color){
-  return `
-    <article class="aa-kpi">
-      <div class="aa-kpi-label">${aaEscape(label)}</div>
-      <div class="aa-kpi-value">${aaEscape(value)}</div>
-      <div class="aa-muted"><span class="aa-badge ${aaBadgeColor(color)}">${aaEscape(sub)}</span></div>
-    </article>
-  `;
+/* Render project task detail panels using KpiTaskMap */
+function renderProjectTaskPanels(report){
+  const container = document.getElementById('aaProjectTasks');
+  if(!container) return;
+  if(!report || !report.projects || !report.projects.length){
+    container.innerHTML = '<div class="aa-muted">Aucun projet à afficher.</div>';
+    return;
+  }
+
+  container.innerHTML = report.projects.slice(0,10).map(p => {
+    const tasks = (p.tasks || p.entries || []).slice(0,8);
+    const healthColor = p.health_score >= 70 ? 'green' : p.health_score >= 45 ? 'orange' : 'red';
+
+    const taskRows = tasks.length ? tasks.map(t => {
+      const formatted = window.KpiTaskMap ? window.KpiTaskMap.formatRow(t) : t;
+      const taskName  = formatted.task_name  || aaEsc(t.task || t.description || 'Tâche sans titre');
+      const userName  = formatted.assigned_user || aaEsc(t.user || t.member || 'Non assigné');
+      const hours     = formatted.hours_label || (t.hours ? t.hours+'h' : '—');
+      const status    = formatted.status_label || '';
+      const initials  = userName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const statusClass = status.includes('Terminé')?'done':status.includes('cours')?'progress':status.includes('attente')?'pending':'unknown';
+      return `<div class="task-item">
+        <div class="task-item-head">
+          <span class="task-name">${aaEsc(taskName)}</span>
+          ${status?`<span class="task-status-pill ${statusClass}">${aaEsc(status)}</span>`:''}
+        </div>
+        <div class="task-meta">
+          <span class="task-user">
+            <span class="task-user-avatar">${initials}</span>
+            ${aaEsc(userName)}
+          </span>
+          ${hours!=='—'?`<span class="task-hours">⏱ ${aaEsc(hours)}</span>`:''}
+        </div>
+      </div>`;
+    }).join('')
+    : '<div class="aa-muted" style="padding:8px 0;">Aucun détail de tâche disponible pour ce projet.</div>';
+
+    return `<div class="project-task-panel">
+      <div class="project-task-panel-head">
+        <div>
+          <div class="project-task-panel-name">${aaEsc(p.project || 'Projet inconnu')}</div>
+          <div class="project-task-panel-meta">
+            Score de santé ${aaEsc(p.health_score)}/100 · ${aaEsc(p.total_hours)}h suivies · ${aaEsc(p.total_tasks||'—')} tâches
+          </div>
+        </div>
+        <span class="aa-badge ${aaBadgeColor(healthColor)}">${aaEsc(p.risk_level||'')}</span>
+      </div>
+      <div class="project-task-panel-body">
+        <div class="task-list">${taskRows}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-function aaDownload(name, content, type){
-  const blob = new Blob([content], {type});
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = name;
-  link.click();
-  URL.revokeObjectURL(link.href);
-}
-
+/* Main analytics render function — called once and on project filter change */
 function renderAdvancedAnalytics(report){
   aaLatestReport = report;
+
+  /* Populate project select */
   const projectSelect = document.getElementById('aaProject');
   if(projectSelect && projectSelect.options.length === 1){
-    report.projects.slice().sort((a,b) => a.project.localeCompare(b.project)).forEach(item => {
-      const option = document.createElement('option');
-      option.value = item.project;
-      option.textContent = item.project;
-      projectSelect.appendChild(option);
+    report.projects.slice().sort((a,b)=>a.project.localeCompare(b.project)).forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.project;
+      opt.textContent = item.project;
+      projectSelect.appendChild(opt);
     });
   }
 
+  /* KPI cards */
   const k = report.kpis;
   document.getElementById('aaKpis').innerHTML = [
-    aaCard('Health Score', k.project_health_score + '/100', 'risque ' + k.risk_level, k.risk_color),
-    aaCard('Productivité', k.team_productivity_score + '/100', k.total_users + ' utilisateurs', 'green'),
-    aaCard('Completion Rate', k.task_completion_rate + '%', k.total_tasks + ' taches', k.task_completion_rate < 45 ? 'red' : 'green'),
-    aaCard('Temps moyen / tache', k.average_time_per_task + 'h', k.total_hours + 'h suivies', 'orange')
+    aaCard('Score de santé global', k.project_health_score+'/100',
+      'Niveau de risque : '+k.risk_level, k.risk_color,
+      k.risk_level==='High'?'Attention requise — des projets nécessitent une intervention rapide.':
+      k.risk_level==='Medium'?'Situation modérée — quelques points à surveiller.':
+      'Bonne santé générale des projets suivis.'),
+    aaCard('Score de productivité', k.team_productivity_score+'/100',
+      k.total_users+' membres actifs', 'green',
+      'Mesure l\'efficacité globale de l\'équipe sur la période analysée.'),
+    aaCard('Taux de complétion', k.task_completion_rate+'%',
+      k.total_tasks+' tâches au total', k.task_completion_rate<45?'red':'green',
+      k.task_completion_rate<45?'En dessous du seuil acceptable de 45%. Actions correctives nécessaires.':
+      'Taux satisfaisant. Maintenir cet effort sur les prochains sprints.'),
+    aaCard('Temps moyen par tâche', k.average_time_per_task+'h',
+      k.total_hours+'h suivies au total', 'orange',
+      'Durée moyenne constatée par ticket ou entrée de time-tracking.')
   ].join('');
 
-  document.getElementById('aaAnomalies').innerHTML = report.anomalies.slice(0, 10).map(a => `
+  /* Anomalies */
+  document.getElementById('aaAnomalies').innerHTML = report.anomalies.slice(0,10).map(a => `
     <div class="aa-row">
-      <span class="aa-badge ${aaBadgeColor(a.risk_color)}">${aaEscape(a.risk_level)}</span>
-      <strong>${aaEscape(a.entity_type + ': ' + a.entity_id)}</strong>
-      <span class="aa-row-score">${aaEscape(a.score)}</span>
-      <div class="aa-row-reason">${aaEscape(a.reason)} · ${aaEscape(a.project)}</div>
+      <span class="aa-badge ${aaBadgeColor(a.risk_color)}">${aaEsc(a.risk_level)}</span>
+      <strong>${aaEsc(a.entity_type)} : ${aaEsc(a.entity_id)}</strong>
+      <span class="aa-row-score">${aaEsc(a.score)}</span>
+      <div class="aa-row-reason">${aaEsc(a.reason)} — Projet : ${aaEsc(a.project)}</div>
     </div>
-  `).join('') || '<div class="aa-muted">Aucune anomalie detectee.</div>';
+  `).join('') || '<div class="aa-muted">Aucune anomalie détectée avec ce filtre.</div>';
 
-  document.getElementById('aaInsights').innerHTML = report.insights.slice(0, 8).map(i => {
-    const color = i.severity === 'High' ? 'red' : i.severity === 'Medium' ? 'orange' : 'green';
-    return `<div class="aa-item"><span class="aa-badge ${color}">${aaEscape(i.severity)}</span> ${aaEscape(i.text)}</div>`;
-  }).join('') || '<div class="aa-muted">Aucun insight pour ce filtre.</div>';
+  /* Insights — human-readable blocks */
+  document.getElementById('aaInsights').innerHTML = report.insights.slice(0,8).map(i =>
+    aaInsightBlock(i.text, i.severity)
+  ).join('') || '<div class="aa-muted">Aucun insight pour ce filtre.</div>';
 
-  document.getElementById('aaRecommendations').innerHTML = report.recommendations.slice(0, 8).map(r => `
+  /* Recommendations — readable sentences */
+  document.getElementById('aaRecommendations').innerHTML = report.recommendations.slice(0,8).map(r => `
+    <div class="aa-insight-block">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span class="aa-badge ${r.priority==='High'?'red':r.priority==='Medium'?'orange':'green'}">${aaEsc(r.priority)}</span>
+        <strong style="font-size:12px;color:var(--text);">${aaEsc(r.problem)}</strong>
+      </div>
+      <div class="aa-insight-text">${aaEsc(r.suggested_action)}</div>
+    </div>
+  `).join('') || '<div class="aa-muted">Aucune recommandation automatique disponible.</div>';
+
+  /* Rankings */
+  document.getElementById('aaRankings').innerHTML = report.rankings.worst_projects.slice(0,8).map((p,i) => `
     <div class="aa-item">
-      <strong>${aaEscape(r.priority + ': ' + r.problem)}</strong><br>
-      <span class="aa-muted">${aaEscape(r.suggested_action)}</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <strong style="font-size:12px;">${i+1}. ${aaEsc(p.project)}</strong>
+        <span class="aa-badge ${aaBadgeColor(p.risk_color)}">${aaEsc(p.risk_level)}</span>
+      </div>
+      <div class="aa-muted" style="margin-top:3px;">
+        Score de santé : ${aaEsc(p.health_score)}/100 · ${aaEsc(p.total_hours)}h enregistrées
+      </div>
+      <div class="aa-bar"><span style="width:${Math.max(0,Math.min(100,p.health_score))}%;background:${p.health_score>=70?'var(--em)':p.health_score>=45?'var(--or)':'var(--co)'}"></span></div>
     </div>
-  `).join('') || '<div class="aa-muted">Aucune recommandation automatique.</div>';
+  `).join('') || '<div class="aa-muted">Aucun projet à classer.</div>';
 
-  document.getElementById('aaRankings').innerHTML = report.rankings.worst_projects.slice(0, 8).map(p => `
-    <div class="aa-item">
-      <strong>${aaEscape(p.project)}</strong>
-      <span class="aa-badge ${aaBadgeColor(p.risk_color)}" style="float:right;">${aaEscape(p.risk_level)}</span>
-      <div class="aa-muted">Health ${aaEscape(p.health_score)}/100 · ${aaEscape(p.total_hours)}h</div>
-      <div class="aa-bar"><span style="width:${Math.max(0, Math.min(100, p.health_score))}%"></span></div>
-    </div>
-  `).join('') || '<div class="aa-muted">Aucun projet a classer.</div>';
+  /* Project task detail */
+  renderProjectTaskPanels(report);
 }
 
 function refreshAdvancedAnalytics(){
@@ -773,74 +743,84 @@ function initAdvancedAnalytics(){
   const projectSelect = document.getElementById('aaProject');
   if(!projectSelect) return;
   projectSelect.addEventListener('change', refreshAdvancedAnalytics);
+
+  const aaDownload = (name, content, type) => {
+    const blob = new Blob([content], {type});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = name;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
   document.getElementById('aaDownloadCsv').addEventListener('click', () => {
     if(!aaLatestReport) return;
-    aaDownload('advanced_analytics_report.csv', window.AdvancedAnalyticsEngine.toCsv(aaLatestReport), 'text/csv;charset=utf-8');
+    aaDownload('analytics_report.csv', window.AdvancedAnalyticsEngine.toCsv(aaLatestReport), 'text/csv;charset=utf-8');
   });
   document.getElementById('aaDownloadJson').addEventListener('click', () => {
     if(!aaLatestReport) return;
-    aaDownload('advanced_analytics_report.json', JSON.stringify(aaLatestReport, null, 2), 'application/json;charset=utf-8');
+    aaDownload('analytics_report.json', JSON.stringify(aaLatestReport, null, 2), 'application/json;charset=utf-8');
   });
 
   fetch('dashboard_dataset.csv')
-    .then(res => {
-      if(!res.ok) throw new Error('dashboard_dataset.csv introuvable');
-      return res.text();
-    })
+    .then(res => { if(!res.ok) throw new Error('dashboard_dataset.csv introuvable'); return res.text(); })
     .then(text => {
-      if(!window.AdvancedAnalyticsEngine) throw new Error('AdvancedAnalyticsEngine non charge');
+      if(!window.AdvancedAnalyticsEngine) throw new Error('AdvancedAnalyticsEngine non chargé');
       aaRawRows = window.AdvancedAnalyticsEngine.parseCsv(text);
       refreshAdvancedAnalytics();
     })
     .catch(err => {
       document.getElementById('aaKpis').innerHTML = `
-        <article class="aa-kpi">
-          <strong>Impossible de charger le moteur Analytics</strong>
-          <div class="aa-muted">${aaEscape(err.message)}</div>
-        </article>
-      `;
+        <div class="aa-kpi" style="grid-column:1/-1;">
+          <div style="font-size:13px;color:var(--text2);font-weight:600;">Données non disponibles</div>
+          <div class="aa-muted" style="margin-top:6px;">${aaEsc(err.message)}<br>Vérifiez que <code>dashboard_dataset.csv</code> est présent à la racine du projet.</div>
+        </div>`;
     });
 }
 
 /* ── FORMAT DATE ─────────────────────────────────────────────── */
 function fmtDate(iso){
-  try {
+  try{
     const d = new Date(iso);
-    return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-  } catch { return iso; }
+    return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})
+      +' '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+  }catch{ return iso; }
 }
 
-/* ── RENDER DSS LEVELS ───────────────────────────────────────── */
+/* ── DSS LEVELS ──────────────────────────────────────────────── */
 function renderDSSLevels(){
   const recs = loadRecs();
   [1,2,3].forEach(lv => {
     const items = recs.filter(r => r.level === lv);
-    document.getElementById(`l${lv}count`).textContent = items.length;
-    const body = document.getElementById(`l${lv}body`);
+    const countEl = document.getElementById(`l${lv}count`);
+    const body    = document.getElementById(`l${lv}body`);
+    if(countEl) countEl.textContent = items.length;
+    if(!body) return;
     if(!items.length){
       body.innerHTML = `<div style="padding:10px 0;font-size:12px;color:var(--text3);font-style:italic;">Aucune entrée pour ce niveau.</div>`;
       return;
     }
-    body.innerHTML = items.map(r => `
-      <div class="dss-rec priority-${r.priority}">
+    const priorityLabels = {high:'🔴 Priorité haute', medium:'🟡 Priorité moyenne', low:'🟢 Priorité basse'};
+    const statusLabels   = {proposed:'Proposée', confirmed:'Confirmée', active:'Active'};
+    body.innerHTML = items.map(r => {
+      const sourceLinks = r.source_comments.map(cid => {
+        const c = loadComments().find(x => x.id === cid);
+        return c ? `<span class="dss-source-chip" onclick="scrollToAnnotation('${cid}')">💬 ${aaEsc(c.author.split(' ')[0])}</span>` : '';
+      }).join('');
+      return `<div class="dss-rec priority-${r.priority}">
         <div class="dss-rec-head">
-          <div class="dss-rec-title">${r.title}</div>
+          <div class="dss-rec-title">${aaEsc(r.title)}</div>
           <div class="dss-rec-badges">
-            <span class="dss-badge ${r.priority}">${r.priority === 'high' ? '🔴 Haute' : r.priority === 'medium' ? '🟡 Moyenne' : '🟢 Basse'}</span>
-            <span class="dss-badge ${r.status}">${r.status === 'proposed' ? 'Proposée' : r.status === 'confirmed' ? 'Confirmée' : 'Active'}</span>
+            <span class="dss-badge ${r.priority}">${priorityLabels[r.priority]||r.priority}</span>
+            <span class="dss-badge ${r.status}">${statusLabels[r.status]||r.status}</span>
           </div>
         </div>
-        <div class="dss-rec-body">${r.description}</div>
+        <div class="dss-rec-body">${aaEsc(r.description)}</div>
         <div class="dss-rec-sources">
-          <span style="font-family:var(--font-m);font-size:9px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-right:4px;">Sources :</span>
-          ${r.source_comments.map(cid => {
-            const comments = loadComments();
-            const c = comments.find(x => x.id === cid);
-            return c ? `<span class="dss-source-chip" onclick="scrollToAnnotation('${cid}')">💬 ${c.author.split(' ')[0]}</span>` : '';
-          }).join('')}
+          <span style="font-family:var(--font-m);font-size:9px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-right:4px;">Basé sur :</span>
+          ${sourceLinks}
         </div>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
   });
 }
 
@@ -849,72 +829,75 @@ function scrollToAnnotation(id){
   if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.style.outline='2px solid var(--sa)'; setTimeout(()=>el.style.outline='',2000); }
 }
 
-/* ── RENDER ANNOTATIONS ──────────────────────────────────────── */
+/* ── ANNOTATIONS ─────────────────────────────────────────────── */
 function renderAnnotations(){
-  const comments = loadComments();
+  const comments     = loadComments();
   const elemFilter   = document.getElementById('filterElement').value;
   const typeFilter   = document.getElementById('filterType').value;
   const statusFilter = document.getElementById('filterStatus').value;
 
   const filtered = comments.filter(c => {
-    if(elemFilter   && c.element !== elemFilter) return false;
-    if(typeFilter   && c.type    !== typeFilter)  return false;
-    if(statusFilter === 'open'     && c.resolved) return false;
+    if(elemFilter && c.element !== elemFilter) return false;
+    if(typeFilter && c.type !== typeFilter) return false;
+    if(statusFilter === 'open' && c.resolved) return false;
     if(statusFilter === 'resolved' && !c.resolved) return false;
     return true;
   });
 
-  document.getElementById('annotCount').textContent = filtered.length + ' annotation' + (filtered.length !== 1 ? 's' : '');
+  document.getElementById('annotCount').textContent = filtered.length+' annotation'+(filtered.length!==1?'s':'');
 
   const container = document.getElementById('annotationsContainer');
   if(!filtered.length){
-    container.innerHTML = `<div class="empty-state"><div class="es-icon">🔍</div>Aucune annotation pour ces filtres.<br><br>${can('annotate') ? '<button class="tb-btn prim" data-rbac="comment" onclick="openNewComment()">＋ Créer une annotation</button>' : ''}</div>`;
+    container.innerHTML = `<div class="empty-state"><div class="es-icon">🔍</div>Aucune annotation pour ces filtres.<br><br>${can('annotate')?'<button class="tb-btn prim" onclick="openNewComment()">＋ Créer une annotation</button>':''}</div>`;
     return;
   }
-
   container.innerHTML = filtered.map(c => buildAnnotCard(c)).join('');
 }
 
 function buildAnnotCard(c){
-  const typeLabels  = {observation:'Observation',anomaly:'Anomalie',risk:'Risque'};
-  const roleAvatars = {};
-  const initials    = c.author.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  const replyHTML   = c.replies && c.replies.length ? `
+  const typeLabels = {observation:'Observation',anomaly:'Anomalie',risk:'Risque'};
+  const initials = c.author.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  const replyHTML = c.replies && c.replies.length ? `
     <div class="annot-replies">
       ${c.replies.map(r => {
         const ri = r.author.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
         return `<div class="reply-card">
           <div class="reply-avatar">${ri}</div>
           <div>
-            <div class="reply-meta"><strong>${r.author}</strong> · <span class="annot-role role-${r.role}">${ROLES[r.role]?.label||r.role}</span> · ${fmtDate(r.timestamp)}</div>
-            <div class="reply-text">${r.text}</div>
+            <div class="reply-meta">
+              <strong>${aaEsc(r.author)}</strong> ·
+              <span class="annot-role role-${r.role}">${ROLES[r.role]?.label||r.role}</span> ·
+              ${aaEsc(fmtDate(r.timestamp))}
+            </div>
+            <div class="reply-text">${aaEsc(r.text)}</div>
           </div>
         </div>`;
       }).join('')}
     </div>` : '';
 
   const footerBtns = [];
-  if(can('reply'))   if(window.__rbacCanComment !== false) footerBtns.push(`<button class="annot-footer-btn" onclick="openReply('${c.id}')">↩ Répondre</button>`);
-  if(window.__rbacCanComment !== false && can('resolve') && !c.resolved) footerBtns.push(`<button class="annot-footer-btn resolve" onclick="resolveComment('${c.id}')">✓ Marquer résolu</button>`);
+  if(can('reply'))   footerBtns.push(`<button class="annot-footer-btn" onclick="openReply('${c.id}')">↩ Répondre</button>`);
+  if(can('resolve') && !c.resolved) footerBtns.push(`<button class="annot-footer-btn resolve" onclick="resolveComment('${c.id}')">✓ Marquer résolu</button>`);
 
-  return `<div class="annot-card ${c.resolved ? 'resolved' : ''}" id="annot_${c.id}">
+  return `<div class="annot-card ${c.resolved?'resolved':''}" id="annot_${c.id}">
     <div class="annot-header">
       <div class="annot-avatar">${initials}</div>
       <div class="annot-meta">
         <div class="annot-author">
-          ${c.author}
+          ${aaEsc(c.author)}
           <span class="annot-role role-${c.role}">${ROLES[c.role]?.label||c.role}</span>
         </div>
-        <div class="annot-time">${fmtDate(c.timestamp)}</div>
-        <div class="annot-element-tag">📌 ${c.element_label}</div>
+        <div class="annot-time">${aaEsc(fmtDate(c.timestamp))}</div>
+        <div class="annot-element-tag">📌 ${aaEsc(c.element_label)}</div>
       </div>
       <div class="annot-type">
         <span class="annot-type-badge type-${c.type}">${typeLabels[c.type]||c.type}</span>
       </div>
     </div>
     <div class="annot-body">
-      <div class="annot-text">${c.text}</div>
-      ${c.tags && c.tags.length ? `<div class="annot-tags">${c.tags.map(t=>`<span class="annot-tag">#${t}</span>`).join('')}</div>` : ''}
+      <div class="annot-text">${aaEsc(c.text)}</div>
+      ${c.tags && c.tags.length ? `<div class="annot-tags">${c.tags.map(t=>`<span class="annot-tag">#${aaEsc(t)}</span>`).join('')}</div>` : ''}
     </div>
     ${replyHTML}
     <div class="annot-footer">
@@ -930,18 +913,17 @@ function resolveComment(id){
   if(!can('resolve')){ showToast('Permission insuffisante pour résoudre','⚠'); return; }
   const comments = loadComments();
   const c = comments.find(x => x.id === id);
-  if(c){ c.resolved = true; saveComments(comments); renderAnnotations(); updateCounts(); showToast('Annotation marquée résolue ✓'); }
+  if(c){ c.resolved = true; saveComments(comments); renderAnnotations(); updateCounts(); showToast('Annotation marquée comme résolue ✓'); }
 }
 
 /* ── REPLY ───────────────────────────────────────────────────── */
 let _replyTargetId = null;
 function openReply(id){
   if(!can('reply')){ showToast('Permission insuffisante','⚠'); return; }
-  const comments = loadComments();
-  const c = comments.find(x => x.id === id);
+  const c = loadComments().find(x => x.id === id);
   if(!c) return;
   _replyTargetId = id;
-  document.getElementById('replyParentInfo').textContent = 'En réponse à ' + c.author;
+  document.getElementById('replyParentInfo').textContent = 'En réponse à '+c.author;
   document.getElementById('replyText').value = '';
   document.getElementById('replyOverlay').classList.add('open');
   setTimeout(() => document.getElementById('replyText').focus(), 300);
@@ -953,36 +935,24 @@ function submitReply(){
   if(!_replyTargetId) return;
   const u = getUser();
   const name = u ? (u.name || u.email.split('@')[0]) : 'Utilisateur';
-  const reply = {
-    id: 'r' + Date.now(),
-    author: name,
-    role: _currentRole,
-    text,
-    timestamp: new Date().toISOString()
-  };
+  const reply = { id:'r'+Date.now(), author:name, role:_currentRole, text, timestamp:new Date().toISOString() };
   const comments = loadComments();
   const c = comments.find(x => x.id === _replyTargetId);
-  if(c){ if(!c.replies) c.replies = []; c.replies.push(reply); saveComments(comments); }
-  closeReply();
-  renderAnnotations();
-  showToast('Réponse publiée');
+  if(c){ if(!c.replies) c.replies=[]; c.replies.push(reply); saveComments(comments); }
+  closeReply(); renderAnnotations(); showToast('Réponse publiée avec succès');
 }
 
 /* ── NEW COMMENT ─────────────────────────────────────────────── */
 let _selectedType = 'observation';
-function selectType(el){
-  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-  _selectedType = el.dataset.type;
-}
+function selectType(el){ document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active')); el.classList.add('active'); _selectedType=el.dataset.type; }
 function openNewComment(){
   if(!can('annotate')){ showToast('Permission insuffisante pour annoter','⚠'); return; }
   document.getElementById('ncText').value = '';
   document.getElementById('ncTags').value = '';
   _selectedType = 'observation';
-  document.querySelectorAll('.type-btn').forEach((b,i) => b.classList.toggle('active', i===0));
+  document.querySelectorAll('.type-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   document.getElementById('newCommentOverlay').classList.add('open');
-  setTimeout(() => document.getElementById('ncText').focus(), 300);
+  setTimeout(()=>document.getElementById('ncText').focus(),300);
 }
 function closeNewComment(){ document.getElementById('newCommentOverlay').classList.remove('open'); }
 function submitNewComment(){
@@ -993,182 +963,177 @@ function submitNewComment(){
   const u = getUser();
   const name = u ? (u.name || u.email.split('@')[0]) : 'Utilisateur';
   const comment = {
-    id: 'c' + Date.now(),
-    element: elem,
-    element_label: ELEMENT_LABELS[elem] || elem,
-    author: name,
-    role: _currentRole,
-    text,
-    type: _selectedType,
-    timestamp: new Date().toISOString(),
-    replies: [],
-    resolved: false,
-    tags
+    id:'c'+Date.now(), element:elem, element_label:ELEMENT_LABELS[elem]||elem,
+    author:name, role:_currentRole, text, type:_selectedType,
+    timestamp:new Date().toISOString(), replies:[], resolved:false, tags
   };
   const comments = loadComments();
   comments.unshift(comment);
   saveComments(comments);
-  closeNewComment();
-  renderAnnotations();
-  updateCounts();
+  closeNewComment(); renderAnnotations(); updateCounts();
   showToast('Annotation publiée avec succès');
 }
-
 function resetAnnotFilters(){
-  ['filterElement','filterType','filterStatus'].forEach(id => document.getElementById(id).value = '');
+  ['filterElement','filterType','filterStatus'].forEach(id=>document.getElementById(id).value='');
   renderAnnotations();
 }
 
 /* ── COUNTS ──────────────────────────────────────────────────── */
 function updateCounts(){
   const comments = loadComments();
-  document.getElementById('dssCountComments').textContent  = comments.length;
-  document.getElementById('dssCountAnomalies').textContent = comments.filter(c => c.type === 'anomaly' || c.type === 'risk').length;
-  document.getElementById('dssCountResolved').textContent  = comments.filter(c => c.resolved).length;
+  const el = id => document.getElementById(id);
+  if(el('dssCountComments'))  el('dssCountComments').textContent  = comments.length;
+  if(el('dssCountAnomalies')) el('dssCountAnomalies').textContent = comments.filter(c=>c.type==='anomaly'||c.type==='risk').length;
+  if(el('dssCountResolved'))  el('dssCountResolved').textContent  = comments.filter(c=>c.resolved).length;
   const recs = loadRecs();
-  document.getElementById('dssCountRecs').textContent = recs.length;
-  [1,2,3].forEach(lv => {
-    const el = document.getElementById(`l${lv}count`);
-    if(el) el.textContent = recs.filter(r => r.level === lv).length;
-  });
+  if(el('dssCountRecs')) el('dssCountRecs').textContent = recs.length;
+  [1,2,3].forEach(lv => { const e=el(`l${lv}count`); if(e) e.textContent=recs.filter(r=>r.level===lv).length; });
 }
 
 /* ── DSS LEVEL TOGGLE ────────────────────────────────────────── */
 document.querySelectorAll('.dss-level-header').forEach(h => {
   h.addEventListener('click', () => {
     const body = h.nextElementSibling;
-    const isOpen = body.style.display !== 'none';
-    body.style.display = isOpen ? 'none' : 'flex';
+    body.style.display = body.style.display !== 'none' ? 'none' : 'flex';
   });
 });
 
-/* ── PDF DECISION REPORT ─────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════
+   PDF DECISION REPORT — professional, non-technical language
+════════════════════════════════════════════════════════════════ */
 async function exportDecisionReport(){
   if(!can('export')){ showToast('Seuls les Analystes peuvent exporter le rapport','⚠'); return; }
   const btn = document.querySelector('[onclick="exportDecisionReport()"]');
-  if(btn){ btn.disabled = true; btn.innerHTML = '⏳ Génération…'; }
+  if(btn){ btn.disabled=true; btn.innerHTML='⏳ Génération…'; }
   showToast('Génération du rapport décisionnel…','📄');
-  await new Promise(r => setTimeout(r, 800));
-  try {
+  await new Promise(r=>setTimeout(r,600));
+  try{
     const {jsPDF} = window.jspdf;
-    const pdf = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
-    const PW = 210, PH = 297, M = 14, W = PW - M * 2;
+    const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const PW=210, PH=297, M=14, W=PW-M*2;
     const comments = loadComments();
     const recs = loadRecs();
     const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
     let y = 0;
 
-    /* ─ COVER PAGE ─ */
+    /* ── COVER PAGE ── */
     pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,PH,'F');
     pdf.setFillColor(30,111,217); pdf.rect(0,0,PW,4,'F');
     pdf.setFillColor(232,160,32); pdf.rect(0,4,PW,1.5,'F');
-    pdf.setTextColor(214,232,255); pdf.setFontSize(9); pdf.setFont('helvetica','normal');
-    pdf.text('CONFIDENTIEL · USAGE INTERNE', M, 20);
-    pdf.setFillColor(30,111,217,0.2);
+    pdf.setTextColor(74,106,154); pdf.setFontSize(8); pdf.setFont('helvetica','normal');
+    pdf.text('USAGE INTERNE · CONFIDENTIEL', M, 16);
     pdf.setTextColor(91,163,245); pdf.setFontSize(11); pdf.setFont('helvetica','bold');
-    pdf.text('KPI HUB · COLLABORATIVE DSS', M, 34);
-    pdf.setTextColor(214,232,255); pdf.setFontSize(28); pdf.setFont('helvetica','bold');
-    pdf.text('RAPPORT DÉCISIONNEL', M, 58);
-    pdf.setFontSize(14); pdf.setFont('helvetica','normal'); pdf.setTextColor(91,163,245);
-    pdf.text('Decision Support Report', M, 70);
-    pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(74,106,154);
-    pdf.text('Généré le ' + now + '  ·  ' + comments.length + ' annotations analysées', M, 82);
-    pdf.setDrawColor(30,111,217); pdf.setLineWidth(0.3); pdf.line(M, 90, PW-M, 90);
-    const coverage = ['Total Heures : 22 993h sur 13 mois','Taux liaison Jira : 3.4%','Taux dépassement estimation : 46.1%','Anomalies signalées : '+comments.filter(c=>c.type==='anomaly').length,'Risques identifiés : '+comments.filter(c=>c.type==='risk').length,'Recommandations : '+recs.length];
+    pdf.text('KPI HUB · DÉCISION SUPPORT SYSTEM', M, 28);
+    pdf.setTextColor(214,232,255); pdf.setFontSize(26); pdf.setFont('helvetica','bold');
+    pdf.text('RAPPORT DÉCISIONNEL', M, 50);
+    pdf.text('COLLABORATIF', M, 62);
+    pdf.setFontSize(12); pdf.setFont('helvetica','normal'); pdf.setTextColor(91,163,245);
+    pdf.text('Synthèse · Observations · Recommandations', M, 74);
+    pdf.setFontSize(9); pdf.setTextColor(74,106,154);
+    pdf.text('Généré le '+now+' · '+comments.length+' observations analysées', M, 86);
+    pdf.setDrawColor(30,111,217); pdf.setLineWidth(0.3); pdf.line(M,94,PW-M,94);
+
+    /* Key metrics summary on cover */
     pdf.setTextColor(168,203,250); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
-    pdf.text('MÉTRIQUES CLÉS DE L\'ANALYSE', M, 100);
-    coverage.forEach((l, i) => {
+    pdf.text('APERÇU DE LA SITUATION', M, 106);
+    const coverLines = [
+      'Volume d\'activité suivi : 22 993 heures sur 13 mois',
+      'Taux de liaison aux tickets Jira : 3,4% — largement insuffisant (objectif : >60%)',
+      'Taux de dépassement d\'estimation : 46,1% sur 256 tickets analysés',
+      'Anomalies signalées par l\'équipe : '+comments.filter(c=>c.type==='anomaly').length,
+      'Risques identifiés et documentés : '+comments.filter(c=>c.type==='risk').length,
+      'Recommandations formulées : '+recs.length+' actions prioritaires définies'
+    ];
+    coverLines.forEach((l,i) => {
       pdf.setFont('helvetica','normal'); pdf.setTextColor(214,232,255);
-      pdf.text('→  ' + l, M + 4, 110 + i * 8);
+      pdf.text('→  '+l, M+4, 116+i*8);
     });
-    const roles = {analyst:'Analyste',commenter:'Commentateur',viewer:'Lecteur'};
-    const authors = [...new Set(comments.map(c=>c.author))];
-    pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(168,203,250);
-    pdf.text('CONTRIBUTEURS', M, 165);
-    authors.forEach((a, i) => {
-      const c = comments.find(x => x.author === a);
-      pdf.setFont('helvetica','normal'); pdf.setTextColor(214,232,255);
-      pdf.text(`${a}  (${roles[c?.role]||c?.role||'—'})`, M + 4, 173 + i * 8);
-    });
+
     pdf.setFontSize(8); pdf.setTextColor(74,106,154); pdf.setFont('helvetica','italic');
-    pdf.text('Ce rapport est généré automatiquement par le moteur DSS de KPI Hub.', M, PH - 16);
-    pdf.text('Il synthétise les annotations collaboratives et les recommandations de l\'équipe d\'analyse.', M, PH - 10);
+    pdf.text('Ce rapport est produit automatiquement par le moteur DSS de KPI Hub à partir des annotations', M, PH-16);
+    pdf.text('collaboratives de l\'équipe. Il est destiné aux responsables de projets et à la direction.', M, PH-10);
     pdf.addPage();
 
-    /* ─ PAGES DE CONTENU ─ */
-    function header(title, sub){
-      pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,20,'F');
+    /* ── CONTENT HELPERS ── */
+    function _bg(){ pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,PH,'F'); }
+    function _header(label){
+      pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,18,'F');
       pdf.setFillColor(30,111,217); pdf.rect(0,0,PW,2,'F');
       pdf.setTextColor(91,163,245); pdf.setFontSize(8); pdf.setFont('helvetica','bold');
-      pdf.text('KPI HUB · RAPPORT DÉCISIONNEL · ' + now, M, 9);
+      pdf.text('KPI HUB · RAPPORT DÉCISIONNEL · '+now, M, 8);
       pdf.setTextColor(74,106,154); pdf.setFont('helvetica','normal');
-      pdf.text(title, PW-M, 9, {align:'right'});
-      pdf.setDrawColor(74,106,154); pdf.setLineWidth(0.2); pdf.line(M, 13, PW-M, 13);
-      return 24;
+      pdf.text(label||'', PW-M, 8, {align:'right'});
+      pdf.setDrawColor(74,106,154); pdf.setLineWidth(0.15); pdf.line(M,13,PW-M,13);
+      y = 24;
     }
-    function footer(){
-      pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(74,106,154);
-      pdf.text('KPI Hub · Collaborative DSS · Confidentiel', M, PH-8);
-      pdf.text('Page ' + pdf.getCurrentPageInfo().pageNumber, PW-M, PH-8, {align:'right'});
+    function _footer(){
+      pdf.setFontSize(7); pdf.setTextColor(74,106,154); pdf.setFont('helvetica','normal');
+      pdf.text('KPI Hub · Collaborative DSS · Confidentiel · PFE 2025–2026', M, PH-8);
+      pdf.text('Page '+pdf.getCurrentPageInfo().pageNumber, PW-M, PH-8, {align:'right'});
     }
-    function section(label, color){
-      pdf.setFillColor(...color); pdf.roundedRect(M, y, W, 7, 1.5, 1.5, 'F');
+    function _section(title, color=[18,58,128]){
+      if(y > PH-30){ _footer(); pdf.addPage(); _bg(); _header('(suite)'); }
+      pdf.setFillColor(...color); pdf.roundedRect(M, y, W, 7, 1.5,1.5,'F');
       pdf.setTextColor(214,232,255); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
-      pdf.text(label, M+4, y+5); y += 12;
+      pdf.text(title, M+4, y+5); y+=12;
     }
-    function textBlock(txt, color=[168,203,250]){
-      pdf.setTextColor(...color); pdf.setFontSize(9); pdf.setFont('helvetica','normal');
-      const lines = pdf.splitTextToSize(txt, W - 6);
-      if(y + lines.length * 5 > PH - 20){ pdf.addPage(); footer(); y = header('(suite)',''); }
-      pdf.text(lines, M+3, y); y += lines.length * 5 + 4;
+    function _prose(text, color=[168,203,250]){
+      if(!text) return;
+      if(y > PH-22){ _footer(); pdf.addPage(); _bg(); _header('(suite)'); }
+      pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(...color);
+      const lines = pdf.splitTextToSize(String(text), W-6);
+      pdf.text(lines, M+3, y); y+=lines.length*5+4;
     }
 
-    /* ─ PAGE 2 : RÉSUMÉ EXÉCUTIF ─ */
-    y = header('Résumé Exécutif','');
-    pdf.setFillColor(8,15,30); pdf.rect(0,20,PW,PH,'F');
-    section('1. RÉSUMÉ EXÉCUTIF',[18,58,128]);
-    textBlock('Cette analyse collaborative a examiné 22 993 heures de time tracking (Solidtime) croisées avec les données Jira sur la période mars 2025 – mars 2026, couvrant 20 membres et 11 projets actifs. L\'équipe a identifié ' + comments.length + ' observations significatives et formulé ' + recs.length + ' recommandations prioritaires.');
-    textBlock('Le principal axe d\'amélioration identifié concerne la traçabilité Jira : avec un taux de liaison de seulement 3.4%, la majorité des heures travaillées ne sont pas rattachées à un ticket. Cette lacune structurelle empêche tout pilotage fin de la vélocité et du dépassement d\'estimation par projet.'); y+=4;
-    section('2. ANOMALIES & RISQUES SIGNALÉS',[120,40,20]);
-    comments.filter(c => c.type === 'anomaly' || c.type === 'risk').forEach((c,i) => {
-      const label = {anomaly:'⚡ ANOMALIE',risk:'⚠ RISQUE'}[c.type] || c.type.toUpperCase();
+    /* ── PAGE 2: EXECUTIVE SUMMARY ── */
+    _bg(); _header('Résumé exécutif');
+    _section('1. RÉSUMÉ EXÉCUTIF', [18,58,128]);
+    _prose('Cette analyse collaborative couvre 22 993 heures de time-tracking enregistrées dans Solidtime entre mars 2025 et mars 2026, pour une équipe de 20 personnes répartie sur 11 projets actifs. L\'équipe d\'analystes a documenté '+comments.length+' observations et formulé '+recs.length+' recommandations concrètes et actionnables.');
+    _prose('Le principal problème identifié est le manque de traçabilité entre les heures enregistrées et les tickets Jira : seuls 3,4% des entrées sont liées à un ticket, ce qui rend impossible un suivi précis des performances par projet. En parallèle, le taux de dépassement d\'estimation de 46,1% indique que la méthode de planification actuelle doit être révisée.'); y+=4;
+
+    _section('2. CE QUI A ÉTÉ OBSERVÉ', [120,40,20]);
+    comments.filter(c=>c.type==='anomaly'||c.type==='risk').forEach((c,i) => {
+      const typeLabel = {anomaly:'Anomalie détectée', risk:'Risque identifié'}[c.type]||c.type;
+      if(y>PH-30){ _footer(); pdf.addPage(); _bg(); _header('Observations'); }
       pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(255,180,100);
-      if(y > PH - 30){ pdf.addPage(); footer(); y = header('Anomalies & Risques',''); pdf.setFillColor(8,15,30); pdf.rect(0,20,PW,PH,'F'); }
-      pdf.text(`${i+1}. ${label} — ${c.element_label}`, M+3, y); y += 6;
-      textBlock(`Signalé par ${c.author} le ${fmtDate(c.timestamp)} :\n${c.text}`, [168,203,250]);
-      if(c.replies && c.replies.length) textBlock(`→ ${c.replies.length} réponse(s) dans le thread`, [74,106,154]);
+      pdf.text(`${i+1}. ${typeLabel} — ${c.element_label}`, M+3, y); y+=6;
+      _prose(`Signalé par ${c.author} (${ROLES[c.role]?.label||c.role}) le ${fmtDate(c.timestamp)} :\n${c.text}`);
+      if(c.replies && c.replies.length){
+        _prose(`Suite à cette observation, ${c.replies.length} réponse(s) ont été apportées dans la discussion collaborative.`,[74,106,154]);
+      }
       y+=2;
-    }); y+=4;
-    footer(); pdf.addPage();
+    });
+    _footer(); pdf.addPage();
 
-    /* ─ PAGE 3 : RECOMMANDATIONS ─ */
-    y = header('Recommandations Décisionnelles','');
-    pdf.setFillColor(8,15,30); pdf.rect(0,20,PW,PH,'F');
-    section('3. RECOMMANDATIONS ACTIONNABLES',[10,100,60]);
+    /* ── PAGE 3: RECOMMENDATIONS ── */
+    _bg(); _header('Recommandations');
+    _section('3. CE QU\'IL EST RECOMMANDÉ DE FAIRE', [10,100,60]);
     recs.forEach((r,i) => {
-      const pColors = {high:[220,60,30],medium:[200,140,20],low:[10,160,100]};
-      const pLabel  = {high:'HAUTE',medium:'MOYENNE',low:'BASSE'};
-      if(y > PH - 40){ pdf.addPage(); footer(); y = header('Recommandations (suite)',''); pdf.setFillColor(8,15,30); pdf.rect(0,20,PW,PH,'F'); }
-      pdf.setFontSize(10); pdf.setFont('helvetica','bold');
-      pdf.setTextColor(...(pColors[r.priority]||[100,150,220]));
-      pdf.text(`Niveau ${r.level} · Priorité ${pLabel[r.priority]||r.priority}`, M+3, y); y += 6;
-      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(214,232,255);
-      const titleLines = pdf.splitTextToSize(r.title, W-6);
-      pdf.text(titleLines, M+3, y); y += titleLines.length * 5 + 3;
-      textBlock(r.description, [168,203,250]);
+      const pLabel = {high:'PRIORITÉ HAUTE',medium:'PRIORITÉ MOYENNE',low:'PRIORITÉ BASSE'}[r.priority]||r.priority;
+      const pColor = {high:[220,60,30],medium:[200,140,20],low:[10,160,100]}[r.priority]||[100,150,220];
+      if(y>PH-40){ _footer(); pdf.addPage(); _bg(); _header('Recommandations (suite)'); }
+      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...pColor);
+      pdf.text(`${r.level_label} · ${pLabel}`, M+3, y); y+=6;
+      pdf.setFontSize(10); pdf.setTextColor(214,232,255);
+      const tLines = pdf.splitTextToSize(r.title, W-6);
+      pdf.text(tLines, M+3, y); y+=tLines.length*5+3;
+      _prose(r.description);
       pdf.setFontSize(8); pdf.setFont('helvetica','italic'); pdf.setTextColor(74,106,154);
-      pdf.text(`Statut : ${r.status} · Basé sur ${r.source_comments.length} annotation(s)`, M+3, y); y += 9;
-    }); y+=4;
-    section('4. CONCLUSION & PROCHAINES ÉTAPES',[30,80,160]);
-    textBlock('L\'adoption d\'un Collaborative DSS au sein de ce projet démontre la valeur ajoutée d\'une analyse décisionnelle structurée en trois niveaux. Les deux axes prioritaires identifiés — l\'amélioration du taux de liaison Jira et la révision du processus d\'estimation — constituent des actions mesurables et actionnables à court terme (< 3 mois).');
-    textBlock('L\'instrumentation complète du système (champs Jira obligatoires, Planning Poker, dashboards de suivi du taux de liaison) permettrait d\'atteindre un niveau de maturité BI de niveau 3 (analyse prédictive) d\'ici Q3 2026.', [168,203,250]);
-    footer();
+      pdf.text(`Statut : ${{proposed:'Proposée',confirmed:'Confirmée',active:'En cours'}[r.status]||r.status} · Basé sur ${r.source_comments.length} observation(s) documentée(s)`, M+3, y); y+=9;
+    });
 
-    pdf.save('rapport-decisionnel-kpihub-' + new Date().toISOString().slice(0,10) + '.pdf');
-    showToast('Rapport décisionnel exporté !');
-  } catch(e){ console.error(e); showToast('Erreur PDF : ' + e.message, '⚠'); }
-  finally {
-    if(btn){ btn.disabled = false; btn.innerHTML = '⬇ <span class="btn-txt">Rapport PDF</span>'; }
+    y+=4;
+    _section('4. PROCHAINES ÉTAPES', [30,80,160]);
+    _prose('Pour améliorer concrètement la situation d\'ici la fin du deuxième trimestre 2026, deux actions sont à lancer en priorité. D\'abord, rendre le champ Jira obligatoire dans Solidtime pour tous les projets actifs — cette modification technique prendra moins d\'une semaine et aura un impact immédiat sur la traçabilité. Ensuite, organiser une session de calibration des estimations avec l\'ensemble de l\'équipe pour réduire le taux de dépassement en dessous de 30%.');
+    _prose('Un suivi mensuel du taux de liaison Jira et du taux de dépassement permettra de mesurer les progrès et d\'ajuster les actions si nécessaire. L\'objectif est d\'atteindre un niveau de maturité de suivi de niveau 3 d\'ici le troisième trimestre 2026.', [168,203,250]);
+
+    _footer();
+    pdf.save('rapport-decisionnel-kpihub-'+new Date().toISOString().slice(0,10)+'.pdf');
+    showToast('Rapport décisionnel exporté avec succès !');
+  }catch(e){
+    console.error(e); showToast('Erreur lors de la génération du PDF : '+e.message,'⚠');
+  }finally{
+    if(btn){ btn.disabled=false; btn.innerHTML='⬇ <span class="btn-txt">Rapport PDF</span>'; }
   }
 }
 
