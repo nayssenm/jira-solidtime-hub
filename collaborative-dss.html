@@ -6,6 +6,7 @@
 <title>Collaborative DSS — KPI Hub</title>
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="static-analytics/advanced-analytics-engine.js" defer></script>
 <script>
 (function(){
   const p=new URLSearchParams(window.location.search);
@@ -27,6 +28,7 @@
     <a class="nav-link" href="dashboard.html"><span class="nav-icon">📈</span> Dashboard</a>
     <a class="nav-link" href="data-warehouse.html"><span class="nav-icon">🗄</span> Data Warehouse</a>
     <a class="nav-link active" href="collaborative-dss.html"><span class="nav-icon">🧠</span> Collaborative DSS</a>
+    <a class="nav-link" href="#advancedAnalytics"><span class="nav-icon">📡</span> Analytics statiques</a>
   </div>
   <div class="nav-user">
     <div class="nav-avatar" id="navAvatar">A</div>
@@ -96,6 +98,45 @@
       <div class="kpi-sub">Taux de résolution 25%</div>
     </div>
   </div>
+
+  <!-- ═══ ADVANCED ANALYTICS STATIC BI ENGINE ═════════════════ -->
+  <div class="sec-div" id="advancedAnalytics"><div class="sec-dot"></div>Advanced Analytics — moteur BI statique</div>
+  <section class="aa-panel card-surf">
+    <div class="aa-head">
+      <div>
+        <div class="aa-eyebrow">dashboard_dataset.csv</div>
+        <h2 class="aa-title">AI Insight Engine</h2>
+      </div>
+      <div class="aa-actions">
+        <select id="aaProject" aria-label="Filtrer par projet">
+          <option value="">Tous les projets</option>
+        </select>
+        <button class="tb-btn" type="button" id="aaDownloadCsv">⬇ CSV</button>
+        <button class="tb-btn" type="button" id="aaDownloadJson">⬇ JSON</button>
+      </div>
+    </div>
+    <div class="aa-kpis" id="aaKpis"></div>
+    <div class="aa-layout">
+      <div class="aa-box">
+        <div class="aa-box-title">Alertes d'anomalies</div>
+        <div id="aaAnomalies"></div>
+      </div>
+      <div class="aa-box">
+        <div class="aa-box-title">Insights</div>
+        <div id="aaInsights"></div>
+      </div>
+    </div>
+    <div class="aa-layout">
+      <div class="aa-box">
+        <div class="aa-box-title">Recommandations automatiques</div>
+        <div id="aaRecommendations"></div>
+      </div>
+      <div class="aa-box">
+        <div class="aa-box-title">Classement risque projet</div>
+        <div id="aaRankings"></div>
+      </div>
+    </div>
+  </section>
 
   <!-- ═══ RBAC INFO ════════════════════════════════════════════ -->
   <div class="rbac-banner" id="rbacBanner">
@@ -274,6 +315,78 @@
 
 <style>
 /* ── DSS-specific styles ────────────────────────────────────── */
+.aa-panel{
+  padding:18px;margin-bottom:24px;
+  border-radius:var(--radius-lg);
+}
+.aa-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+  margin-bottom:14px;flex-wrap:wrap;
+}
+.aa-eyebrow{
+  font-family:var(--font-m);font-size:9px;font-weight:600;letter-spacing:.12em;
+  color:var(--text3);text-transform:uppercase;margin-bottom:4px;
+}
+.aa-title{
+  margin:0;font-family:var(--font-d);font-size:18px;color:var(--text);
+}
+.aa-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.aa-actions select{
+  min-width:180px;padding:8px 12px;border-radius:var(--radius);
+  border:1px solid var(--border);background:var(--input-bg);color:var(--text);
+  font-family:var(--font-b);font-size:12px;outline:none;
+}
+.aa-kpis{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px;
+}
+.aa-kpi{
+  padding:14px;border-radius:var(--radius);border:1px solid var(--border2);
+  background:var(--surf2);
+}
+.aa-kpi-label{
+  font-family:var(--font-m);font-size:9px;font-weight:600;letter-spacing:.10em;
+  color:var(--text3);text-transform:uppercase;
+}
+.aa-kpi-value{
+  margin-top:7px;font-family:var(--font-d);font-size:25px;font-weight:700;color:var(--text);
+}
+.aa-layout{
+  display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-top:14px;
+}
+.aa-box{
+  padding:14px;border-radius:var(--radius);border:1px solid var(--border2);
+  background:var(--surf2);min-height:110px;
+}
+.aa-box-title{
+  font-family:var(--font-d);font-size:14px;font-weight:600;color:var(--text);
+  margin-bottom:10px;
+}
+.aa-row{
+  display:grid;grid-template-columns:82px 1fr auto;gap:10px;
+  padding:9px 0;border-bottom:1px solid var(--border2);align-items:start;
+}
+.aa-row:last-child,.aa-item:last-child{border-bottom:0;}
+.aa-row strong,.aa-item strong{font-size:12px;color:var(--text);}
+.aa-row-score{font-family:var(--font-m);font-size:11px;color:var(--text3);}
+.aa-row-reason{grid-column:2/4;font-size:11px;color:var(--text3);line-height:1.5;}
+.aa-item{
+  padding:9px 0;border-bottom:1px solid var(--border2);
+  font-size:12px;color:var(--text2);line-height:1.55;
+}
+.aa-badge{
+  display:inline-flex;align-items:center;width:max-content;
+  padding:2px 8px;border-radius:16px;font-family:var(--font-m);font-size:9px;
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+}
+.aa-badge.green{background:rgba(12,184,122,.14);color:var(--em2);}
+.aa-badge.orange{background:rgba(232,160,32,.14);color:var(--or2);}
+.aa-badge.red{background:rgba(232,82,42,.14);color:var(--co2);}
+.aa-bar{
+  height:7px;border-radius:999px;background:var(--badge-bg);overflow:hidden;margin-top:7px;
+}
+.aa-bar span{display:block;height:100%;background:var(--sa);}
+.aa-muted{font-size:11px;color:var(--text3);line-height:1.5;}
+
 .role-tag{
   display:inline-flex;align-items:center;gap:5px;
   padding:3px 10px;border-radius:20px;
@@ -456,6 +569,13 @@
 .type-btn:hover:not(.active){border-color:var(--sa);color:var(--sa);}
 
 textarea:focus,input:focus{border-color:var(--sa)!important;box-shadow:0 0 0 3px rgba(30,111,217,.12)!important;}
+
+@media (max-width:900px){
+  .aa-kpis,.aa-layout{grid-template-columns:1fr;}
+  .aa-row{grid-template-columns:76px 1fr;}
+  .aa-row-score{grid-column:2;}
+  .aa-row-reason{grid-column:2;}
+}
 </style>
 
 <script>
@@ -542,6 +662,136 @@ function loadRecs(){
   } catch(e){}
   localStorage.setItem(RECS_KEY, JSON.stringify(SEED_RECS));
   return [...SEED_RECS];
+}
+
+/* ── ADVANCED ANALYTICS STATIC ENGINE ───────────────────────── */
+let aaRawRows = [];
+let aaLatestReport = null;
+
+function aaEscape(value){
+  return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#39;'
+  })[ch]);
+}
+
+function aaBadgeColor(value){
+  const c = String(value || 'green').toLowerCase();
+  return c === 'red' || c === 'orange' || c === 'green' ? c : 'green';
+}
+
+function aaCard(label, value, sub, color){
+  return `
+    <article class="aa-kpi">
+      <div class="aa-kpi-label">${aaEscape(label)}</div>
+      <div class="aa-kpi-value">${aaEscape(value)}</div>
+      <div class="aa-muted"><span class="aa-badge ${aaBadgeColor(color)}">${aaEscape(sub)}</span></div>
+    </article>
+  `;
+}
+
+function aaDownload(name, content, type){
+  const blob = new Blob([content], {type});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function renderAdvancedAnalytics(report){
+  aaLatestReport = report;
+  const projectSelect = document.getElementById('aaProject');
+  if(projectSelect && projectSelect.options.length === 1){
+    report.projects.slice().sort((a,b) => a.project.localeCompare(b.project)).forEach(item => {
+      const option = document.createElement('option');
+      option.value = item.project;
+      option.textContent = item.project;
+      projectSelect.appendChild(option);
+    });
+  }
+
+  const k = report.kpis;
+  document.getElementById('aaKpis').innerHTML = [
+    aaCard('Health Score', k.project_health_score + '/100', 'risque ' + k.risk_level, k.risk_color),
+    aaCard('Productivité', k.team_productivity_score + '/100', k.total_users + ' utilisateurs', 'green'),
+    aaCard('Completion Rate', k.task_completion_rate + '%', k.total_tasks + ' taches', k.task_completion_rate < 45 ? 'red' : 'green'),
+    aaCard('Temps moyen / tache', k.average_time_per_task + 'h', k.total_hours + 'h suivies', 'orange')
+  ].join('');
+
+  document.getElementById('aaAnomalies').innerHTML = report.anomalies.slice(0, 10).map(a => `
+    <div class="aa-row">
+      <span class="aa-badge ${aaBadgeColor(a.risk_color)}">${aaEscape(a.risk_level)}</span>
+      <strong>${aaEscape(a.entity_type + ': ' + a.entity_id)}</strong>
+      <span class="aa-row-score">${aaEscape(a.score)}</span>
+      <div class="aa-row-reason">${aaEscape(a.reason)} · ${aaEscape(a.project)}</div>
+    </div>
+  `).join('') || '<div class="aa-muted">Aucune anomalie detectee.</div>';
+
+  document.getElementById('aaInsights').innerHTML = report.insights.slice(0, 8).map(i => {
+    const color = i.severity === 'High' ? 'red' : i.severity === 'Medium' ? 'orange' : 'green';
+    return `<div class="aa-item"><span class="aa-badge ${color}">${aaEscape(i.severity)}</span> ${aaEscape(i.text)}</div>`;
+  }).join('') || '<div class="aa-muted">Aucun insight pour ce filtre.</div>';
+
+  document.getElementById('aaRecommendations').innerHTML = report.recommendations.slice(0, 8).map(r => `
+    <div class="aa-item">
+      <strong>${aaEscape(r.priority + ': ' + r.problem)}</strong><br>
+      <span class="aa-muted">${aaEscape(r.suggested_action)}</span>
+    </div>
+  `).join('') || '<div class="aa-muted">Aucune recommandation automatique.</div>';
+
+  document.getElementById('aaRankings').innerHTML = report.rankings.worst_projects.slice(0, 8).map(p => `
+    <div class="aa-item">
+      <strong>${aaEscape(p.project)}</strong>
+      <span class="aa-badge ${aaBadgeColor(p.risk_color)}" style="float:right;">${aaEscape(p.risk_level)}</span>
+      <div class="aa-muted">Health ${aaEscape(p.health_score)}/100 · ${aaEscape(p.total_hours)}h</div>
+      <div class="aa-bar"><span style="width:${Math.max(0, Math.min(100, p.health_score))}%"></span></div>
+    </div>
+  `).join('') || '<div class="aa-muted">Aucun projet a classer.</div>';
+}
+
+function refreshAdvancedAnalytics(){
+  if(!window.AdvancedAnalyticsEngine || !aaRawRows.length) return;
+  const projectSelect = document.getElementById('aaProject');
+  renderAdvancedAnalytics(window.AdvancedAnalyticsEngine.buildReport(aaRawRows, {
+    project: projectSelect && projectSelect.value ? projectSelect.value : null
+  }));
+}
+
+function initAdvancedAnalytics(){
+  const projectSelect = document.getElementById('aaProject');
+  if(!projectSelect) return;
+  projectSelect.addEventListener('change', refreshAdvancedAnalytics);
+  document.getElementById('aaDownloadCsv').addEventListener('click', () => {
+    if(!aaLatestReport) return;
+    aaDownload('advanced_analytics_report.csv', window.AdvancedAnalyticsEngine.toCsv(aaLatestReport), 'text/csv;charset=utf-8');
+  });
+  document.getElementById('aaDownloadJson').addEventListener('click', () => {
+    if(!aaLatestReport) return;
+    aaDownload('advanced_analytics_report.json', JSON.stringify(aaLatestReport, null, 2), 'application/json;charset=utf-8');
+  });
+
+  fetch('dashboard_dataset.csv')
+    .then(res => {
+      if(!res.ok) throw new Error('dashboard_dataset.csv introuvable');
+      return res.text();
+    })
+    .then(text => {
+      if(!window.AdvancedAnalyticsEngine) throw new Error('AdvancedAnalyticsEngine non charge');
+      aaRawRows = window.AdvancedAnalyticsEngine.parseCsv(text);
+      refreshAdvancedAnalytics();
+    })
+    .catch(err => {
+      document.getElementById('aaKpis').innerHTML = `
+        <article class="aa-kpi">
+          <strong>Impossible de charger le moteur Analytics</strong>
+          <div class="aa-muted">${aaEscape(err.message)}</div>
+        </article>
+      `;
+    });
 }
 
 /* ── FORMAT DATE ─────────────────────────────────────────────── */
@@ -917,6 +1167,7 @@ async function exportDecisionReport(){
 /* ── INIT ────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   switchRole('analyst');
+  initAdvancedAnalytics();
   renderDSSLevels();
   renderAnnotations();
   updateCounts();
