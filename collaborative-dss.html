@@ -1046,7 +1046,12 @@ async function exportDecisionReport(){
 
     /* ── Compute real KPIs from live data ── */
     const k = report ? report.kpis : {};
-    const totalHours    = k.total_hours       || rawRows.reduce((s,r)=>s+parseFloat(r['Duration (decimal)']||0),0);
+    const _rawHoursAll  = rawRows.reduce((s,r)=>{
+      return s+parseFloat(r['Duration (decimal)']||r['duration (decimal)']||r['duration_decimal']||r['hours']||0);
+    },0);
+    const totalHours    = k.total_hours || _rawHoursAll;
+    /* Safe number format — avoid fr-FR non-breaking space that breaks jsPDF */
+    function _fmtNum(n){ return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' '); }
     const totalTasks    = k.total_tasks        || rawRows.length;
     const totalUsers    = k.total_users        || new Set(rawRows.map(r=>r['User']||r['user']).filter(Boolean)).size;
     const projects      = report ? report.projects : [];
@@ -1068,33 +1073,55 @@ async function exportDecisionReport(){
     /* ══════════════════════════════════════════════════════════
        HELPERS
     ══════════════════════════════════════════════════════════ */
+    /* ── Professional white/dark color palette ── */
     const C = {
-      navy:  [8,15,30],   blue:  [30,111,217],  gold:  [232,160,32],
-      light: [214,232,255], mid:  [168,203,250], dim:   [74,106,154],
-      accent:[91,163,245],  red:  [220,60,30],   green: [10,160,80],
-      orange:[200,130,20],  white:[240,248,255]
+      page:   [255,255,255],   /* page background: pure white           */
+      ink:    [15,30,60],      /* main text: deep navy                  */
+      ink2:   [50,70,110],     /* secondary text                        */
+      dim:    [120,140,170],   /* muted / labels                        */
+      rule:   [210,220,235],   /* dividers                              */
+      blue:   [30,111,217],    /* accent blue                           */
+      blue2:  [235,242,255],   /* blue tint background                  */
+      gold:   [180,120,0],     /* gold (darker for white bg)            */
+      goldbg: [255,248,225],   /* gold tint background                  */
+      red:    [192,40,30],     /* danger                                */
+      redbg:  [255,240,238],   /* danger tint                           */
+      green:  [10,130,70],     /* success                               */
+      greenbg:[235,255,245],   /* success tint                          */
+      orange: [180,100,0],     /* warning                               */
+      oranbg: [255,248,235],   /* warning tint                          */
+      header: [20,50,100],     /* page header bar bg                    */
+      htext:  [255,255,255],   /* page header text                      */
+      sbg:    [30,80,180],     /* section bar bg                        */
+      stext:  [255,255,255],   /* section bar text                      */
+      card:   [245,249,255],   /* card/row bg                           */
+      border: [200,215,235],   /* table borders                         */
     };
 
     function _bg(){
-      pdf.setFillColor(...C.navy); pdf.rect(0,0,PW,PH,'F');
+      pdf.setFillColor(...C.page); pdf.rect(0,0,PW,PH,'F');
     }
     function _pageAccent(){
-      pdf.setFillColor(...C.blue); pdf.rect(0,0,PW,2,'F');
-      pdf.setFillColor(...C.gold); pdf.rect(0,2,PW,0.8,'F');
+      pdf.setFillColor(...C.blue);  pdf.rect(0,0,PW,2,'F');
+      pdf.setFillColor(...C.gold);  pdf.rect(0,2,PW,0.7,'F');
     }
     function _header(right){
       _bg(); _pageAccent();
-      pdf.setFillColor(13,22,41); pdf.rect(0,3,PW,16,'F');
-      pdf.setTextColor(...C.accent); pdf.setFontSize(7.5); pdf.setFont('helvetica','bold');
-      pdf.text('KPI HUB  ·  RAPPORT DÉCISIONNEL  ·  '+now, M, 12);
-      if(right){ pdf.setTextColor(...C.dim); pdf.setFont('helvetica','normal'); pdf.text(right, PW-M, 12,{align:'right'}); }
-      pdf.setDrawColor(...C.dim); pdf.setLineWidth(0.15); pdf.line(M,17,PW-M,17);
+      /* Header band */
+      pdf.setFillColor(...C.header); pdf.rect(0,3,PW,15,'F');
+      pdf.setTextColor(...C.htext); pdf.setFontSize(7.5); pdf.setFont('helvetica','bold');
+      pdf.text('KPI HUB  ·  RAPPORT DÉCISIONNEL  ·  '+now, M, 12.5);
+      if(right){ pdf.setFont('helvetica','normal'); pdf.setTextColor(180,200,240); pdf.text(right, PW-M, 12.5,{align:'right'}); }
+      /* Thin rule under header */
+      pdf.setDrawColor(...C.rule); pdf.setLineWidth(0.4); pdf.line(0,18,PW,18);
       y = 26;
     }
     function _footer(){
+      pdf.setFillColor(...C.rule); pdf.rect(0,PH-12,PW,0.4,'F');
+      pdf.setFillColor(245,248,255); pdf.rect(0,PH-11.6,PW,11.6,'F');
       pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.dim);
-      pdf.text('KPI Hub  ·  Collaborative DSS  ·  Confidentiel  ·  PFE 2025–2026', M, PH-7);
-      pdf.text('Page '+pdf.getCurrentPageInfo().pageNumber, PW-M, PH-7,{align:'right'});
+      pdf.text('KPI Hub  ·  Collaborative DSS  ·  Confidentiel  ·  PFE 2025–2026', M, PH-5.5);
+      pdf.text('Page '+pdf.getCurrentPageInfo().pageNumber, PW-M, PH-5.5,{align:'right'});
     }
     function _newPage(right){
       _footer(); pdf.addPage(); _header(right||'');
@@ -1103,22 +1130,25 @@ async function exportDecisionReport(){
 
     /* Section title bar */
     function _section(label, clr){
-      _guard(12);
+      _guard(14);
       const col = clr||C.blue;
-      pdf.setFillColor(...col); pdf.roundedRect(M, y, W, 8, 2,2,'F');
-      pdf.setFillColor(col[0]*0.5,col[1]*0.5,col[2]*0.5); pdf.roundedRect(M,y+5,W,3,0,0,'F');
-      pdf.setTextColor(...C.white); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
-      pdf.text(label, M+5, y+5.5);
-      y += 13;
+      /* Left accent bar + light tinted background */
+      pdf.setFillColor(col[0],col[1],col[2],0.08); pdf.roundedRect(M, y, W, 9, 2,2,'F');
+      pdf.setFillColor(...col); pdf.rect(M, y, 3, 9, 'F');
+      pdf.setDrawColor(col[0],col[1],col[2],0.3); pdf.setLineWidth(0.3);
+      pdf.roundedRect(M, y, W, 9, 2,2);
+      pdf.setTextColor(...col); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+      pdf.text(label, M+7, y+6);
+      y += 14;
     }
 
     /* Key-value row */
     function _kv(label, value, indent){
       _guard(7);
       const ix = M+(indent||0);
-      pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.mid);
+      pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.ink2);
       pdf.text(String(label)+'  :', ix, y);
-      pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.light);
+      pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.ink);
       const lines = pdf.splitTextToSize(String(value||'—'), W-70);
       pdf.text(lines, ix+68, y);
       y += Math.max(6, lines.length*4.8)+1;
@@ -1128,7 +1158,7 @@ async function exportDecisionReport(){
     function _prose(text, clr, indent){
       if(!text) return;
       _guard(10);
-      pdf.setFontSize(8.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...(clr||C.light));
+      pdf.setFontSize(8.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...(clr||C.ink));
       const lines = pdf.splitTextToSize(String(text), W-(indent||0)*2);
       if(y+lines.length*4.8 > PH-14){ _newPage(); }
       pdf.text(lines, M+(indent||0), y);
@@ -1148,50 +1178,58 @@ async function exportDecisionReport(){
     }
 
     /* Horizontal rule */
-    function _rule(clr){ _guard(4); pdf.setDrawColor(...(clr||C.dim)); pdf.setLineWidth(0.2); pdf.line(M,y,PW-M,y); y+=5; }
+    function _rule(clr){ _guard(4); pdf.setDrawColor(...(clr||C.rule)); pdf.setLineWidth(0.3); pdf.line(M,y,PW-M,y); y+=5; }
 
     /* Mini metric box */
     function _metBox(label, value, sub, x, bw, clr){
       const col=clr||C.blue;
-      pdf.setFillColor(col[0],col[1],col[2],.12); pdf.roundedRect(x,y,bw,22,2,2,'F');
-      pdf.setDrawColor(...col); pdf.setLineWidth(0.3); pdf.roundedRect(x,y,bw,22,2,2);
-      pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.mid);
-      pdf.text(String(label), x+bw/2, y+5, {align:'center'});
-      pdf.setFontSize(14); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.light);
-      pdf.text(String(value), x+bw/2, y+14, {align:'center'});
-      if(sub){ pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.dim); pdf.text(String(sub), x+bw/2, y+19.5, {align:'center'}); }
+      /* White card with colored top border */
+      pdf.setFillColor(255,255,255); pdf.roundedRect(x,y,bw,24,2,2,'F');
+      pdf.setFillColor(...col); pdf.roundedRect(x,y,bw,3,2,2,'F');
+      pdf.setFillColor(...col); pdf.rect(x,y+1.5,bw,1.5,'F');
+      pdf.setDrawColor(...col); pdf.setLineWidth(0.5); pdf.roundedRect(x,y,bw,24,2,2);
+      pdf.setFontSize(6.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...col);
+      pdf.text(String(label).toUpperCase(), x+bw/2, y+10, {align:'center'});
+      pdf.setFontSize(15); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.ink);
+      pdf.text(String(value), x+bw/2, y+18, {align:'center'});
+      if(sub){ pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.dim); pdf.text(String(sub), x+bw/2, y+22.5, {align:'center'}); }
     }
 
     /* ══════════════════════════════════════════════════════════
        PAGE 1 — COVER
     ══════════════════════════════════════════════════════════ */
-    _bg(); _pageAccent();
-    /* Blue vertical band */
-    pdf.setFillColor(18,40,90); pdf.rect(0,3,6,PH,'F');
-    pdf.setFillColor(...C.blue); pdf.rect(0,3,2.5,PH,'F');
+    /* ── COVER: white page, professional dark ink ── */
+    pdf.setFillColor(...C.page); pdf.rect(0,0,PW,PH,'F');
+    /* Top accent bar */
+    pdf.setFillColor(...C.blue);  pdf.rect(0,0,PW,38,'F');
+    pdf.setFillColor(...C.gold);  pdf.rect(0,38,PW,1.5,'F');
+    /* Left vertical accent */
+    pdf.setFillColor(255,255,255,0.12); pdf.rect(0,0,5,38,'F');
 
-    pdf.setTextColor(...C.dim); pdf.setFontSize(8); pdf.setFont('helvetica','normal');
-    pdf.text('USAGE INTERNE · CONFIDENTIEL', M+6, 20);
+    /* Cover header on blue */
+    pdf.setTextColor(180,210,255); pdf.setFontSize(7.5); pdf.setFont('helvetica','normal');
+    pdf.text('USAGE INTERNE  ·  CONFIDENTIEL', M, 12);
+    pdf.setTextColor(255,255,255); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+    pdf.text('KPI HUB  ·  DECISION SUPPORT SYSTEM', M, 22);
+    pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(180,210,255);
+    pdf.text('Généré le '+now, PW-M, 22,{align:'right'});
 
-    pdf.setTextColor(...C.accent); pdf.setFontSize(10); pdf.setFont('helvetica','bold');
-    pdf.text('KPI HUB · DECISION SUPPORT SYSTEM', M+6, 34);
+    /* Big title on white */
+    pdf.setTextColor(...C.header); pdf.setFontSize(32); pdf.setFont('helvetica','bold');
+    pdf.text('RAPPORT', M, 62);
+    pdf.setTextColor(...C.blue); pdf.setFontSize(32);
+    pdf.text('DÉCISIONNEL', M, 78);
+    /* Gold rule */
+    pdf.setFillColor(...C.blue); pdf.rect(M, 82, 55, 1.5,'F');
+    pdf.setFillColor(...C.gold); pdf.rect(M+55, 82, 30, 1.5,'F');
 
-    pdf.setTextColor(...C.light); pdf.setFontSize(28); pdf.setFont('helvetica','bold');
-    pdf.text('RAPPORT', M+6, 56);
-    pdf.text('DÉCISIONNEL', M+6, 70);
-
-    pdf.setFillColor(...C.gold); pdf.rect(M+6, 75, 60, 1.2, 'F');
-
-    pdf.setFontSize(11); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.accent);
-    pdf.text('Analyse · Observations · Recommandations', M+6, 84);
-
-    pdf.setFontSize(8); pdf.setTextColor(...C.dim);
-    pdf.text('Généré le '+now, M+6, 93);
+    pdf.setFontSize(10.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.ink2);
+    pdf.text('Analyse  ·  Observations  ·  Recommandations', M, 92);
 
     /* ── Cover metric boxes ── */
     const bw=40, gap=3, bx=M+6;
     const metrics=[
-      {l:'Heures suivies', v: totalHours>0?Math.round(totalHours).toLocaleString('fr-FR')+'h':'—', s:totalProjects+' projets', c:C.blue},
+      {l:'Heures suivies', v: totalHours>0?_fmtNum(totalHours)+'h':'—', s:totalProjects+' projets', c:C.blue},
       {l:'Membres actifs', v: String(totalUsers), s:'équipe', c:[30,140,100]},
       {l:'Tâches enregistrées', v: String(totalTasks), s:'entrées', c:[160,100,20]},
       {l:'Score de santé', v: String(healthScore)+'/100', s:'global', c: riskLevel==='High'?C.red:riskLevel==='Medium'?C.orange:C.green},
@@ -1200,41 +1238,49 @@ async function exportDecisionReport(){
     metrics.forEach((m,i)=>{ _metBox(m.l,m.v,m.s, bx+i*(bw+gap), bw, m.c); });
     y+=28;
 
-    /* Cover summary bullets */
-    pdf.setFillColor(13,22,41,.7); pdf.roundedRect(M+6,y,W-6,58,3,3,'F');
-    pdf.setDrawColor(...C.blue); pdf.setLineWidth(0.3); pdf.roundedRect(M+6,y,W-6,58,3,3);
-    y+=8;
-    pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.accent);
-    pdf.text('POINTS CLÉS DE L\'ANALYSE', M+12, y); y+=7;
+    /* Cover summary — white card */
+    y += 4;
+    pdf.setFillColor(248,251,255); pdf.roundedRect(M,y,W,56,3,3,'F');
+    pdf.setDrawColor(...C.blue); pdf.setLineWidth(0.4); pdf.roundedRect(M,y,W,56,3,3);
+    pdf.setFillColor(...C.blue); pdf.rect(M,y,4,56,'F');
+    pdf.setFillColor(...C.blue); pdf.roundedRect(M,y,4,56,2,2,'F');
+    y += 9;
+    pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.blue);
+    pdf.text("POINTS CLÉS DE L'ANALYSE", M+9, y); y+=8;
 
     const bullets=[
-      ['Productivité équipe', prodScore+'/100 — score global de l\'équipe sur la période'],
+      ['Productivité équipe', prodScore+'/100 — score global de léquipe sur la période'] ,
       ['Taux de complétion', completionRate+'% — des tâches ont été menées à terme'],
       ['Temps moyen / tâche', avgTimeTask+'h — durée moyenne constatée par entrée'],
-      ['Annotations collaboratives', comments.length+' observations documentées par l\'équipe'],
+      ['Annotations collaboratives', comments.length+' observations documentées par léquipe'] ,
       ['Recommandations', recs.length+' actions prioritaires définies et formalisées'],
     ];
     bullets.forEach(([lbl,val])=>{
-      pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.gold); pdf.text('›  ', M+12, y);
-      pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.mid); pdf.text(lbl+' : ', M+17, y);
-      pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.light);
-      pdf.text(val, M+17+pdf.getTextWidth(lbl+' : '), y);
-      y+=7;
+      pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.blue);
+      pdf.text('›', M+9, y);
+      pdf.setTextColor(...C.ink2); pdf.text(lbl+' :', M+14, y);
+      pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.ink);
+      pdf.text(val, M+14+pdf.getTextWidth(lbl+' :  '), y);
+      y+=8;
     });
 
-    pdf.setFontSize(7); pdf.setTextColor(...C.dim); pdf.setFont('helvetica','italic');
-    pdf.text('Ce rapport est produit automatiquement par le moteur DSS de KPI Hub.', M+6, PH-18);
-    pdf.text('Il synthétise les données réelles de Solidtime et les annotations collaboratives de l\'équipe.', M+6, PH-13);
-    pdf.text('Destiné aux responsables de projets et à la direction.', M+6, PH-8);
+    /* Page footer line */
+    pdf.setFillColor(...C.rule),
+     pdf.rect(0,PH-16,PW,0.4,'F'),
+    pdf.setFontSize(6.5),
+     pdf.setTextColor(...C.dim),
+      pdf.setFont('helvetica','italic'),
+    pdf.text('Rapport produit automatiquement par le moteur DSS de KPI Hub · Données réelles Solidtime · Destiné aux responsables et à la direction.', M, PH-9),
 
     /* ══════════════════════════════════════════════════════════
        PAGE 2 — RÉSUMÉ EXÉCUTIF + KPI GLOBAUX
     ══════════════════════════════════════════════════════════ */
-    pdf.addPage(); _header('Résumé exécutif');
+    pdf.addPage();
+    _header('Résumé exécutif');
 
     _section('1. RÉSUMÉ EXÉCUTIF', C.blue);
     _prose(
-      'Cette analyse couvre '+Math.round(totalHours).toLocaleString('fr-FR')+' heures de travail enregistrées dans Solidtime, '+
+      'Cette analyse couvre '+_fmtNum(totalHours)+' heures de travail enregistrées dans Solidtime, '+
       'réalisées par '+totalUsers+' membres de l\'équipe sur '+totalProjects+' projets actifs. '+
       'L\'équipe a produit '+totalTasks+' entrées de time-tracking et l\'ensemble des données a été analysé '+
       'par le moteur BI de KPI Hub, complété par '+comments.length+' observations collaboratives et '+recs.length+' recommandations actionnables.'
@@ -1248,7 +1294,7 @@ async function exportDecisionReport(){
 
     _section('2. INDICATEURS CLÉS DE PERFORMANCE', [18,58,128]);
     const kpiRows=[
-      ['Volume d\'activité total',       Math.round(totalHours).toLocaleString('fr-FR')+' heures enregistrées'],
+      ['Volume d\'activité total',       _fmtNum(totalHours)+' heures enregistrées'],
       ['Nombre de membres actifs',       totalUsers+' personnes'],
       ['Nombre de projets suivis',       totalProjects+' projets'],
       ['Nombre total d\'entrées',        totalTasks+' tâches / entrées de temps'],
@@ -1270,7 +1316,7 @@ async function exportDecisionReport(){
         const col = a.risk_color==='red'?C.red:a.risk_color==='orange'?C.orange:C.green;
         pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...col);
         pdf.text((i+1)+'. '+String(a.entity_type)+' : '+String(a.entity_id), M+3, y); y+=5;
-        _prose('Projet : '+a.project+'  ·  Score : '+a.score+'\n'+a.reason, C.light, 4);
+        _prose('Projet : '+a.project+'  ·  Score : '+a.score+'\n'+a.reason, C.ink2, 4);
         y+=1;
       });
     }
@@ -1294,20 +1340,52 @@ async function exportDecisionReport(){
     projList.slice(0,12).forEach((proj,pi)=>{
       const pName    = proj.project || 'Projet inconnu';
       const pRows    = rawByProject[pName] || [];
-      const pHours   = pRows.reduce((s,r)=>s+parseFloat(r['Duration (decimal)']||0),0);
-      const pUsers   = [...new Set(pRows.map(r=>r['User']||r['user']).filter(Boolean))];
+      /* Try all possible key formats that parseCsv might produce */
+      function _getHours(r){
+        return parseFloat(
+          r['Duration (decimal)'] || r['duration (decimal)'] ||
+          r['Duration_decimal']   || r['duration_decimal']   ||
+          r['DurationDecimal']    || r['duration']           ||
+          r['hours']              || r['Hours']              || 0
+        );
+      }
+      function _getDesc(r){
+        return r['Description'] || r['description'] ||
+               r['Task']        || r['task']        ||
+               r['name']        || r['Name']        || '';
+      }
+      function _getUser(r){
+        return r['User'] || r['user'] || r['member'] ||
+               r['Member'] || r['username'] || '';
+      }
+      function _getTags(r){
+        return r['Tags'] || r['tags'] || r['tag'] || r['Tag'] || '';
+      }
+      /* Clean Jira prefixes from description for readable display */
+      function _cleanDesc(raw){
+        if(!raw) return '';
+        let s = String(raw).trim();
+        s = s.replace(/^[A-Z]+-\d+\s*[\|\-:\[\]]*\s*/i, '');
+        s = s.replace(/\[[^\]]*\]/g, '').replace(/\s+/g,' ').trim();
+        if(!s) return String(raw).slice(0,60);
+        return s.charAt(0).toUpperCase()+s.slice(1);
+      }
+      const pHours = pRows.reduce((s,r)=>s+_getHours(r), 0);
+      const pUsers   = [...new Set(pRows.map(r=>_getUser(r)).filter(Boolean))];
       const pHealth  = proj.health_score;
       const pRisk    = proj.risk_level;
 
       _guard(18);
-      /* Project header bar */
+      /* Project header bar — white with colored left accent */
       const hCol = pHealth>=70?C.green:pHealth>=45?C.orange:C.red;
-      pdf.setFillColor(13,22,41); pdf.roundedRect(M, y, W, 12, 2,2,'F');
-      pdf.setDrawColor(...(hCol||C.blue)); pdf.setLineWidth(0.4); pdf.roundedRect(M,y,W,12,2,2);
-      pdf.setFillColor(...(hCol||C.blue)); pdf.rect(M,y,2.5,12,'F');
+      const hColBg = pHealth>=70?C.greenbg:pHealth>=45?C.oranbg:C.redbg;
+      pdf.setFillColor(...(hColBg||C.blue2)); pdf.roundedRect(M, y, W, 13, 2,2,'F');
+      pdf.setDrawColor(...(hCol||C.blue)); pdf.setLineWidth(0.5); pdf.roundedRect(M,y,W,13,2,2);
+      pdf.setFillColor(...(hCol||C.blue)); pdf.rect(M,y,3.5,13,'F');
+      pdf.setFillColor(...(hCol||C.blue)); pdf.roundedRect(M,y,3.5,13,2,2,'F');
 
-      pdf.setFontSize(9.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.light);
-      pdf.text(pName, M+6, y+7.5);
+      pdf.setFontSize(10); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.ink);
+      pdf.text(pName, M+8, y+8.5);
 
       /* right-side chips */
       let cx = PW-M-4;
@@ -1330,56 +1408,69 @@ async function exportDecisionReport(){
 
       /* Project summary line */
       _prose(
-        Math.round(pHours).toLocaleString('fr-FR')+'h enregistrées  ·  '+
+        _fmtNum(pHours)+'h enregistrées  ·  '+
         pUsers.length+' membre'+(pUsers.length>1?'s':'')+
         (pUsers.length ? ' : '+pUsers.join(', ') : ''),
-        C.mid
+        C.ink2
       );
       y+=1;
 
       /* Task rows from real CSV — using Description column */
       const shown = pRows.slice(0,10);
       if(shown.length){
-        /* Column headers */
-        _guard(8);
-        pdf.setFontSize(7); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.dim);
-        pdf.text('TÂCHE (Description Solidtime)', M+4, y);
-        pdf.text('RESPONSABLE', M+115, y);
-        pdf.text('DURÉE', PW-M-10, y, {align:'right'});
-        pdf.setDrawColor(...C.dim); pdf.setLineWidth(0.15); pdf.line(M+4,y+1.5,PW-M-4,y+1.5);
-        y+=5;
+        /* Column headers row */
+        _guard(10);
+        pdf.setFillColor(...C.header); pdf.rect(M,y,W,7,'F');
+        pdf.setFontSize(7); pdf.setFont('helvetica','bold'); pdf.setTextColor(255,255,255);
+        pdf.text('TÂCHE / DESCRIPTION', M+3, y+5);
+        pdf.text('RESPONSABLE', M+118, y+5);
+        pdf.text('DURÉE', PW-M-3, y+5, {align:'right'});
+        y+=10;
 
         shown.forEach((row, ri)=>{
-          _guard(8);
-          const fmt  = window.KpiTaskMap ? window.KpiTaskMap.formatRow(row) : row;
-          const tName = fmt.task_name || String(row['Description']||'').slice(0,55) || 'Tâche sans titre';
-          const uName = fmt.assigned_user || row['User'] || '—';
-          const hrs   = fmt.hours_label || (parseFloat(row['Duration (decimal)']||0).toFixed(1)+'h');
-          const tag   = row['Tags'] || '';
+          _guard(9);
+          /* Read raw columns directly with all key variants */
+          const rawDesc = _getDesc(row);
+          const rawHrs  = _getHours(row);
+          const rawUser = _getUser(row);
+          const tag     = _getTags(row);
 
-          /* Alternating row background */
-          if(ri%2===0){ pdf.setFillColor(20,35,65,.5); pdf.rect(M+3,y-3.5,W-6,6.5,'F'); }
+          /* Clean description — strip Jira codes */
+          const tName = rawDesc ? _cleanDesc(rawDesc) : 'Non renseigné';
+          const uName = rawUser || 'Non assigné';
+          const hrs   = rawHrs > 0 ? rawHrs.toFixed(1)+'h' : '—';
 
-          pdf.setFontSize(8); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.light);
-          /* Task name — truncate at 52 chars to avoid overflow */
-          const nameStr = tName.length>52 ? tName.slice(0,49)+'…' : tName;
-          pdf.text(nameStr, M+4, y);
+          /* Alternating white / very light blue */
+          const rowBg = ri%2===0 ? C.page : C.card;
+          pdf.setFillColor(...rowBg); pdf.rect(M,y-4,W,8,'F');
+          /* Bottom rule */
+          pdf.setDrawColor(...C.rule); pdf.setLineWidth(0.15); pdf.line(M,y+4,PW-M,y+4);
+
+          /* Task name — truncate to fit column */
+          pdf.setFontSize(8); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.ink);
+          const nameStr = tName.length>56 ? tName.slice(0,53)+'…' : tName;
+          pdf.text(nameStr, M+3, y);
 
           /* User */
-          pdf.setTextColor(...C.mid);
-          const uStr = uName.length>18 ? uName.slice(0,16)+'…' : uName;
-          pdf.text(uStr, M+115, y);
+          pdf.setTextColor(...C.ink2);
+          const uStr = uName.length>20 ? uName.slice(0,18)+'…' : uName;
+          pdf.text(uStr, M+118, y);
 
-          /* Hours */
-          pdf.setTextColor(...C.gold); pdf.setFont('helvetica','bold');
-          pdf.text(hrs, PW-M-4, y, {align:'right'});
+          /* Hours — right aligned, colored */
+          pdf.setTextColor(...C.blue); pdf.setFont('helvetica','bold');
+          pdf.text(hrs, PW-M-3, y, {align:'right'});
 
-          /* Tag chip inline */
-          if(tag){
-            const tagCol = tag==='Testing'?C.orange:tag==='Réunion'?[80,30,160]:tag==='Documentation'?[20,100,60]:C.dim;
-            _chip(tag, tagCol, M+4, y+5);
+          /* Tag small text */
+          if(tag && tag.length < 25){
+            pdf.setFontSize(6.5); pdf.setFont('helvetica','normal');
+            const tagCol = tag.includes('Testing')?C.orange:
+                           tag.includes('Réunion')?[100,40,180]:
+                           tag.includes('Documentation')?C.green:
+                           tag.includes('Bug')?C.red: C.dim;
+            pdf.setTextColor(...tagCol);
+            pdf.text('['+tag+']', PW-M-3-pdf.getTextWidth(hrs)-4, y, {align:'right'});
           }
-          y+=7;
+          y+=8;
         });
 
         if(pRows.length>10){
@@ -1410,21 +1501,22 @@ async function exportDecisionReport(){
       const typeCol  ={observation:[30,111,217],anomaly:[220,60,30],risk:[200,130,20]}[c.type]||C.blue;
 
       /* Card background */
-      pdf.setFillColor(13,22,41,.8); pdf.roundedRect(M, y, W, 6, 1.5,1.5,'F');
+      pdf.setFillColor(...C.card); pdf.roundedRect(M, y, W, 6, 1.5,1.5,'F');
+      pdf.setDrawColor(...C.rule); pdf.setLineWidth(0.2); pdf.roundedRect(M,y,W,6,1.5,1.5);
       _chip(typeLabel, typeCol, M+3, y+4.5);
-      pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.light);
+      pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.ink);
       pdf.text(c.element_label, M+30, y+4.5);
       pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.dim);
       pdf.text(c.author+' · '+fmtDate(c.timestamp), PW-M-4, y+4.5,{align:'right'});
       y+=9;
 
-      _prose(c.text, C.light, 3);
+      _prose(c.text, C.ink, 3);
 
       if(c.replies && c.replies.length){
         c.replies.forEach(r=>{
           _guard(8);
           pdf.setFontSize(7.5); pdf.setFont('helvetica','italic'); pdf.setTextColor(...C.mid);
-          _prose('↩ '+r.author+' : '+r.text, C.mid, 6);
+          _prose('↩ '+r.author+' : '+r.text, C.ink2, 6);
         });
       }
       if(c.resolved){
@@ -1458,23 +1550,24 @@ async function exportDecisionReport(){
       pdf.setFillColor(...pCol); pdf.rect(M, y, 2, 0, 'F'); // will be drawn after height known
 
       /* Card */
-      pdf.setFillColor(13,22,41,.9); pdf.roundedRect(M+3, y, W-3, 8, 1.5,1.5,'F');
+      pdf.setFillColor(...C.card); pdf.roundedRect(M+3, y, W-3, 8, 1.5,1.5,'F');
+      pdf.setDrawColor(...C.rule); pdf.setLineWidth(0.2); pdf.roundedRect(M+3,y,W-3,8,1.5,1.5);
       pdf.setFillColor(...pCol); pdf.rect(M,y,2.5,8,'F');
 
       let cx2 = M+8;
       cx2 += _chip(pLbl, pCol, cx2, y+5)+2;
-      cx2 += _chip('Niveau '+r.level, C.accent, cx2, y+5)+2;
+      cx2 += _chip('Niveau '+r.level, C.blue, cx2, y+5)+2;
       _chip(sLbl, r.status==='confirmed'?C.green:r.status==='active'?C.red:C.blue, cx2, y+5);
       y+=11;
 
       /* Title */
       _guard(8);
-      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.light);
+      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.ink);
       const tLines = pdf.splitTextToSize(r.title, W-6);
       pdf.text(tLines, M+4, y); y+=tLines.length*5+2;
 
       /* Description */
-      _prose(r.description, C.mid, 4);
+      _prose(r.description, C.ink2, 4);
 
       /* Sources */
       _guard(6);
