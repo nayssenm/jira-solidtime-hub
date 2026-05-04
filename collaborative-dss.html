@@ -1021,7 +1021,11 @@ document.querySelectorAll('.dss-level-header').forEach(h => {
 });
 
 /* ════════════════════════════════════════════════════════════════
-   PDF DECISION REPORT — professional, non-technical language
+   PDF DECISION REPORT  v3.0
+   — Données réelles depuis aaRawRows + aaLatestReport
+   — Noms de tâches lisibles (Description column)
+   — Résumé global + détail par projet
+   — Langage simple, clair, non-technique
 ════════════════════════════════════════════════════════════════ */
 async function exportDecisionReport(){
   if(!can('export')){ showToast('Seuls les Analystes peuvent exporter le rapport','⚠'); return; }
@@ -1031,129 +1035,476 @@ async function exportDecisionReport(){
   await new Promise(r=>setTimeout(r,600));
   try{
     const {jsPDF} = window.jspdf;
-    const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-    const PW=210, PH=297, M=14, W=PW-M*2;
+    const pdf  = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const PW=210, PH=297, M=16, W=PW-M*2;
     const comments = loadComments();
-    const recs = loadRecs();
-    const now = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+    const recs     = loadRecs();
+    const report   = aaLatestReport;
+    const rawRows  = aaRawRows || [];
+    const now      = new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
     let y = 0;
 
-    /* ── COVER PAGE ── */
-    pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,PH,'F');
-    pdf.setFillColor(30,111,217); pdf.rect(0,0,PW,4,'F');
-    pdf.setFillColor(232,160,32); pdf.rect(0,4,PW,1.5,'F');
-    pdf.setTextColor(74,106,154); pdf.setFontSize(8); pdf.setFont('helvetica','normal');
-    pdf.text('USAGE INTERNE · CONFIDENTIEL', M, 16);
-    pdf.setTextColor(91,163,245); pdf.setFontSize(11); pdf.setFont('helvetica','bold');
-    pdf.text('KPI HUB · DÉCISION SUPPORT SYSTEM', M, 28);
-    pdf.setTextColor(214,232,255); pdf.setFontSize(26); pdf.setFont('helvetica','bold');
-    pdf.text('RAPPORT DÉCISIONNEL', M, 50);
-    pdf.text('COLLABORATIF', M, 62);
-    pdf.setFontSize(12); pdf.setFont('helvetica','normal'); pdf.setTextColor(91,163,245);
-    pdf.text('Synthèse · Observations · Recommandations', M, 74);
-    pdf.setFontSize(9); pdf.setTextColor(74,106,154);
-    pdf.text('Généré le '+now+' · '+comments.length+' observations analysées', M, 86);
-    pdf.setDrawColor(30,111,217); pdf.setLineWidth(0.3); pdf.line(M,94,PW-M,94);
+    /* ── Compute real KPIs from live data ── */
+    const k = report ? report.kpis : {};
+    const totalHours    = k.total_hours       || rawRows.reduce((s,r)=>s+parseFloat(r['Duration (decimal)']||0),0);
+    const totalTasks    = k.total_tasks        || rawRows.length;
+    const totalUsers    = k.total_users        || new Set(rawRows.map(r=>r['User']||r['user']).filter(Boolean)).size;
+    const projects      = report ? report.projects : [];
+    const totalProjects = projects.length || new Set(rawRows.map(r=>r['Project']||r['project']).filter(Boolean)).size;
+    const healthScore   = k.project_health_score || '—';
+    const riskLevel     = k.risk_level || '—';
+    const completionRate= k.task_completion_rate || '—';
+    const avgTimeTask   = k.average_time_per_task || '—';
+    const prodScore     = k.team_productivity_score || '—';
 
-    /* Key metrics summary on cover */
-    pdf.setTextColor(168,203,250); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
-    pdf.text('APERÇU DE LA SITUATION', M, 106);
-    const coverLines = [
-      'Volume d\'activité suivi : 22 993 heures sur 13 mois',
-      'Taux de liaison aux tickets Jira : 3,4% — largement insuffisant (objectif : >60%)',
-      'Taux de dépassement d\'estimation : 46,1% sur 256 tickets analysés',
-      'Anomalies signalées par l\'équipe : '+comments.filter(c=>c.type==='anomaly').length,
-      'Risques identifiés et documentés : '+comments.filter(c=>c.type==='risk').length,
-      'Recommandations formulées : '+recs.length+' actions prioritaires définies'
-    ];
-    coverLines.forEach((l,i) => {
-      pdf.setFont('helvetica','normal'); pdf.setTextColor(214,232,255);
-      pdf.text('→  '+l, M+4, 116+i*8);
+    /* Group raw rows by project */
+    const rawByProject = {};
+    rawRows.forEach(r => {
+      const p = r['Project']||r['project']||''; if(!p) return;
+      if(!rawByProject[p]) rawByProject[p]=[];
+      rawByProject[p].push(r);
     });
 
-    pdf.setFontSize(8); pdf.setTextColor(74,106,154); pdf.setFont('helvetica','italic');
-    pdf.text('Ce rapport est produit automatiquement par le moteur DSS de KPI Hub à partir des annotations', M, PH-16);
-    pdf.text('collaboratives de l\'équipe. Il est destiné aux responsables de projets et à la direction.', M, PH-10);
-    pdf.addPage();
+    /* ══════════════════════════════════════════════════════════
+       HELPERS
+    ══════════════════════════════════════════════════════════ */
+    const C = {
+      navy:  [8,15,30],   blue:  [30,111,217],  gold:  [232,160,32],
+      light: [214,232,255], mid:  [168,203,250], dim:   [74,106,154],
+      accent:[91,163,245],  red:  [220,60,30],   green: [10,160,80],
+      orange:[200,130,20],  white:[240,248,255]
+    };
 
-    /* ── CONTENT HELPERS ── */
-    function _bg(){ pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,PH,'F'); }
-    function _header(label){
-      pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,18,'F');
-      pdf.setFillColor(30,111,217); pdf.rect(0,0,PW,2,'F');
-      pdf.setTextColor(91,163,245); pdf.setFontSize(8); pdf.setFont('helvetica','bold');
-      pdf.text('KPI HUB · RAPPORT DÉCISIONNEL · '+now, M, 8);
-      pdf.setTextColor(74,106,154); pdf.setFont('helvetica','normal');
-      pdf.text(label||'', PW-M, 8, {align:'right'});
-      pdf.setDrawColor(74,106,154); pdf.setLineWidth(0.15); pdf.line(M,13,PW-M,13);
-      y = 24;
+    function _bg(){
+      pdf.setFillColor(...C.navy); pdf.rect(0,0,PW,PH,'F');
+    }
+    function _pageAccent(){
+      pdf.setFillColor(...C.blue); pdf.rect(0,0,PW,2,'F');
+      pdf.setFillColor(...C.gold); pdf.rect(0,2,PW,0.8,'F');
+    }
+    function _header(right){
+      _bg(); _pageAccent();
+      pdf.setFillColor(13,22,41); pdf.rect(0,3,PW,16,'F');
+      pdf.setTextColor(...C.accent); pdf.setFontSize(7.5); pdf.setFont('helvetica','bold');
+      pdf.text('KPI HUB  ·  RAPPORT DÉCISIONNEL  ·  '+now, M, 12);
+      if(right){ pdf.setTextColor(...C.dim); pdf.setFont('helvetica','normal'); pdf.text(right, PW-M, 12,{align:'right'}); }
+      pdf.setDrawColor(...C.dim); pdf.setLineWidth(0.15); pdf.line(M,17,PW-M,17);
+      y = 26;
     }
     function _footer(){
-      pdf.setFontSize(7); pdf.setTextColor(74,106,154); pdf.setFont('helvetica','normal');
-      pdf.text('KPI Hub · Collaborative DSS · Confidentiel · PFE 2025–2026', M, PH-8);
-      pdf.text('Page '+pdf.getCurrentPageInfo().pageNumber, PW-M, PH-8, {align:'right'});
+      pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.dim);
+      pdf.text('KPI Hub  ·  Collaborative DSS  ·  Confidentiel  ·  PFE 2025–2026', M, PH-7);
+      pdf.text('Page '+pdf.getCurrentPageInfo().pageNumber, PW-M, PH-7,{align:'right'});
     }
-    function _section(title, color=[18,58,128]){
-      if(y > PH-30){ _footer(); pdf.addPage(); _bg(); _header('(suite)'); }
-      pdf.setFillColor(...color); pdf.roundedRect(M, y, W, 7, 1.5,1.5,'F');
-      pdf.setTextColor(214,232,255); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
-      pdf.text(title, M+4, y+5); y+=12;
+    function _newPage(right){
+      _footer(); pdf.addPage(); _header(right||'');
     }
-    function _prose(text, color=[168,203,250]){
+    function _guard(need){ if(y+need > PH-14) _newPage(); }
+
+    /* Section title bar */
+    function _section(label, clr){
+      _guard(12);
+      const col = clr||C.blue;
+      pdf.setFillColor(...col); pdf.roundedRect(M, y, W, 8, 2,2,'F');
+      pdf.setFillColor(col[0]*0.5,col[1]*0.5,col[2]*0.5); pdf.roundedRect(M,y+5,W,3,0,0,'F');
+      pdf.setTextColor(...C.white); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+      pdf.text(label, M+5, y+5.5);
+      y += 13;
+    }
+
+    /* Key-value row */
+    function _kv(label, value, indent){
+      _guard(7);
+      const ix = M+(indent||0);
+      pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.mid);
+      pdf.text(String(label)+'  :', ix, y);
+      pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.light);
+      const lines = pdf.splitTextToSize(String(value||'—'), W-70);
+      pdf.text(lines, ix+68, y);
+      y += Math.max(6, lines.length*4.8)+1;
+    }
+
+    /* Prose paragraph */
+    function _prose(text, clr, indent){
       if(!text) return;
-      if(y > PH-22){ _footer(); pdf.addPage(); _bg(); _header('(suite)'); }
-      pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(...color);
-      const lines = pdf.splitTextToSize(String(text), W-6);
-      pdf.text(lines, M+3, y); y+=lines.length*5+4;
+      _guard(10);
+      pdf.setFontSize(8.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...(clr||C.light));
+      const lines = pdf.splitTextToSize(String(text), W-(indent||0)*2);
+      if(y+lines.length*4.8 > PH-14){ _newPage(); }
+      pdf.text(lines, M+(indent||0), y);
+      y += lines.length*4.8+3;
     }
 
-    /* ── PAGE 2: EXECUTIVE SUMMARY ── */
-    _bg(); _header('Résumé exécutif');
-    _section('1. RÉSUMÉ EXÉCUTIF', [18,58,128]);
-    _prose('Cette analyse collaborative couvre 22 993 heures de time-tracking enregistrées dans Solidtime entre mars 2025 et mars 2026, pour une équipe de 20 personnes répartie sur 11 projets actifs. L\'équipe d\'analystes a documenté '+comments.length+' observations et formulé '+recs.length+' recommandations concrètes et actionnables.');
-    _prose('Le principal problème identifié est le manque de traçabilité entre les heures enregistrées et les tickets Jira : seuls 3,4% des entrées sont liées à un ticket, ce qui rend impossible un suivi précis des performances par projet. En parallèle, le taux de dépassement d\'estimation de 46,1% indique que la méthode de planification actuelle doit être révisée.'); y+=4;
+    /* Small label chip */
+    function _chip(text, clr, x, cy){
+      const col = clr||C.blue;
+      pdf.setFillColor(col[0],col[1],col[2],.18);
+      pdf.setDrawColor(...col); pdf.setLineWidth(0.3);
+      const tw = pdf.getTextWidth(text)+6;
+      pdf.roundedRect(x, cy-3.5, tw, 5.5, 1,1);
+      pdf.setTextColor(...col); pdf.setFontSize(7); pdf.setFont('helvetica','bold');
+      pdf.text(text, x+3, cy+0.5);
+      return tw+3;
+    }
 
-    _section('2. CE QUI A ÉTÉ OBSERVÉ', [120,40,20]);
-    comments.filter(c=>c.type==='anomaly'||c.type==='risk').forEach((c,i) => {
-      const typeLabel = {anomaly:'Anomalie détectée', risk:'Risque identifié'}[c.type]||c.type;
-      if(y>PH-30){ _footer(); pdf.addPage(); _bg(); _header('Observations'); }
-      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(255,180,100);
-      pdf.text(`${i+1}. ${typeLabel} — ${c.element_label}`, M+3, y); y+=6;
-      _prose(`Signalé par ${c.author} (${ROLES[c.role]?.label||c.role}) le ${fmtDate(c.timestamp)} :\n${c.text}`);
-      if(c.replies && c.replies.length){
-        _prose(`Suite à cette observation, ${c.replies.length} réponse(s) ont été apportées dans la discussion collaborative.`,[74,106,154]);
-      }
+    /* Horizontal rule */
+    function _rule(clr){ _guard(4); pdf.setDrawColor(...(clr||C.dim)); pdf.setLineWidth(0.2); pdf.line(M,y,PW-M,y); y+=5; }
+
+    /* Mini metric box */
+    function _metBox(label, value, sub, x, bw, clr){
+      const col=clr||C.blue;
+      pdf.setFillColor(col[0],col[1],col[2],.12); pdf.roundedRect(x,y,bw,22,2,2,'F');
+      pdf.setDrawColor(...col); pdf.setLineWidth(0.3); pdf.roundedRect(x,y,bw,22,2,2);
+      pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.mid);
+      pdf.text(String(label), x+bw/2, y+5, {align:'center'});
+      pdf.setFontSize(14); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.light);
+      pdf.text(String(value), x+bw/2, y+14, {align:'center'});
+      if(sub){ pdf.setFontSize(6.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.dim); pdf.text(String(sub), x+bw/2, y+19.5, {align:'center'}); }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       PAGE 1 — COVER
+    ══════════════════════════════════════════════════════════ */
+    _bg(); _pageAccent();
+    /* Blue vertical band */
+    pdf.setFillColor(18,40,90); pdf.rect(0,3,6,PH,'F');
+    pdf.setFillColor(...C.blue); pdf.rect(0,3,2.5,PH,'F');
+
+    pdf.setTextColor(...C.dim); pdf.setFontSize(8); pdf.setFont('helvetica','normal');
+    pdf.text('USAGE INTERNE · CONFIDENTIEL', M+6, 20);
+
+    pdf.setTextColor(...C.accent); pdf.setFontSize(10); pdf.setFont('helvetica','bold');
+    pdf.text('KPI HUB · DECISION SUPPORT SYSTEM', M+6, 34);
+
+    pdf.setTextColor(...C.light); pdf.setFontSize(28); pdf.setFont('helvetica','bold');
+    pdf.text('RAPPORT', M+6, 56);
+    pdf.text('DÉCISIONNEL', M+6, 70);
+
+    pdf.setFillColor(...C.gold); pdf.rect(M+6, 75, 60, 1.2, 'F');
+
+    pdf.setFontSize(11); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.accent);
+    pdf.text('Analyse · Observations · Recommandations', M+6, 84);
+
+    pdf.setFontSize(8); pdf.setTextColor(...C.dim);
+    pdf.text('Généré le '+now, M+6, 93);
+
+    /* ── Cover metric boxes ── */
+    const bw=40, gap=3, bx=M+6;
+    const metrics=[
+      {l:'Heures suivies', v: totalHours>0?Math.round(totalHours).toLocaleString('fr-FR')+'h':'—', s:totalProjects+' projets', c:C.blue},
+      {l:'Membres actifs', v: String(totalUsers), s:'équipe', c:[30,140,100]},
+      {l:'Tâches enregistrées', v: String(totalTasks), s:'entrées', c:[160,100,20]},
+      {l:'Score de santé', v: String(healthScore)+'/100', s:'global', c: riskLevel==='High'?C.red:riskLevel==='Medium'?C.orange:C.green},
+    ];
+    y=105;
+    metrics.forEach((m,i)=>{ _metBox(m.l,m.v,m.s, bx+i*(bw+gap), bw, m.c); });
+    y+=28;
+
+    /* Cover summary bullets */
+    pdf.setFillColor(13,22,41,.7); pdf.roundedRect(M+6,y,W-6,58,3,3,'F');
+    pdf.setDrawColor(...C.blue); pdf.setLineWidth(0.3); pdf.roundedRect(M+6,y,W-6,58,3,3);
+    y+=8;
+    pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.accent);
+    pdf.text('POINTS CLÉS DE L\'ANALYSE', M+12, y); y+=7;
+
+    const bullets=[
+      ['Productivité équipe', prodScore+'/100 — score global de l\'équipe sur la période'],
+      ['Taux de complétion', completionRate+'% — des tâches ont été menées à terme'],
+      ['Temps moyen / tâche', avgTimeTask+'h — durée moyenne constatée par entrée'],
+      ['Annotations collaboratives', comments.length+' observations documentées par l\'équipe'],
+      ['Recommandations', recs.length+' actions prioritaires définies et formalisées'],
+    ];
+    bullets.forEach(([lbl,val])=>{
+      pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.gold); pdf.text('›  ', M+12, y);
+      pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.mid); pdf.text(lbl+' : ', M+17, y);
+      pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.light);
+      pdf.text(val, M+17+pdf.getTextWidth(lbl+' : '), y);
+      y+=7;
+    });
+
+    pdf.setFontSize(7); pdf.setTextColor(...C.dim); pdf.setFont('helvetica','italic');
+    pdf.text('Ce rapport est produit automatiquement par le moteur DSS de KPI Hub.', M+6, PH-18);
+    pdf.text('Il synthétise les données réelles de Solidtime et les annotations collaboratives de l\'équipe.', M+6, PH-13);
+    pdf.text('Destiné aux responsables de projets et à la direction.', M+6, PH-8);
+
+    /* ══════════════════════════════════════════════════════════
+       PAGE 2 — RÉSUMÉ EXÉCUTIF + KPI GLOBAUX
+    ══════════════════════════════════════════════════════════ */
+    pdf.addPage(); _header('Résumé exécutif');
+
+    _section('1. RÉSUMÉ EXÉCUTIF', C.blue);
+    _prose(
+      'Cette analyse couvre '+Math.round(totalHours).toLocaleString('fr-FR')+' heures de travail enregistrées dans Solidtime, '+
+      'réalisées par '+totalUsers+' membres de l\'équipe sur '+totalProjects+' projets actifs. '+
+      'L\'équipe a produit '+totalTasks+' entrées de time-tracking et l\'ensemble des données a été analysé '+
+      'par le moteur BI de KPI Hub, complété par '+comments.length+' observations collaboratives et '+recs.length+' recommandations actionnables.'
+    );
+    _prose(
+      'Le score de santé global des projets est de '+healthScore+'/100, avec un niveau de risque classé "'+riskLevel+'". '+
+      'Le taux de complétion des tâches s\'établit à '+completionRate+'%, et la durée moyenne constatée par tâche est de '+avgTimeTask+'h. '+
+      'Ces indicateurs permettent d\'identifier rapidement les projets qui nécessitent une attention particulière.'
+    );
+    y+=3; _rule();
+
+    _section('2. INDICATEURS CLÉS DE PERFORMANCE', [18,58,128]);
+    const kpiRows=[
+      ['Volume d\'activité total',       Math.round(totalHours).toLocaleString('fr-FR')+' heures enregistrées'],
+      ['Nombre de membres actifs',       totalUsers+' personnes'],
+      ['Nombre de projets suivis',       totalProjects+' projets'],
+      ['Nombre total d\'entrées',        totalTasks+' tâches / entrées de temps'],
+      ['Score de santé global',          healthScore+'/100 (niveau de risque : '+riskLevel+')'],
+      ['Score de productivité équipe',   prodScore+'/100'],
+      ['Taux de complétion des tâches',  completionRate+'%'],
+      ['Durée moyenne par tâche',        avgTimeTask+'h par entrée'],
+    ];
+    kpiRows.forEach(([l,v])=>_kv(l,v));
+    y+=3; _rule();
+
+    /* Anomalies detected by the engine */
+    if(report && report.anomalies && report.anomalies.length){
+      _section('3. ANOMALIES DÉTECTÉES AUTOMATIQUEMENT', [120,40,20]);
+      _prose('Le moteur d\'analyse a identifié les situations suivantes qui sortent de la normale. Elles méritent une vérification ou une action corrective rapide.');
       y+=2;
-    });
-    _footer(); pdf.addPage();
-
-    /* ── PAGE 3: RECOMMENDATIONS ── */
-    _bg(); _header('Recommandations');
-    _section('3. CE QU\'IL EST RECOMMANDÉ DE FAIRE', [10,100,60]);
-    recs.forEach((r,i) => {
-      const pLabel = {high:'PRIORITÉ HAUTE',medium:'PRIORITÉ MOYENNE',low:'PRIORITÉ BASSE'}[r.priority]||r.priority;
-      const pColor = {high:[220,60,30],medium:[200,140,20],low:[10,160,100]}[r.priority]||[100,150,220];
-      if(y>PH-40){ _footer(); pdf.addPage(); _bg(); _header('Recommandations (suite)'); }
-      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...pColor);
-      pdf.text(`${r.level_label} · ${pLabel}`, M+3, y); y+=6;
-      pdf.setFontSize(10); pdf.setTextColor(214,232,255);
-      const tLines = pdf.splitTextToSize(r.title, W-6);
-      pdf.text(tLines, M+3, y); y+=tLines.length*5+3;
-      _prose(r.description);
-      pdf.setFontSize(8); pdf.setFont('helvetica','italic'); pdf.setTextColor(74,106,154);
-      pdf.text(`Statut : ${{proposed:'Proposée',confirmed:'Confirmée',active:'En cours'}[r.status]||r.status} · Basé sur ${r.source_comments.length} observation(s) documentée(s)`, M+3, y); y+=9;
-    });
-
-    y+=4;
-    _section('4. PROCHAINES ÉTAPES', [30,80,160]);
-    _prose('Pour améliorer concrètement la situation d\'ici la fin du deuxième trimestre 2026, deux actions sont à lancer en priorité. D\'abord, rendre le champ Jira obligatoire dans Solidtime pour tous les projets actifs — cette modification technique prendra moins d\'une semaine et aura un impact immédiat sur la traçabilité. Ensuite, organiser une session de calibration des estimations avec l\'ensemble de l\'équipe pour réduire le taux de dépassement en dessous de 30%.');
-    _prose('Un suivi mensuel du taux de liaison Jira et du taux de dépassement permettra de mesurer les progrès et d\'ajuster les actions si nécessaire. L\'objectif est d\'atteindre un niveau de maturité de suivi de niveau 3 d\'ici le troisième trimestre 2026.', [168,203,250]);
+      report.anomalies.slice(0,6).forEach((a,i)=>{
+        _guard(14);
+        const col = a.risk_color==='red'?C.red:a.risk_color==='orange'?C.orange:C.green;
+        pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...col);
+        pdf.text((i+1)+'. '+String(a.entity_type)+' : '+String(a.entity_id), M+3, y); y+=5;
+        _prose('Projet : '+a.project+'  ·  Score : '+a.score+'\n'+a.reason, C.light, 4);
+        y+=1;
+      });
+    }
 
     _footer();
+
+    /* ══════════════════════════════════════════════════════════
+       PAGE 3 — DÉTAIL PAR PROJET
+    ══════════════════════════════════════════════════════════ */
+    pdf.addPage(); _header('Détail par projet');
+    _section('4. ANALYSE PAR PROJET — TÂCHES ET RESPONSABLES', [20,80,50]);
+    _prose(
+      'Pour chaque projet, vous trouverez ci-dessous le volume d\'heures investies, '+
+      'les membres impliqués et les tâches réalisées avec leur intitulé complet. '+
+      'Les noms de tâches sont issus directement de la colonne Description de Solidtime.'
+    );
+    y+=2;
+
+    const projList = projects.length ? projects : Object.keys(rawByProject).map(p=>({project:p}));
+
+    projList.slice(0,12).forEach((proj,pi)=>{
+      const pName    = proj.project || 'Projet inconnu';
+      const pRows    = rawByProject[pName] || [];
+      const pHours   = pRows.reduce((s,r)=>s+parseFloat(r['Duration (decimal)']||0),0);
+      const pUsers   = [...new Set(pRows.map(r=>r['User']||r['user']).filter(Boolean))];
+      const pHealth  = proj.health_score;
+      const pRisk    = proj.risk_level;
+
+      _guard(18);
+      /* Project header bar */
+      const hCol = pHealth>=70?C.green:pHealth>=45?C.orange:C.red;
+      pdf.setFillColor(13,22,41); pdf.roundedRect(M, y, W, 12, 2,2,'F');
+      pdf.setDrawColor(...(hCol||C.blue)); pdf.setLineWidth(0.4); pdf.roundedRect(M,y,W,12,2,2);
+      pdf.setFillColor(...(hCol||C.blue)); pdf.rect(M,y,2.5,12,'F');
+
+      pdf.setFontSize(9.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.light);
+      pdf.text(pName, M+6, y+7.5);
+
+      /* right-side chips */
+      let cx = PW-M-4;
+      if(pRisk){
+        const rc=pRisk==='High'?C.red:pRisk==='Medium'?C.orange:C.green;
+        const tw=pdf.getTextWidth(pRisk)+8;
+        cx-=tw;
+        pdf.setFillColor(rc[0],rc[1],rc[2],.25); pdf.roundedRect(cx,y+3,tw,6,1,1,'F');
+        pdf.setTextColor(...rc); pdf.setFontSize(7); pdf.setFont('helvetica','bold');
+        pdf.text(pRisk, cx+4, y+7);
+        cx-=4;
+      }
+      if(pHealth!=null){
+        const hs=String(pHealth)+'/100'; const tw2=pdf.getTextWidth(hs)+8;
+        cx-=tw2;
+        pdf.setTextColor(...C.mid); pdf.setFontSize(7); pdf.setFont('helvetica','normal');
+        pdf.text(hs, cx+2, y+7);
+      }
+      y+=15;
+
+      /* Project summary line */
+      _prose(
+        Math.round(pHours).toLocaleString('fr-FR')+'h enregistrées  ·  '+
+        pUsers.length+' membre'+(pUsers.length>1?'s':'')+
+        (pUsers.length ? ' : '+pUsers.join(', ') : ''),
+        C.mid
+      );
+      y+=1;
+
+      /* Task rows from real CSV — using Description column */
+      const shown = pRows.slice(0,10);
+      if(shown.length){
+        /* Column headers */
+        _guard(8);
+        pdf.setFontSize(7); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.dim);
+        pdf.text('TÂCHE (Description Solidtime)', M+4, y);
+        pdf.text('RESPONSABLE', M+115, y);
+        pdf.text('DURÉE', PW-M-10, y, {align:'right'});
+        pdf.setDrawColor(...C.dim); pdf.setLineWidth(0.15); pdf.line(M+4,y+1.5,PW-M-4,y+1.5);
+        y+=5;
+
+        shown.forEach((row, ri)=>{
+          _guard(8);
+          const fmt  = window.KpiTaskMap ? window.KpiTaskMap.formatRow(row) : row;
+          const tName = fmt.task_name || String(row['Description']||'').slice(0,55) || 'Tâche sans titre';
+          const uName = fmt.assigned_user || row['User'] || '—';
+          const hrs   = fmt.hours_label || (parseFloat(row['Duration (decimal)']||0).toFixed(1)+'h');
+          const tag   = row['Tags'] || '';
+
+          /* Alternating row background */
+          if(ri%2===0){ pdf.setFillColor(20,35,65,.5); pdf.rect(M+3,y-3.5,W-6,6.5,'F'); }
+
+          pdf.setFontSize(8); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.light);
+          /* Task name — truncate at 52 chars to avoid overflow */
+          const nameStr = tName.length>52 ? tName.slice(0,49)+'…' : tName;
+          pdf.text(nameStr, M+4, y);
+
+          /* User */
+          pdf.setTextColor(...C.mid);
+          const uStr = uName.length>18 ? uName.slice(0,16)+'…' : uName;
+          pdf.text(uStr, M+115, y);
+
+          /* Hours */
+          pdf.setTextColor(...C.gold); pdf.setFont('helvetica','bold');
+          pdf.text(hrs, PW-M-4, y, {align:'right'});
+
+          /* Tag chip inline */
+          if(tag){
+            const tagCol = tag==='Testing'?C.orange:tag==='Réunion'?[80,30,160]:tag==='Documentation'?[20,100,60]:C.dim;
+            _chip(tag, tagCol, M+4, y+5);
+          }
+          y+=7;
+        });
+
+        if(pRows.length>10){
+          _guard(6);
+          pdf.setFontSize(7.5); pdf.setFont('helvetica','italic'); pdf.setTextColor(...C.dim);
+          pdf.text('… et '+(pRows.length-10)+' entrée(s) supplémentaire(s) non affichée(s)', M+4, y);
+          y+=5;
+        }
+      } else {
+        _prose('Aucune entrée de temps trouvée pour ce projet.', C.dim);
+      }
+      y+=4; _rule(C.dim);
+    });
+
+    _footer();
+
+    /* ══════════════════════════════════════════════════════════
+       PAGE 4 — OBSERVATIONS & RISQUES
+    ══════════════════════════════════════════════════════════ */
+    pdf.addPage(); _header('Observations & Risques');
+    _section('5. OBSERVATIONS COLLABORATIVES', [120,40,20]);
+    _prose('Les observations suivantes ont été documentées par l\'équipe d\'analyse dans le fil de discussion collaboratif. Chaque point est lié à un élément KPI précis et a été validé par plusieurs membres.');
+    y+=2;
+
+    comments.forEach((c,i)=>{
+      _guard(20);
+      const typeLabel={observation:'Observation',anomaly:'Anomalie',risk:'Risque'}[c.type]||c.type;
+      const typeCol  ={observation:[30,111,217],anomaly:[220,60,30],risk:[200,130,20]}[c.type]||C.blue;
+
+      /* Card background */
+      pdf.setFillColor(13,22,41,.8); pdf.roundedRect(M, y, W, 6, 1.5,1.5,'F');
+      _chip(typeLabel, typeCol, M+3, y+4.5);
+      pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.light);
+      pdf.text(c.element_label, M+30, y+4.5);
+      pdf.setFontSize(7); pdf.setFont('helvetica','normal'); pdf.setTextColor(...C.dim);
+      pdf.text(c.author+' · '+fmtDate(c.timestamp), PW-M-4, y+4.5,{align:'right'});
+      y+=9;
+
+      _prose(c.text, C.light, 3);
+
+      if(c.replies && c.replies.length){
+        c.replies.forEach(r=>{
+          _guard(8);
+          pdf.setFontSize(7.5); pdf.setFont('helvetica','italic'); pdf.setTextColor(...C.mid);
+          _prose('↩ '+r.author+' : '+r.text, C.mid, 6);
+        });
+      }
+      if(c.resolved){
+        _guard(5);
+        pdf.setFontSize(7); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.green);
+        pdf.text('✓ Résolu', M+6, y); y+=5;
+      }
+      y+=3; _rule(C.dim);
+    });
+
+    _footer();
+
+    /* ══════════════════════════════════════════════════════════
+       PAGE 5 — RECOMMANDATIONS
+    ══════════════════════════════════════════════════════════ */
+    pdf.addPage(); _header('Recommandations');
+    _section('6. RECOMMANDATIONS ACTIONNABLES', [10,100,60]);
+    _prose(
+      'Les recommandations suivantes découlent directement des observations documentées par l\'équipe. '+
+      'Elles sont classées par niveau d\'urgence et formulées de façon concrète pour permettre une mise en œuvre rapide.'
+    );
+    y+=2;
+
+    recs.forEach((r,ri)=>{
+      _guard(30);
+      const pCol={high:C.red,medium:C.orange,low:C.green}[r.priority]||C.blue;
+      const pLbl={high:'PRIORITÉ HAUTE',medium:'PRIORITÉ MOYENNE',low:'PRIORITÉ BASSE'}[r.priority]||r.priority;
+      const sLbl={proposed:'Proposée',confirmed:'Confirmée',active:'En cours'}[r.status]||r.status;
+
+      /* Left accent bar */
+      pdf.setFillColor(...pCol); pdf.rect(M, y, 2, 0, 'F'); // will be drawn after height known
+
+      /* Card */
+      pdf.setFillColor(13,22,41,.9); pdf.roundedRect(M+3, y, W-3, 8, 1.5,1.5,'F');
+      pdf.setFillColor(...pCol); pdf.rect(M,y,2.5,8,'F');
+
+      let cx2 = M+8;
+      cx2 += _chip(pLbl, pCol, cx2, y+5)+2;
+      cx2 += _chip('Niveau '+r.level, C.accent, cx2, y+5)+2;
+      _chip(sLbl, r.status==='confirmed'?C.green:r.status==='active'?C.red:C.blue, cx2, y+5);
+      y+=11;
+
+      /* Title */
+      _guard(8);
+      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.light);
+      const tLines = pdf.splitTextToSize(r.title, W-6);
+      pdf.text(tLines, M+4, y); y+=tLines.length*5+2;
+
+      /* Description */
+      _prose(r.description, C.mid, 4);
+
+      /* Sources */
+      _guard(6);
+      pdf.setFontSize(7); pdf.setFont('helvetica','italic'); pdf.setTextColor(...C.dim);
+      pdf.text('Sources : '+r.source_comments.length+' observation(s) documentée(s)', M+6, y);
+      y+=6; _rule();
+    });
+
+    /* Next steps */
+    _guard(30);
+    _section('7. PROCHAINES ÉTAPES', [30,80,160]);
+    _prose(
+      'Pour concrétiser les améliorations identifiées dans ce rapport, trois actions sont à lancer dans les prochaines semaines. '+
+      'Premièrement, mettre en place les modifications techniques dans Solidtime pour améliorer la traçabilité. '+
+      'Deuxièmement, organiser une session de travail avec l\'équipe pour recalibrer les estimations de tâches. '+
+      'Troisièmement, définir un tableau de bord de suivi mensuel pour mesurer la progression des indicateurs clés.'
+    );
+    _prose(
+      'Un bilan de mi-parcours est recommandé dans 4 à 6 semaines pour évaluer l\'impact des actions engagées. '+
+      'L\'objectif final est d\'atteindre un niveau de maturité analytique permettant une prise de décision '+
+      'basée sur des données fiables et complètes.',
+      C.mid
+    );
+
+    _footer();
+
     pdf.save('rapport-decisionnel-kpihub-'+new Date().toISOString().slice(0,10)+'.pdf');
-    showToast('Rapport décisionnel exporté avec succès !');
+    showToast('Rapport exporté avec succès — '+pdf.getNumberOfPages()+' pages 🎉');
   }catch(e){
-    console.error(e); showToast('Erreur lors de la génération du PDF : '+e.message,'⚠');
+    console.error(e); showToast('Erreur PDF : '+e.message,'⚠');
   }finally{
     if(btn){ btn.disabled=false; btn.innerHTML='⬇ <span class="btn-txt">Rapport PDF</span>'; }
   }
