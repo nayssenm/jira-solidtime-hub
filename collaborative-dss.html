@@ -1249,10 +1249,10 @@ async function exportDecisionReport(){
     pdf.text("POINTS CLÉS DE L'ANALYSE", M+9, y); y+=8;
 
     const bullets=[
-      ['Productivité équipe', prodScore+'/100 — score global de léquipe sur la période'] ,
+      ['Productivité équipe', prodScore+'/100 — score global de l'équipe sur la période'],
       ['Taux de complétion', completionRate+'% — des tâches ont été menées à terme'],
       ['Temps moyen / tâche', avgTimeTask+'h — durée moyenne constatée par entrée'],
-      ['Annotations collaboratives', comments.length+' observations documentées par léquipe'] ,
+      ['Annotations collaboratives', comments.length+' observations documentées par l'équipe'],
       ['Recommandations', recs.length+' actions prioritaires définies et formalisées'],
     ];
     bullets.forEach(([lbl,val])=>{
@@ -1265,18 +1265,14 @@ async function exportDecisionReport(){
     });
 
     /* Page footer line */
-    pdf.setFillColor(...C.rule),
-     pdf.rect(0,PH-16,PW,0.4,'F'),
-    pdf.setFontSize(6.5),
-     pdf.setTextColor(...C.dim),
-      pdf.setFont('helvetica','italic'),
-    pdf.text('Rapport produit automatiquement par le moteur DSS de KPI Hub · Données réelles Solidtime · Destiné aux responsables et à la direction.', M, PH-9),
+    pdf.setFillColor(...C.rule); pdf.rect(0,PH-16,PW,0.4,'F');
+    pdf.setFontSize(6.5); pdf.setTextColor(...C.dim); pdf.setFont('helvetica','italic');
+    pdf.text('Rapport produit automatiquement par le moteur DSS de KPI Hub · Données réelles Solidtime · Destiné aux responsables et à la direction.', M, PH-9);
 
     /* ══════════════════════════════════════════════════════════
        PAGE 2 — RÉSUMÉ EXÉCUTIF + KPI GLOBAUX
     ══════════════════════════════════════════════════════════ */
-    pdf.addPage();
-    _header('Résumé exécutif');
+    pdf.addPage(); _header('Résumé exécutif');
 
     _section('1. RÉSUMÉ EXÉCUTIF', C.blue);
     _prose(

@@ -243,6 +243,15 @@ table.dt tr:last-child td{border-bottom:none;}
     <button class="hdr-btn" data-rbac="export" onclick="exportSchemaPDF()">⬇ Export PDF</button>
     <button class="hdr-btn primary" onclick="logout()">⏻ Déconnexion</button>
   </div>
+  <div class="toolbar-right">
+    <div class="tb-toggle" onclick="toggleTheme()" title="Basculer thème clair/sombre">
+      <span class="tb-icon">☀️</span><div class="tb-track"></div><span class="tb-icon">🌙</span>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="quickShare()" title="Partager ce rapport">🔗 <span class="btn-txt">Partager</span></button>
+    <button class="tb-btn" data-rbac="export" onclick="exportDecisionReport()">⬇ <span class="btn-txt">Rapport PDF</span></button>
+    <button class="tb-btn prim" data-rbac="comment" onclick="openNewComment()">＋ Annotation</button>
+  </div>
 </header>
 
 <div class="container">
