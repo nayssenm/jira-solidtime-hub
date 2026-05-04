@@ -1397,7 +1397,7 @@ async function exportDecisionReport(){
       if(pHealth!=null){
         const hs=String(pHealth)+'/100'; const tw2=pdf.getTextWidth(hs)+8;
         cx-=tw2;
-        pdf.setTextColor(...C.mid); pdf.setFontSize(7); pdf.setFont('helvetica','normal');
+        pdf.setTextColor(...C.dim); pdf.setFontSize(7); pdf.setFont('helvetica','normal');
         pdf.text(hs, cx+2, y+7);
       }
       y+=15;
@@ -1511,7 +1511,7 @@ async function exportDecisionReport(){
       if(c.replies && c.replies.length){
         c.replies.forEach(r=>{
           _guard(8);
-          pdf.setFontSize(7.5); pdf.setFont('helvetica','italic'); pdf.setTextColor(...C.mid);
+          pdf.setFontSize(7.5); pdf.setFont('helvetica','italic'); pdf.setTextColor(...C.dim);
           _prose('↩ '+r.author+' : '+r.text, C.ink2, 6);
         });
       }
@@ -1585,7 +1585,7 @@ async function exportDecisionReport(){
       'Un bilan de mi-parcours est recommandé dans 4 à 6 semaines pour évaluer l\'impact des actions engagées. '+
       'L\'objectif final est d\'atteindre un niveau de maturité analytique permettant une prise de décision '+
       'basée sur des données fiables et complètes.',
-      C.mid
+      C.dim
     );
 
     _footer();
