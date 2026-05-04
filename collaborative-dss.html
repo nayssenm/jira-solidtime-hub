@@ -1249,14 +1249,13 @@ async function exportDecisionReport(){
     pdf.text("POINTS CLÉS DE L'ANALYSE", M+9, y); y+=8;
 
     const bullets=[
-      ['Productivité équipe', prodScore+'/100 — score global de léquipe sur la période'],
-      ['Taux de complétion', completionRate+'% — des tâches ont été menées à terme'],
-      ['Temps moyen / tâche', avgTimeTask+'h — durée moyenne constatée par entrée'],
-      ['Annotations collaboratives', comments.length+' observations documentées par léquipe'],
-      ['Recommandations', recs.length+' actions prioritaires définies et formalisées'],
+      ["Productivité équipe", prodScore+"/100 — score global de l’équipe sur la période"],
+      ["Taux de complétion", completionRate+"% — des tâches ont été menées à terme"],
+      ["Temps moyen / tâche", avgTimeTask+"h — durée moyenne constatée par entrée"],
+      ["Annotations collaboratives", comments.length+" observations documentées par l’équipe"],
+      ["Recommandations", recs.length+" actions prioritaires définies et formalisées"],
     ];
-    bullets.forEach(
-      ([lbl,val])=>{
+    bullets.forEach(([lbl,val])=>{
       pdf.setFontSize(8); pdf.setFont('helvetica','bold'); pdf.setTextColor(...C.blue);
       pdf.text('›', M+9, y);
       pdf.setTextColor(...C.ink2); pdf.text(lbl+' :', M+14, y);
@@ -1526,7 +1525,9 @@ async function exportDecisionReport(){
 
     _footer();
 
-   
+    /* ══════════════════════════════════════════════════════════
+       PAGE 5 — RECOMMANDATIONS
+    ══════════════════════════════════════════════════════════ */
     pdf.addPage(); _header('Recommandations');
     _section('6. RECOMMANDATIONS ACTIONNABLES', [10,100,60]);
     _prose(
