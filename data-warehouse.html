@@ -247,11 +247,7 @@ table.dt tr:last-child td{border-bottom:none;}
     <div class="tb-toggle" onclick="toggleTheme()" title="Basculer thème clair/sombre">
       <span class="tb-icon">☀️</span><div class="tb-track"></div><span class="tb-icon">🌙</span>
     </div>
-    <div class="tb-sep"></div>
-    <button class="tb-btn" onclick="quickShare()" title="Partager ce rapport">🔗 <span class="btn-txt">Partager</span></button>
-    <button class="tb-btn" data-rbac="export" onclick="exportDecisionReport()">⬇ <span class="btn-txt">Rapport PDF</span></button>
-    <button class="tb-btn prim" data-rbac="comment" onclick="openNewComment()">＋ Annotation</button>
-  </div>
+    
 </header>
 
 <div class="container">
@@ -376,6 +372,19 @@ table.dt tr:last-child td{border-bottom:none;}
    Star Schema classique + Galaxy Schema DSS enrichi
    Export PDF haute qualité via Canvas → jsPDF
 ════════════════════════════════════════════════════════ */
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('kpi-theme', isDark ? 'light' : 'dark');
+}
+
+// Restaure le thème au chargement de la page
+(function initTheme() {
+  const saved = localStorage.getItem('kpi-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+
 
 /* ── AUTH ── */
 function logout(){localStorage.removeItem('kpi_auth');localStorage.removeItem('kpi_current_user');window.location.href='login.html';}

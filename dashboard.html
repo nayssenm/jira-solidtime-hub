@@ -137,12 +137,60 @@
   </div><div class="mom-controls"><div class="fg"><label>Projet MoM</label><select id="fMoMProject"><option value="__top5">Top 5 projets</option><option value="__all">Tous les projets</option></select></div><span class="cbadge" id="momBadge">Top 5</span></div></div><canvas id="cMoM" style="max-height:280px;"></canvas></div>
 </div>
 </div><script>
-function toggleTheme(){
-  var d=document.documentElement;
-  var n=d.getAttribute("data-theme")==="dark"?"light":"dark";
-  d.setAttribute("data-theme",n);localStorage.setItem("kh-theme",n);
+/* ── THEME ─────────────────────────────────────────────── */
+(function initTheme() {
+  const saved = localStorage.getItem('kpi-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('kpi-theme', isDark ? 'light' : 'dark');
 }
-(function(){var t=localStorage.getItem("kh-theme");if(t)document.documentElement.setAttribute("data-theme",t);})();
+
+/* ── EXPORT PDF ─────────────────────────────────────────── */
+function exportPDF() {
+  const btn = document.getElementById('pdfBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Génération…'; }
+
+  document.documentElement.setAttribute('data-theme', 'light');
+  document.title = `KPI-Hub — Dashboard ${new Date().toLocaleDateString('fr-FR')}`;
+
+  setTimeout(() => {
+    window.print();
+    const saved = localStorage.getItem('kpi-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    if (btn) { btn.disabled = false; btn.innerHTML = '⬇ <span class="btn-txt">Export PDF</span>'; }
+  }, 300);
+}
+
+/* ── PARTAGER ───────────────────────────────────────────── */
+function openShare() {
+  const url = window.location.href;
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(url)
+      .then(() => showToast('🔗 Lien copié dans le presse-papiers !'))
+      .catch(() => showToast('⚠ Impossible de copier. URL : ' + url));
+  } else {
+    const el = document.createElement('textarea');
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast('🔗 Lien copié !');
+  }
+}
+
+function showToast(msg, duration = 3000) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
 
 function showToast(msg,icon){
   if(!icon)icon="&#10003;";
@@ -225,6 +273,19 @@ function vbar(id,labels,vals){
       scales:{x:{ticks:{maxRotation:35}},y:{beginAtZero:true,ticks:{callback:function(v){return v+"h";}}}}}
   });
 }
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('kpi-theme', isDark ? 'light' : 'dark');
+}
+
+// Restaure le thème au chargement de la page
+(function initTheme() {
+  const saved = localStorage.getItem('kpi-theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+
 function donut(id,labels,vals,colors){
   var el=document.getElementById(id);if(!el)return null;
   var tot=vals.reduce(function(a,b){return a+b;},0);
