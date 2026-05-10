@@ -34,6 +34,7 @@ body{
   font-family:var(--font-b);background:var(--bg);color:var(--text);
   min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;
 }
+body > header{display:none!important;}
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
@@ -52,7 +53,7 @@ body::before{
 @keyframes gridScroll{0%{background-position:0 0;}100%{background-position:56px 56px;}}
 
 /* ── HEADER ── */
-header{
+header.dw-legacy-header{
   position:sticky;top:0;z-index:100;height:64px;
   background:rgba(8,15,30,.96);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
   border-bottom:1px solid var(--border);
@@ -229,6 +230,38 @@ table.dt tr:last-child td{border-bottom:none;}
 </head>
 <body>
 
+<nav class="nav-bar">
+  <a class="nav-logo" href="kpi.html">
+    <div class="nav-logo-mark"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
+    <span class="nav-logo-text">KPI <em>Hub</em></span>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="kpi.html"><span class="nav-icon">&#128202;</span> KPI</a>
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">&#128200;</span> Dashboard</a>
+    <a class="nav-link active" href="data-warehouse.html"><span class="nav-icon">&#128452;</span> Data Warehouse</a>
+    <a class="nav-link" href="collaborative-dss.html"><span class="nav-icon">&#129504;</span> Collaborative DSS</a>
+  </div>
+  <div class="nav-user">
+    <div class="nav-avatar" id="navAvatar">A</div>
+    <span class="nav-name" id="navName">&mdash;</span>
+    <button class="nav-logout" onclick="logout()">&#9211; Deconnexion</button>
+  </div>
+</nav>
+
+<div class="toolbar">
+  <div class="toolbar-left">
+    <span class="toolbar-crumb">kpi-hub / <em>data-warehouse</em></span>
+  </div>
+  <div class="toolbar-right">
+    <div class="tb-toggle" onclick="toggleTheme()" title="Basculer theme clair/sombre">
+      <span class="tb-icon">&#9728;</span><div class="tb-track"></div><span class="tb-icon">&#9790;</span>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" data-rbac="export" onclick="exportSchemaPDF()">&#11015; <span class="btn-txt">Export PDF</span></button>
+    <a class="tb-btn" href="advanced-analytics-static.html">Analytics static</a>
+  </div>
+</div>
+
 <header>
   <div class="hdr-brand">
     <div class="hdr-mark"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
@@ -391,6 +424,16 @@ function logout(){localStorage.removeItem('kpi_auth');localStorage.removeItem('k
 function toast(msg,icon='✓'){const t=document.getElementById('toast');t.innerHTML=`<span>${icon}</span> ${msg}`;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3200);}
 
 /* ── TABS ── */
+(function initNavUser(){
+  const u=JSON.parse(localStorage.getItem('kpi_current_user')||'null');
+  if(!u)return;
+  const name=(u.name||u.email||'A').split('@')[0];
+  const av=document.getElementById('navAvatar');
+  const nm=document.getElementById('navName');
+  if(av)av.textContent=name[0].toUpperCase();
+  if(nm)nm.textContent=name;
+})();
+
 function switchTab(id){
   document.querySelectorAll('.tab-btn').forEach((b,i)=>{
     const ids=['classic','galaxy','sql','data'];
@@ -416,7 +459,8 @@ function drawClassicSchema(){
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
 
-  const bg='#080F1E';
+  const lightMode=!!window.__DW_EXPORT_LIGHT;
+  const bg=lightMode?'#F8FBFF':'#080F1E';
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
   /* colors */
@@ -428,8 +472,10 @@ function drawClassicSchema(){
     fact:    '#8B5CF6', fact2:   '#A78BFA',
     pk:      '#F5C842', fk:      '#FF7A52',
     meas:    '#A78BFA', link:    'rgba(91,163,245,.55)',
-    text:    '#D6E8FF', text2:   '#A8CBFA', text3:'#4A6A9A',
-    border:  'rgba(91,163,245,.22)',
+    text:    lightMode?'#0A1E3D':'#D6E8FF',
+    text2:   lightMode?'#1A3560':'#A8CBFA',
+    text3:   lightMode?'#5A7BAC':'#4A6A9A',
+    border:  lightMode?'rgba(30,111,217,.20)':'rgba(91,163,245,.22)',
   };
 
   /* helper: rounded rect */
@@ -447,8 +493,8 @@ function drawClassicSchema(){
 
   /* card draw fn */
   function drawCard(x,y,w,h,title,fields,accent1,accent2,isCenter){
-    const bgCard=isCenter?'rgba(139,92,246,.13)':'rgba(14,26,54,.80)';
-    const borderC=isCenter?'rgba(139,92,246,.45)':'rgba(91,163,245,.20)';
+    const bgCard=lightMode?(isCenter?'#F3EFFF':'#FFFFFF'):(isCenter?'rgba(139,92,246,.13)':'rgba(14,26,54,.80)');
+    const borderC=lightMode?(isCenter?'rgba(139,92,246,.40)':'rgba(30,111,217,.18)'):(isCenter?'rgba(139,92,246,.45)':'rgba(91,163,245,.20)');
     const bw=isCenter?1.5:1;
     rr(x,y,w,h,10,bgCard,borderC,bw);
     topBorder(x,y,w,accent1,accent2);
@@ -466,7 +512,7 @@ function drawClassicSchema(){
     ctx.fillText(title,x+14,y+44);
 
     // divider
-    ctx.strokeStyle='rgba(91,163,245,.14)';ctx.lineWidth=1;
+    ctx.strokeStyle=lightMode?'rgba(30,111,217,.16)':'rgba(91,163,245,.14)';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(x+14,y+54);ctx.lineTo(x+w-14,y+54);ctx.stroke();
 
     // fields
@@ -490,7 +536,7 @@ function drawClassicSchema(){
       // type badge
       const tw=ctx.measureText(type).width+8;
       const tx=x+w-tw-14;
-      rr(tx,fy-10,tw,14,3,'rgba(255,255,255,.06)','rgba(255,255,255,.08)',1);
+      rr(tx,fy-10,tw,14,3,lightMode?'rgba(30,111,217,.07)':'rgba(255,255,255,.06)',lightMode?'rgba(30,111,217,.12)':'rgba(255,255,255,.08)',1);
       ctx.font=`400 9px 'DM Mono',monospace`;
       ctx.fillStyle=COL.text3;
       ctx.fillText(type,tx+4,fy);
@@ -592,13 +638,14 @@ function drawGalaxySchema(){
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
 
-  ctx.fillStyle='#080F1E'; ctx.fillRect(0,0,W,H);
+  const lightMode=!!window.__DW_EXPORT_LIGHT;
+  ctx.fillStyle=lightMode?'#F8FBFF':'#080F1E'; ctx.fillRect(0,0,W,H);
 
   /* Subtle background zone separation */
   const zoneGrad=ctx.createLinearGradient(0,0,W,H);
-  zoneGrad.addColorStop(0,'rgba(139,92,246,.04)');
-  zoneGrad.addColorStop(0.5,'rgba(30,111,217,.03)');
-  zoneGrad.addColorStop(1,'rgba(232,82,42,.04)');
+  zoneGrad.addColorStop(0,lightMode?'rgba(139,92,246,.08)':'rgba(139,92,246,.04)');
+  zoneGrad.addColorStop(0.5,lightMode?'rgba(30,111,217,.06)':'rgba(30,111,217,.03)');
+  zoneGrad.addColorStop(1,lightMode?'rgba(232,82,42,.07)':'rgba(232,82,42,.04)');
   ctx.fillStyle=zoneGrad;ctx.fillRect(0,0,W,H);
 
   const COL={
@@ -610,7 +657,9 @@ function drawGalaxySchema(){
     shared:'rgba(30,111,217,.50)',
     dss:'rgba(232,82,42,.50)',
     pk:'#F5C842',fk:'#FF7A52',meas:'#A78BFA',
-    text:'#D6E8FF',text2:'#A8CBFA',text3:'#4A6A9A',
+    text:lightMode?'#0A1E3D':'#D6E8FF',
+    text2:lightMode?'#1A3560':'#A8CBFA',
+    text3:lightMode?'#5A7BAC':'#4A6A9A',
   };
 
   function rr(x,y,w,h,r,fill,stroke,sw=1){
@@ -625,8 +674,8 @@ function drawGalaxySchema(){
   }
   function drawSmCard(x,y,w,fields,title,accent1,accent2,isFact,isDSS){
     const h=fields.length*18+72;
-    const bgC=isFact?(isDSS?'rgba(232,82,42,.12)':'rgba(139,92,246,.12)'):'rgba(14,26,54,.82)';
-    const bdC=isFact?(isDSS?'rgba(232,82,42,.45)':'rgba(139,92,246,.45)'):isDSS?'rgba(232,82,42,.20)':'rgba(91,163,245,.18)';
+    const bgC=lightMode?(isFact?(isDSS?'#FFF3EF':'#F3EFFF'):'#FFFFFF'):(isFact?(isDSS?'rgba(232,82,42,.12)':'rgba(139,92,246,.12)'):'rgba(14,26,54,.82)');
+    const bdC=lightMode?(isFact?(isDSS?'rgba(232,82,42,.38)':'rgba(139,92,246,.38)'):isDSS?'rgba(232,82,42,.20)':'rgba(30,111,217,.16)'):(isFact?(isDSS?'rgba(232,82,42,.45)':'rgba(139,92,246,.45)'):isDSS?'rgba(232,82,42,.20)':'rgba(91,163,245,.18)');
     rr(x,y,w,h,8,bgC,bdC,isFact?1.5:1);
     topBorder(x,y,w,accent1,accent2);
     // badge
@@ -636,7 +685,7 @@ function drawGalaxySchema(){
     ctx.font=`600 13px 'Lora',serif`;ctx.fillStyle=COL.text;
     ctx.fillText(title,x+10,y+36);
     // divider
-    ctx.strokeStyle='rgba(91,163,245,.12)';ctx.lineWidth=1;
+    ctx.strokeStyle=lightMode?'rgba(30,111,217,.15)':'rgba(91,163,245,.12)';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(x+10,y+44);ctx.lineTo(x+w-10,y+44);ctx.stroke();
     // fields
     let fy=y+58;
@@ -648,7 +697,7 @@ function drawGalaxySchema(){
       ctx.font=`500 10px 'DM Mono',monospace`;ctx.fillStyle=nc;
       ctx.fillText(name,x+24,fy);
       const tw=ctx.measureText(type).width+6;
-      rr(x+w-tw-10,fy-9,tw,12,2,'rgba(255,255,255,.05)',null);
+      rr(x+w-tw-10,fy-9,tw,12,2,lightMode?'rgba(30,111,217,.07)':'rgba(255,255,255,.05)',null);
       ctx.font=`400 8px 'DM Mono',monospace`;ctx.fillStyle=COL.text3;
       ctx.fillText(type,x+w-tw-7,fy);
       fy+=18;
@@ -1019,23 +1068,26 @@ async function exportSchemaPDF(){
   await new Promise(r=>setTimeout(r,400));
 
   try{
+    window.__DW_EXPORT_LIGHT=true;
+    drawClassicSchema();
+    drawGalaxySchema();
     const {jsPDF}=window.jspdf;
     const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     const PW=297,PH=210,M=12;
     const now=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
 
     function drawPageHeader(title,sub){
-      pdf.setFillColor(8,15,30);pdf.rect(0,0,PW,PH,'F');
+      pdf.setFillColor(248,251,255);pdf.rect(0,0,PW,PH,'F');
       pdf.setFillColor(30,111,217);pdf.rect(0,0,PW,2,'F');
       pdf.setFillColor(232,160,32);pdf.rect(0,2,PW,.8,'F');
-      pdf.setTextColor(91,163,245);pdf.setFontSize(8);pdf.setFont('helvetica','bold');
+      pdf.setTextColor(21,88,176);pdf.setFontSize(8);pdf.setFont('helvetica','bold');
       pdf.text('KPI HUB · DATA WAREHOUSE · GALAXY SCHEMA',M,10);
-      pdf.setTextColor(74,106,154);pdf.setFont('helvetica','normal');
+      pdf.setTextColor(90,123,172);pdf.setFont('helvetica','normal');
       pdf.text(now,PW-M,10,{align:'right'});
       pdf.setDrawColor(30,111,217,0.3);pdf.setLineWidth(.2);pdf.line(M,12,PW-M,12);
-      pdf.setTextColor(214,232,255);pdf.setFontSize(16);pdf.setFont('helvetica','bold');
+      pdf.setTextColor(10,30,61);pdf.setFontSize(16);pdf.setFont('helvetica','bold');
       pdf.text(title,M,24);
-      pdf.setFontSize(9);pdf.setFont('helvetica','normal');pdf.setTextColor(168,203,250);
+      pdf.setFontSize(9);pdf.setFont('helvetica','normal');pdf.setTextColor(26,53,96);
       pdf.text(sub,M,32);
       return 38;
     }
@@ -1089,11 +1141,11 @@ async function exportSchemaPDF(){
     const colW=(PW-M*2)/tables.length;
     tables.forEach((t,i)=>{
       const x=M+i*colW;
-      pdf.setFillColor(...t.c,0.15);pdf.roundedRect(x,y,colW-2,PH-y-20,2,2,'F');
+      pdf.setFillColor(...t.c,0.08);pdf.roundedRect(x,y,colW-2,PH-y-20,2,2,'F');
       pdf.setFillColor(...t.c);pdf.roundedRect(x,y,colW-2,6,2,2,'F');
-      pdf.setTextColor(214,232,255);pdf.setFontSize(8);pdf.setFont('helvetica','bold');
+      pdf.setTextColor(255,255,255);pdf.setFontSize(8);pdf.setFont('helvetica','bold');
       pdf.text(t.n,x+3,y+5);
-      pdf.setFontSize(7);pdf.setFont('helvetica','italic');pdf.setTextColor(168,203,250);
+      pdf.setFontSize(7);pdf.setFont('helvetica','italic');pdf.setTextColor(26,53,96);
       const descLines=pdf.splitTextToSize(t.d,colW-6);
       pdf.text(descLines,x+3,y+12);
       let cy2=y+12+descLines.length*4+3;
@@ -1103,7 +1155,7 @@ async function exportSchemaPDF(){
         const isPK=col.includes('(PK)'),isFK=col.includes(' FK');
         if(isPK)pdf.setTextColor(245,200,66);
         else if(isFK)pdf.setTextColor(255,122,82);
-        else pdf.setTextColor(168,203,250);
+        else pdf.setTextColor(26,53,96);
         pdf.setFontSize(7);pdf.setFont('helvetica',isPK?'bold':'normal');
         pdf.text('  '+(isPK?'🔑 ':isFK?'🔗 ':'  ')+col.replace(' FK','').replace(' (PK)',''),x+3,cy2);
         cy2+=5.5;
@@ -1131,6 +1183,7 @@ async function exportSchemaPDF(){
     pdf.save('data-warehouse-galaxy-schema-'+new Date().toISOString().slice(0,10)+'.pdf');
     toast('PDF exporté — 3 pages haute qualité !');
   }catch(e){console.error(e);toast('Erreur PDF : '+e.message,'⚠');}
+  finally{window.__DW_EXPORT_LIGHT=false;drawClassicSchema();if(document.getElementById('tab-galaxy').classList.contains('active'))drawGalaxySchema();}
 }
 
 /* ══════════════════════════════════════════════════════

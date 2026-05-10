@@ -387,19 +387,19 @@ window.KpiPdfExport = (function(){
     let y = 0;
 
     /* ── Cover ── */
-    pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,PH,'F');
+    pdf.setFillColor(248,251,255); pdf.rect(0,0,PW,PH,'F');
     pdf.setFillColor(30,111,217); pdf.rect(0,0,PW,4,'F');
     pdf.setFillColor(232,160,32); pdf.rect(0,4,PW,1.5,'F');
 
-    pdf.setTextColor(91,163,245); pdf.setFontSize(11); pdf.setFont('helvetica','bold');
+    pdf.setTextColor(21,88,176); pdf.setFontSize(11); pdf.setFont('helvetica','bold');
     pdf.text('KPI HUB · RAPPORT OFFICIEL', M, 24);
-    pdf.setTextColor(214,232,255); pdf.setFontSize(30); pdf.setFont('helvetica','bold');
+    pdf.setTextColor(10,30,61); pdf.setFontSize(30); pdf.setFont('helvetica','bold');
     pdf.text(title, M, 52);
     if(subtitle){
-      pdf.setFontSize(14); pdf.setFont('helvetica','normal'); pdf.setTextColor(91,163,245);
+      pdf.setFontSize(14); pdf.setFont('helvetica','normal'); pdf.setTextColor(26,53,96);
       pdf.text(subtitle, M, 66);
     }
-    pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(74,106,154);
+    pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(90,123,172);
     pdf.text(`Généré le ${now}${user?' · '+user:''}`, M, 82);
     pdf.setDrawColor(30,111,217); pdf.setLineWidth(0.3); pdf.line(M,90,PW-M,90);
 
@@ -407,31 +407,31 @@ window.KpiPdfExport = (function(){
 
     /* ── Content pages ── */
     function _header(pageLabel){
-      pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,18,'F');
+      pdf.setFillColor(255,255,255); pdf.rect(0,0,PW,18,'F');
       pdf.setFillColor(30,111,217); pdf.rect(0,0,PW,2,'F');
-      pdf.setTextColor(91,163,245); pdf.setFontSize(8); pdf.setFont('helvetica','bold');
+      pdf.setTextColor(21,88,176); pdf.setFontSize(8); pdf.setFont('helvetica','bold');
       pdf.text('KPI HUB · '+pageTitle.toUpperCase(), M, 8);
-      pdf.setTextColor(74,106,154); pdf.setFont('helvetica','normal');
+      pdf.setTextColor(90,123,172); pdf.setFont('helvetica','normal');
       pdf.text(pageLabel||now, PW-M, 8, {align:'right'});
       pdf.setDrawColor(74,106,154); pdf.setLineWidth(0.15); pdf.line(M,13,PW-M,13);
       y = 22;
     }
     function _footer(){
-      pdf.setFontSize(7); pdf.setTextColor(74,106,154); pdf.setFont('helvetica','normal');
+      pdf.setFontSize(7); pdf.setTextColor(90,123,172); pdf.setFont('helvetica','normal');
       pdf.text('KPI Hub · Confidentiel · Usage interne', M, PH-8);
       pdf.text('Page '+ pdf.getCurrentPageInfo().pageNumber, PW-M, PH-8, {align:'right'});
     }
     function _section(heading, color=[18,58,128]){
       if(y > PH-30){ _footer(); pdf.addPage(); _header('(suite)'); }
       pdf.setFillColor(...color); pdf.roundedRect(M, y, W, 7, 1.5,1.5,'F');
-      pdf.setTextColor(214,232,255); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
+      pdf.setTextColor(255,255,255); pdf.setFontSize(9); pdf.setFont('helvetica','bold');
       pdf.text(heading, M+4, y+5); y += 12;
     }
     function _row(label, value, indent=0){
       if(y > PH-22){ _footer(); pdf.addPage(); _header('(suite)'); }
-      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(168,203,250);
+      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(21,88,176);
       pdf.text(_esc(label)+':', M+3+indent, y);
-      pdf.setFont('helvetica','normal'); pdf.setTextColor(214,232,255);
+      pdf.setFont('helvetica','normal'); pdf.setTextColor(10,30,61);
       const lines = pdf.splitTextToSize(_esc(value), W-70);
       pdf.text(lines, M+65+indent, y);
       y += Math.max(6, lines.length*5) + 2;
@@ -439,12 +439,12 @@ window.KpiPdfExport = (function(){
     function _prose(text){
       if(!text) return;
       if(y > PH-22){ _footer(); pdf.addPage(); _header('(suite)'); }
-      pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(168,203,250);
+      pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(26,53,96);
       const lines = pdf.splitTextToSize(_esc(text), W-6);
       pdf.text(lines, M+3, y); y += lines.length*5+4;
     }
 
-    pdf.setFillColor(8,15,30); pdf.rect(0,0,PW,PH,'F');
+    pdf.setFillColor(248,251,255); pdf.rect(0,0,PW,PH,'F');
     _header('');
 
     sections.forEach((sec, si) => {

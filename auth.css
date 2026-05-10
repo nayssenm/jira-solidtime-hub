@@ -202,9 +202,9 @@ h2{
   background:rgba(232,82,42,.09);border:1px solid rgba(232,82,42,.24);
   border-left:2px solid var(--co);border-radius:10px;
   font-size:12px;color:rgba(255,140,110,.90);
-  display:none;align-items:center;gap:9px;animation:fadeIn .25s ease;
+  display:flex;align-items:center;gap:9px;visibility:hidden;opacity:0;transition:opacity .18s ease;
 }
-.global-err.show{display:flex;}
+.global-err.show{visibility:visible;opacity:1;}
 
 /* ════════════════════════════════════════════════════════════════
    FORM FIELDS
@@ -237,7 +237,7 @@ h2{
 .field input.err{border-color:rgba(232,82,42,.60);box-shadow:0 0 0 3px rgba(232,82,42,.10);}
 .eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;color:rgba(168,203,250,.30);font-size:16px;user-select:none;transition:color .2s;padding:4px;}
 .eye:hover{color:rgba(168,203,250,.70);}
-.field-msg{font-family:var(--font-m);font-size:10px;margin-top:6px;display:none;letter-spacing:.04em;animation:fadeIn .2s ease;}
+.field-msg{font-family:var(--font-m);font-size:10px;margin-top:6px;display:none;letter-spacing:.04em;}
 .field-msg.show   {display:block;}
 .field-msg.error  {color:rgba(255,140,110,.90);}
 .field-msg.success{color:rgba(52,211,153,.90);}

@@ -327,7 +327,7 @@ async function exportPDF(){
   try{
     const{jsPDF}=window.jspdf;
     const SA=[30,111,217],SA3=[91,163,245],OR=[232,160,32],CO=[232,82,42],EM=[12,184,122];
-    const BG=[8,15,30],TXT=[214,232,255],TXT2=[168,203,250],TXT3=[74,106,154],SURFL=[235,241,255];
+    const BG=[255,255,255],TXT=[10,30,61],TXT2=[26,53,96],TXT3=[90,123,172],SURFL=[248,251,255];
     const now=new Date();
     const dateStr=now.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
     const timeStr=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
