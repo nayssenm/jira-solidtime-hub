@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&family=Lora:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="report-actions.js"></script>
 <script>
 (function(){if(localStorage.getItem('kpi_auth')!=='true'){window.location.href='login.html';}})();
 </script>
@@ -27,6 +28,20 @@
   --font-m:'DM Mono',monospace;
   --ease:cubic-bezier(.4,0,.2,1);
   --radius:10px;--radius-lg:16px;
+}
+[data-theme="light"]{
+  --bg:#EEF4FF;--bg2:#DDE8FF;
+  --surf:#F5F9FF;--surf2:#E4EEFD;
+  --border:rgba(30,111,217,.15);--border2:rgba(30,111,217,.07);
+  --text:#0A1E3D;--text2:#1A3560;--text3:#5A7BAC;
+  --shadow:0 2px 8px rgba(30,111,217,.10),0 6px 20px rgba(30,111,217,.07);
+}
+[data-theme="dark"]{
+  --bg:#080F1E;--bg2:#0D1629;
+  --surf:rgba(30,111,217,.07);--surf2:rgba(30,111,217,.12);
+  --border:rgba(91,163,245,.14);--border2:rgba(91,163,245,.07);
+  --text:#D6E8FF;--text2:#A8CBFA;--text3:#4A6A9A;
+  --shadow:0 2px 18px rgba(0,0,8,.55);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
@@ -163,6 +178,8 @@ pre.sql{
   padding:18px 20px;overflow-x:auto;font-family:var(--font-m);font-size:12px;line-height:1.8;
   color:#C8DFFF;
 }
+[data-theme="light"] pre.sql{background:#FFFFFF;color:var(--text2);border-color:var(--border);}
+[data-theme="light"] .fg select option{background:#EEF4FF;color:#0A1E3D;}
 .sql-kw{color:var(--sa3);}
 .sql-type{color:var(--or2);}
 .sql-cmt{color:var(--text3);font-style:italic;}
@@ -218,6 +235,7 @@ table.dt tr:last-child td{border-bottom:none;}
 
 /* Toast */
 .toast{position:fixed;top:20px;right:20px;z-index:9999;background:rgba(8,15,30,.97);border:1px solid var(--border);border-top:2px solid var(--sa);color:var(--text);padding:10px 16px;border-radius:var(--radius);font-size:12px;backdrop-filter:blur(16px);display:flex;align-items:center;gap:8px;transform:translateY(-65px);opacity:0;transition:all .35s var(--ease);pointer-events:none;max-width:290px;}
+[data-theme="light"] .toast{background:#FFFFFF;box-shadow:0 12px 30px rgba(30,111,217,.16);}
 .toast.show{transform:translateY(0);opacity:1;}
 
 /* Animations */
@@ -257,6 +275,7 @@ table.dt tr:last-child td{border-bottom:none;}
       <span class="tb-icon">&#9728;</span><div class="tb-track"></div><span class="tb-icon">&#9790;</span>
     </div>
     <div class="tb-sep"></div>
+    <button class="tb-btn" onclick="quickShare()">&#128279; <span class="btn-txt">Partager</span></button>
     <button class="tb-btn" data-rbac="export" onclick="exportSchemaPDF()">&#11015; <span class="btn-txt">Export PDF</span></button>
     <a class="tb-btn" href="advanced-analytics-static.html">Analytics static</a>
   </div>
@@ -284,6 +303,12 @@ table.dt tr:last-child td{border-bottom:none;}
 </header>
 
 <div class="container">
+
+  <div class="share-banner" id="shareBanner">
+    <span>&#128279;</span>
+    <span id="shareBannerText">Vous consultez ce rapport via un lien partagé</span>
+    <span class="share-perm" id="sharePerm">Lecteur</span>
+  </div>
 
   <div class="pg-header">
     <div class="pg-eyebrow">Architecture données · Galaxy Schema · PFE 2025–2026</div>
@@ -406,16 +431,12 @@ table.dt tr:last-child td{border-bottom:none;}
    Export PDF haute qualité via Canvas → jsPDF
 ════════════════════════════════════════════════════════ */
 function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  localStorage.setItem('kpi-theme', isDark ? 'light' : 'dark');
+  KpiReportActions.toggleTheme();
 }
 
 // Restaure le thème au chargement de la page
 (function initTheme() {
-  const saved = localStorage.getItem('kpi-theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  KpiReportActions.applySavedTheme();
 })();
 
 
@@ -433,6 +454,10 @@ function toast(msg,icon='✓'){const t=document.getElementById('toast');t.innerH
   if(av)av.textContent=name[0].toUpperCase();
   if(nm)nm.textContent=name;
 })();
+window.onReportThemeChange=function(){
+  drawClassicSchema();
+  if(document.getElementById('tab-galaxy').classList.contains('active'))drawGalaxySchema();
+};
 
 function switchTab(id){
   document.querySelectorAll('.tab-btn').forEach((b,i)=>{
@@ -459,7 +484,7 @@ function drawClassicSchema(){
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
 
-  const lightMode=!!window.__DW_EXPORT_LIGHT;
+  const lightMode=!!window.__DW_EXPORT_LIGHT||document.documentElement.getAttribute('data-theme')==='light';
   const bg=lightMode?'#F8FBFF':'#080F1E';
   ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
@@ -638,7 +663,7 @@ function drawGalaxySchema(){
   const ctx=canvas.getContext('2d');
   ctx.scale(dpr,dpr);
 
-  const lightMode=!!window.__DW_EXPORT_LIGHT;
+  const lightMode=!!window.__DW_EXPORT_LIGHT||document.documentElement.getAttribute('data-theme')==='light';
   ctx.fillStyle=lightMode?'#F8FBFF':'#080F1E'; ctx.fillRect(0,0,W,H);
 
   /* Subtle background zone separation */
@@ -1192,6 +1217,7 @@ async function exportSchemaPDF(){
 (function(){
   initFilters();updateKPIs();render();
   drawClassicSchema();
+  KpiReportActions.applyIncomingShare();
   toast('Data Warehouse · Galaxy Schema v2.0 · 2 facts · 8 dimensions','🗄');
 })();
 </script>

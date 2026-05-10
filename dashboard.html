@@ -4,6 +4,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="enhancements/dashboard-enhancements.css">
 <link rel="stylesheet" href="enhancements/print.css">
+<script src="report-actions.js"></script>
 </head><body><nav>
   <a class="nl" href="dashboard.html">
     <div class="nm"><svg viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 4h2v-2h2v2h2v2h-2v2h-2v-2h-2z"/></svg></div>
@@ -33,12 +34,16 @@
     </div>
     <div class="tb-sep"></div>
     <button class="tb-btn" id="pdfBtn" onclick="exportPDF()">⬇ <span class="btn-txt">Export PDF</span></button>
-    <button class="tb-btn prim" onclick="openShare()">🔗 <span class="btn-txt">Partager</span></button>
+    <button class="tb-btn prim" onclick="quickShare()">🔗 <span class="btn-txt">Partager</span></button>
   </div>
 </div>
 </div>
   
 </nav><div class="toast" id="toast"></div><div class="wrap">
+<div class="share-banner" id="shareBanner">
+  <span>🔗</span><span id="shareBannerText">Vous consultez ce rapport via un lien partagé</span>
+  <span class="share-perm" id="sharePerm">Lecteur</span>
+</div>
 <div class="sdiv"><div class="sdot"></div>Vue d'ensemble</div>
 <div class="kgrid">
   <div class="card kcard" title="Somme totale des heures Solidtime">
@@ -141,13 +146,11 @@
 (function initTheme() {
   const saved = localStorage.getItem('kpi-theme');
   if (saved) document.documentElement.setAttribute('data-theme', saved);
+  KpiReportActions.applyIncomingShare();
 })();
 
 function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  localStorage.setItem('kpi-theme', isDark ? 'light' : 'dark');
+  KpiReportActions.toggleTheme();
 }
 
 /* ── EXPORT PDF ─────────────────────────────────────────── */
@@ -155,19 +158,15 @@ function exportPDF() {
   const btn = document.getElementById('pdfBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Génération…'; }
 
-  document.documentElement.setAttribute('data-theme', 'light');
-  document.title = `KPI-Hub — Dashboard ${new Date().toLocaleDateString('fr-FR')}`;
-
+  KpiReportActions.exportLightPrint('Dashboard');
   setTimeout(() => {
-    window.print();
-    const saved = localStorage.getItem('kpi-theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', saved);
     if (btn) { btn.disabled = false; btn.innerHTML = '⬇ <span class="btn-txt">Export PDF</span>'; }
-  }, 300);
+  }, 700);
 }
 
 /* ── PARTAGER ───────────────────────────────────────────── */
 function openShare() {
+  return quickShare();
   const url = window.location.href;
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard.writeText(url)
@@ -274,10 +273,7 @@ function vbar(id,labels,vals){
   });
 }
 function toggleTheme() {
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  localStorage.setItem('kpi-theme', isDark ? 'light' : 'dark');
+  KpiReportActions.toggleTheme();
 }
 
 // Restaure le thème au chargement de la page
